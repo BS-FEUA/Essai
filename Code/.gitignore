@@ -1,0 +1,17 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Next.js
+/.next/
+/out/
+
+# environment files
+.env*
+!.env.example
+
+# deployment and local files
+.vercel
+*.tsbuildinfo
+coverage/

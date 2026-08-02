@@ -1,0 +1,6 @@
+{
+  "name": "BS-Lokossa",
+  "description": "Plateforme officielle du Bureau Syndical FEUA Lokossa - Communiqués, Assemblées, Revendications, Cotisations & Services Étudiants",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

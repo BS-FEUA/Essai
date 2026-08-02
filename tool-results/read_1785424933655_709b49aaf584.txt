@@ -1,0 +1,2002 @@
+     1→'use client';
+     2→
+     3→import { useEffect, useState, useCallback, useRef } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  useAppStore, silentFetch, apiFetch, canAccess, ACCESS_LABELS,
+     7→  type SessionMember, type ViewName,
+     8→} from '@/lib/store';
+     9→import { Sidebar } from '@/components/layout/Sidebar';
+    10→import { Header } from '@/components/layout/Header';
+    11→import { Footer } from '@/components/layout/Footer';
+    12→
+    13→import { Button } from '@/components/ui/button';
+    14→import { Input } from '@/components/ui/input';
+    15→import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+    16→import { Badge } from '@/components/ui/badge';
+    17→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+    18→import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+    19→import { Skeleton } from '@/components/ui/skeleton';
+    20→import { ScrollArea } from '@/components/ui/scroll-area';
+    21→import { Separator } from '@/components/ui/separator';
+    22→import { Label } from '@/components/ui/label';
+    23→import { Textarea } from '@/components/ui/textarea';
+    24→import {
+    25→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    26→} from '@/components/ui/table';
+    27→import {
+    28→  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+    29→} from '@/components/ui/dialog';
+    30→import {
+    31→  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+    32→} from '@/components/ui/dropdown-menu';
+    33→import { Switch } from '@/components/ui/switch';
+    34→import {
+    35→  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+    36→} from '@/components/ui/select';
+    37→import {
+    38→  LogIn, UserPlus, Users, FileText, Wallet, MessageSquare, Shirt,
+    39→  Shield, Globe, ArrowLeft, Search, Send, ChevronLeft, ChevronRight,
+    40→  Plus, Download, Trash2, Eye, Upload, Package, CheckCircle, Clock,
+    41→  AlertTriangle, DollarSign, TrendingUp, BarChart3, Activity,
+    42→  User, Mail, Lock, Phone, GraduationCap, Building, BookOpen,
+    43→  Calendar, Hash, ChevronDown, Megaphone, Star, Heart,
+    44→  CheckCircle2, XCircle, Info, Loader2, Pencil, Check, MoreVertical, FileUp, Archive,
+    45→} from 'lucide-react';
+    46→import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+    47→
+    48→// ─── Animation variants ─────────────────────────────
+    49→const pageVariants = {
+    50→  initial: { opacity: 0, y: 20 },
+    51→  animate: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+    52→  exit: { opacity: 0, y: -20, transition: { duration: 0.2 } },
+    53→};
+    54→
+    55→const fadeIn = { initial: { opacity: 0 }, animate: { opacity: 1, transition: { duration: 0.4 } } };
+    56→
+    57→// ─── Status/role helpers ─────────────────────────────
+    58→const statusBadge: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+    59→  ACTIVE: { label: 'Actif', variant: 'default' },
+    60→  PENDING_VALIDATION: { label: 'En attente', variant: 'secondary' },
+    61→  ARCHIVED: { label: 'Archivé', variant: 'outline' },
+    62→  IGNORANT: { label: 'Ignorant', variant: 'destructive' },
+    63→};
+    64→
+    65→const orderBadge: Record<string, { label: string; color: string }> = {
+    66→  EN_ATTENTE: { label: 'En attente', color: 'bg-yellow-100 text-yellow-800' },
+    67→  VAL1: { label: 'Validé 1', color: 'bg-emerald-100 text-emerald-800' },
+    68→  VAL2: { label: 'Validé 2', color: 'bg-[var(--feua-green-light)] text-[var(--feua-green)]' },
+    69→  LIVRE: { label: 'Livré', color: 'bg-green-100 text-green-800' },
+    70→  ANNULE: { label: 'Annulé', color: 'bg-red-100 text-red-800' },
+    71→};
+    72→
+    73→const roleBadgeColor: Record<string, string> = {
+    74→  CEO: 'bg-[var(--feua-gold)] text-white',
+    75→  MAST_IN: 'bg-[var(--feua-gold)] text-[var(--feua-dark)]',
+    76→  MAST: 'bg-[var(--feua-green)] text-white',
+    77→  MASTER: 'bg-[var(--feua-green)] text-white',
+    78→  MIX: 'bg-emerald-600 text-white',
+    79→  MIN: 'bg-emerald-400 text-[var(--feua-dark)]',
+    80→  AMC: 'bg-gray-400 text-white',
+    81→  IGN: 'bg-gray-300 text-gray-700',
+    82→};
+    83→
+    84→const statusBadgeSoft: Record<string, string> = {
+    85→  ACTIVE: 'bg-green-50 text-green-700',
+    86→  PENDING_VALIDATION: 'bg-yellow-50 text-yellow-700',
+    87→  ARCHIVED: 'bg-gray-100 text-gray-600',
+    88→  IGNORANT: 'bg-red-50 text-red-700',
+    89→};
+    90→
+    91→const docTypeColors: Record<string, string> = {
+    92→  FICHE_PRE_INSCRIPTION: 'bg-emerald-100 text-emerald-800',
+    93→  CARTE_ETUDIANT: 'bg-[var(--feua-gold-light)] text-[var(--feua-gold)]',
+    94→  BULLETIN: 'bg-green-100 text-green-800',
+    95→  CERTIFICAT: 'bg-amber-100 text-amber-800',
+    96→  AUTRE: 'bg-gray-100 text-gray-700',
+    97→};
+    98→
+    99→// ─── Announcements banner ───────────────────────────
+   100→function AnnouncementsBanner({ announcements }: { announcements: any[] }) {
+   101→  const [idx, setIdx] = useState(0);
+   102→  useEffect(() => {
+   103→    if (announcements.length <= 1) return;
+   104→    const t = setInterval(() => setIdx((i) => (i + 1) % announcements.length), 5000);
+   105→    return () => clearInterval(t);
+   106→  }, [announcements.length]);
+   107→  if (announcements.length === 0) return null;
+   108→  const a = announcements[idx];
+   109→  return (
+   110→    <div className={`py-2 px-4 text-center text-sm font-medium ${a?.isUrgent ? 'bg-red-500/10 text-red-700 border-b border-red-200' : 'bg-[var(--feua-green-light)] text-[var(--feua-green)] border-b border-green-200'}`}>
+   111→      <AnimatePresence mode="wait">
+   112→        <motion.p key={a?.id || idx} {...pageVariants} className="truncate">
+   113→          {a?.isUrgent && <AlertTriangle className="inline h-4 w-4 mr-1" />}
+   114→          {a?.title}{a?.content ? ` — ${a.content}` : ''}
+   115→        </motion.p>
+   116→      </AnimatePresence>
+   117→    </div>
+   118→  );
+   119→}
+   120→
+   121→// ─── LANDING PAGE ────────────────────────────────────
+   122→function LandingPage() {
+   123→  const { announcements, setView } = useAppStore();
+   124→  return (
+   125→    <div className="min-h-screen flex flex-col">
+   126→      <AnnouncementsBanner announcements={announcements} />
+   127→      {/* Hero */}
+   128→      <section className="relative flex-1 flex items-center justify-center overflow-hidden">
+   129→        <div
+   130→          className="absolute inset-0 bg-cover bg-center"
+   131→          style={{ backgroundImage: 'url(/hero-banner.png)' }}
+   132→        >
+   133→          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-[var(--feua-dark)]/50 to-black/80" />
+   134→        </div>
+   135→
+   136→        {/* CSS floating particles */}
+   137→        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+   138→          <div className="absolute bottom-10 left-[15%] w-2 h-2 rounded-full bg-[var(--feua-gold)]/40 animate-float-particle" style={{ animationDelay: '0s' }} />
+   139→          <div className="absolute bottom-20 left-[40%] w-1.5 h-1.5 rounded-full bg-[var(--feua-green)]/50 animate-float-particle-2" style={{ animationDelay: '2s' }} />
+   140→          <div className="absolute bottom-5 left-[65%] w-2.5 h-2.5 rounded-full bg-[var(--feua-gold)]/30 animate-float-particle" style={{ animationDelay: '4s' }} />
+   141→          <div className="absolute bottom-15 left-[80%] w-1.5 h-1.5 rounded-full bg-[var(--feua-green)]/40 animate-float-particle-2" style={{ animationDelay: '1s' }} />
+   142→          <div className="absolute bottom-8 left-[25%] w-2 h-2 rounded-full bg-white/20 animate-float-particle" style={{ animationDelay: '6s' }} />
+   143→          <div className="absolute bottom-25 left-[55%] w-1 h-1 rounded-full bg-[var(--feua-gold)]/50 animate-float-particle-2" style={{ animationDelay: '3s' }} />
+   144→        </div>
+   145→
+   146→        <motion.div {...fadeIn} className="relative z-10 text-center px-4 max-w-3xl mx-auto">
+   147→          <motion.img
+   148→            src="/feua-logo.png" alt="FEUA"
+   149→            className="h-24 w-24 mx-auto mb-6 object-contain drop-shadow-[0_0_24px_rgba(27,122,61,0.5)]"
+   150→            animate={{ scale: [1, 1.05, 1] }}
+   151→            transition={{ duration: 2, repeat: Infinity }}
+   152→          />
+   153→          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-2">
+   154→            FEUA
+   155→          </h1>
+   156→          <p className="text-xl sm:text-2xl text-[var(--feua-gold)] font-semibold mb-2">
+   157→            Bureau Syndical de Lokossa
+   158→          </p>
+   159→          <p className="text-white/80 text-sm sm:text-base mb-8 max-w-md mx-auto">
+   160→            Fédération des Étudiants Universitaires Associés — Unissant les étudiants pour un avenir meilleur au Bénin.
+   161→          </p>
+   162→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
+   163→            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+   164→              <Card
+   165→                className="cursor-pointer border-[var(--feua-green)] hover:shadow-2xl hover:shadow-[var(--feua-green)]/20 transition-all backdrop-blur-md bg-white/80"
+   166→                onClick={() => setView('login')}
+   167→              >
+   168→                <CardHeader className="pb-3">
+   169→                  <CardTitle className="text-lg text-[var(--feua-green)] flex items-center justify-center gap-2">
+   170→                    <span className="relative flex h-2.5 w-2.5">
+   171→                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--feua-green)] opacity-75" />
+   172→                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--feua-green)]" />
+   173→                    </span>
+   174→                    <Users className="h-5 w-5" />
+   175→                    Espace Membre FEUA
+   176→                  </CardTitle>
+   177→                  <CardDescription>Accédez à votre espace membre</CardDescription>
+   178→                </CardHeader>
+   179→                <CardContent>
+   180→                  <Button className="w-full bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90">
+   181→                    <LogIn className="mr-2 h-4 w-4" /> Se connecter
+   182→                  </Button>
+   183→                </CardContent>
+   184→              </Card>
+   185→            </motion.div>
+   186→            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+   187→              <Card
+   188→                className="cursor-pointer border-[var(--feua-gold)] hover:shadow-2xl hover:shadow-[var(--feua-gold)]/20 transition-all backdrop-blur-md bg-white/80"
+   189→                onClick={() => setView('landa')}
+   190→              >
+   191→                <CardHeader className="pb-3">
+   192→                  <CardTitle className="text-lg text-[var(--feua-gold)] flex items-center gap-2">
+   193→                    <Globe className="h-5 w-5" />
+   194→                    Espace Landa
+   195→                  </CardTitle>
+   196→                  <CardDescription>Pour les non-membres</CardDescription>
+   197→                </CardHeader>
+   198→                <CardContent>
+   199→                  <Button className="w-full bg-[var(--feua-gold)] hover:bg-[var(--feua-gold)]/90 text-[var(--feua-dark)]">
+   200→                    <Globe className="mr-2 h-4 w-4" /> Découvrir
+   201→                  </Button>
+   202→                </CardContent>
+   203→              </Card>
+   204→            </motion.div>
+   205→          </div>
+   206→        </motion.div>
+   207→
+   208→        {/* Bottom fade */}
+   209→        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
+   210→      </section>
+   211→      <Footer />
+   212→    </div>
+   213→  );
+   214→}
+   215→
+   216→// ─── LOGIN ──────────────────────────────────────────
+   217→function LoginPage() {
+   218→  const [email, setEmail] = useState('');
+   219→  const [password, setPassword] = useState('');
+   220→  const { login, loading, setView } = useAppStore();
+   221→
+   222→  const handleSubmit = (e: React.FormEvent) => {
+   223→    e.preventDefault();
+   224→    if (email && password) login(email, password);
+   225→  };
+   226→
+   227→  return (
+   228→    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[var(--feua-green-light)] to-background">
+   229→      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+   230→        {/* Decorative left panel - desktop only */}
+   231→        <div className="hidden lg:flex flex-col items-center justify-center p-8 rounded-2xl bg-gradient-to-br from-[var(--feua-green)] to-emerald-800 text-white relative overflow-hidden">
+   232→          <div className="absolute inset-0 pointer-events-none">
+   233→            <div className="absolute top-10 right-10 w-24 h-24 rounded-full bg-white/5" />
+   234→            <div className="absolute bottom-20 left-8 w-16 h-16 rounded-full bg-white/5" />
+   235→            <div className="absolute top-1/2 right-4 w-8 h-8 rounded-full bg-[var(--feua-gold)]/10" />
+   236→          </div>
+   237→          <img src="/feua-logo.png" alt="FEUA" className="h-20 w-20 object-contain mb-6 drop-shadow-[0_0_20px_rgba(212,160,23,0.4)] relative z-10" />
+   238→          <h2 className="text-2xl font-bold text-center relative z-10">FEUA — BS Lokossa</h2>
+   239→          <p className="text-white/80 text-center text-sm mt-2 max-w-xs relative z-10">Fédération des Étudiants Universitaires Associés</p>
+   240→          <p className="text-[var(--feua-gold)] text-center text-xs mt-4 font-medium relative z-10">Unissant les étudiants pour un avenir meilleur</p>
+   241→        </div>
+   242→
+   243→        <motion.div {...pageVariants} className="w-full max-w-md mx-auto">
+   244→          {/* Mobile logo */}
+   245→          <div className="lg:hidden flex justify-center mb-4">
+   246→            <img src="/feua-logo.png" alt="FEUA" className="h-14 w-14 object-contain" />
+   247→          </div>
+   248→          <div className="relative p-[2px] rounded-xl bg-gradient-to-br from-[var(--feua-green)] via-[var(--feua-gold)] to-[var(--feua-green)]">
+   249→            <Card className="shadow-xl border-0 rounded-xl">
+   250→              <CardHeader className="text-center space-y-2">
+   251→                <CardTitle className="text-2xl text-[var(--feua-green)]">Connexion</CardTitle>
+   252→                <CardDescription>Connectez-vous à votre espace FEUA</CardDescription>
+   253→              </CardHeader>
+   254→          <form onSubmit={handleSubmit}>
+   255→            <CardContent className="space-y-4">
+   256→              <div className="space-y-2">
+   257→                <Label htmlFor="email">Email</Label>
+   258→                <div className="relative">
+   259→                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+   260→                  <Input id="email" type="email" placeholder="votre@email.bj" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
+   261→                </div>
+   262→              </div>
+   263→              <div className="space-y-2">
+   264→                <Label htmlFor="password">Mot de passe</Label>
+   265→                <div className="relative">
+   266→                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+   267→                  <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" required />
+   268→                </div>
+   269→              </div>
+   270→              <div className="flex justify-end">
+   271→                <Button variant="link" className="text-xs p-0 h-auto" onClick={() => setView('forgot-password')}>
+   272→                  Mot de passe oublié ?
+   273→                </Button>
+   274→              </div>
+   275→            </CardContent>
+   276→            <CardFooter className="flex-col gap-3">
+   277→              <Button type="submit" className="w-full bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90" disabled={loading}>
+   278→                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+   279→                Se connecter
+   280→              </Button>
+   281→              <p className="text-sm text-muted-foreground">
+   282→                Pas encore membre ?{' '}
+   283→                <Button variant="link" className="p-0 h-auto text-[var(--feua-green)]" onClick={() => setView('register')}>
+   284→                  Créer un compte
+   285→                </Button>
+   286→              </p>
+   287→            </CardFooter>
+   288→          </form>
+   289→        </Card>
+   290→        </div>
+   291→        {/* Demo hints */}
+   292→        <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-[var(--feua-gold-light)] to-amber-50 border border-[var(--feua-gold)]/20">
+   293→          <p className="font-semibold text-sm text-[var(--feua-gold)] mb-2 text-center">Comptes de démonstration</p>
+   294→          <div className="space-y-1.5 text-xs">
+   295→            <p className="flex items-center justify-between gap-4">
+   296→              <span className="font-medium text-muted-foreground">CEO</span>
+   297→              <code className="bg-white/70 px-2 py-0.5 rounded-md font-mono">ceo@feua.bj / ceo2026</code>
+   298→            </p>
+   299→            <p className="flex items-center justify-between gap-4">
+   300→              <span className="font-medium text-muted-foreground">Master</span>
+   301→              <code className="bg-white/70 px-2 py-0.5 rounded-md font-mono">master@feua.bj / master2026</code>
+   302→            </p>
+   303→          </div>
+   304→        </div>
+   305→      </motion.div>
+   306→      </div>
+   307→    </div>
+   308→  );
+   309→}
+   310→
+   311→// ─── REGISTER (multi-step) ───────────────────────────
+   312→function RegisterPage() {
+   313→  const { register, loading, setView } = useAppStore();
+   314→  const [step, setStep] = useState(1);
+   315→  const totalSteps = 3;
+   316→  const [form, setForm] = useState<Record<string, string>>({
+   317→    email: '', password: '', confirmPassword: '', matricule: '',
+   318→    firstName: '', lastName: '', phone: '', institution: '',
+   319→    filiere: '', niveau: '', dateOfBirth: '',
+   320→  });
+   321→  const [error, setError] = useState('');
+   322→
+   323→  const updateField = (key: string, value: string) => {
+   324→    setForm((f) => ({ ...f, [key]: value }));
+   325→    setError('');
+   326→  };
+   327→
+   328→  const nextStep = () => {
+   329→    if (step === 1) {
+   330→      if (!form.email || !form.password || !form.confirmPassword) { setError('Remplissez tous les champs'); return; }
+   331→      if (form.password.length < 8) { setError('Le mot de passe doit contenir au moins 8 caractères'); return; }
+   332→      if (form.password !== form.confirmPassword) { setError('Les mots de passe ne correspondent pas'); return; }
+   333→    }
+   334→    if (step === 2) {
+   335→      if (!form.matricule || !form.firstName || !form.lastName) { setError('Remplissez tous les champs obligatoires'); return; }
+   336→    }
+   337→    setError('');
+   338→    setStep((s) => Math.min(s + 1, totalSteps));
+   339→  };
+   340→
+   341→  const handleSubmit = (e: React.FormEvent) => {
+   342→    e.preventDefault();
+   343→    register(form);
+   344→  };
+   345→
+   346→  const steps = [
+   347→    {
+   348→      title: 'Identifiants',
+   349→      fields: (
+   350→        <div className="space-y-4">
+   351→          <div className="space-y-2">
+   352→            <Label>Email *</Label>
+   353→            <div className="relative"><Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input placeholder="votre@email.bj" value={form.email} onChange={(e) => updateField('email', e.target.value)} className="pl-10" /></div>
+   354→          </div>
+   355→          <div className="space-y-2">
+   356→            <Label>Mot de passe *</Label>
+   357→            <div className="relative"><Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input type="password" placeholder="Min. 8 caractères" value={form.password} onChange={(e) => updateField('password', e.target.value)} className="pl-10" /></div>
+   358→          </div>
+   359→          <div className="space-y-2">
+   360→            <Label>Confirmer *</Label>
+   361→            <div className="relative"><Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input type="password" placeholder="Retapez le mot de passe" value={form.confirmPassword} onChange={(e) => updateField('confirmPassword', e.target.value)} className="pl-10" /></div>
+   362→          </div>
+   363→        </div>
+   364→      ),
+   365→    },
+   366→    {
+   367→      title: 'Informations personnelles',
+   368→      fields: (
+   369→        <div className="space-y-4">
+   370→          <div className="space-y-2">
+   371→            <Label>Matricule *</Label>
+   372→            <div className="relative"><Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input placeholder="Ex: FEUA-2026-001" value={form.matricule} onChange={(e) => updateField('matricule', e.target.value)} className="pl-10" /></div>
+   373→          </div>
+   374→          <div className="grid grid-cols-2 gap-3">
+   375→            <div className="space-y-2"><Label>Prénom *</Label><Input placeholder="Prénom" value={form.firstName} onChange={(e) => updateField('firstName', e.target.value)} /></div>
+   376→            <div className="space-y-2"><Label>Nom *</Label><Input placeholder="Nom" value={form.lastName} onChange={(e) => updateField('lastName', e.target.value)} /></div>
+   377→          </div>
+   378→          <div className="space-y-2">
+   379→            <Label>Téléphone</Label>
+   380→            <div className="relative"><Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input placeholder="+229 ..." value={form.phone} onChange={(e) => updateField('phone', e.target.value)} className="pl-10" /></div>
+   381→          </div>
+   382→        </div>
+   383→      ),
+   384→    },
+   385→    {
+   386→      title: 'Formation',
+   387→      fields: (
+   388→        <div className="space-y-4">
+   389→          <div className="space-y-2">
+   390→            <Label>Institution</Label>
+   391→            <div className="relative"><Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input placeholder="Ex: Université de Lokossa" value={form.institution} onChange={(e) => updateField('institution', e.target.value)} className="pl-10" /></div>
+   392→          </div>
+   393→          <div className="space-y-2">
+   394→            <Label>Filière</Label>
+   395→            <div className="relative"><BookOpen className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input placeholder="Ex: Droit" value={form.filiere} onChange={(e) => updateField('filiere', e.target.value)} className="pl-10" /></div>
+   396→          </div>
+   397→          <div className="grid grid-cols-2 gap-3">
+   398→            <div className="space-y-2"><Label>Niveau</Label><Input placeholder="Ex: L1, L2, L3, M1, M2" value={form.niveau} onChange={(e) => updateField('niveau', e.target.value)} /></div>
+   399→            <div className="space-y-2"><Label>Date de naissance</Label><Input type="date" value={form.dateOfBirth} onChange={(e) => updateField('dateOfBirth', e.target.value)} /></div>
+   400→          </div>
+   401→        </div>
+   402→      ),
+   403→    },
+   404→  ];
+   405→
+   406→  return (
+   407→    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[var(--feua-green-light)] to-background">
+   408→      <motion.div {...pageVariants} className="w-full max-w-md">
+   409→        <Card className="shadow-xl">
+   410→          <CardHeader className="text-center space-y-2">
+   411→            <img src="/feua-logo.png" alt="FEUA" className="h-12 w-12 mx-auto object-contain" />
+   412→            <CardTitle className="text-xl text-[var(--feua-green)]">Inscription</CardTitle>
+   413→            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+   414→              Étape {step}/{totalSteps} — {steps[step - 1].title}
+   415→            </div>
+   416→            <div className="flex gap-1 justify-center">
+   417→              {[1, 2, 3].map((s) => (
+   418→                <div key={s} className={`h-2 rounded-full transition-all ${s <= step ? 'w-8 bg-[var(--feua-green)]' : 'w-2 bg-muted'}`} />
+   419→              ))}
+   420→            </div>
+   421→          </CardHeader>
+   422→          <form onSubmit={handleSubmit}>
+   423→            <CardContent className="space-y-4">
+   424→              {steps[step - 1].fields}
+   425→              {error && <p className="text-sm text-destructive flex items-center gap-1"><AlertTriangle className="h-4 w-4" />{error}</p>}
+   426→            </CardContent>
+   427→            <CardFooter className="flex gap-2">
+   428→              <Button variant="outline" type="button" onClick={() => step === 1 ? setView('login') : setStep(step - 1)} className="flex-1">
+   429→                {step === 1 ? 'Retour' : 'Précédent'}
+   430→              </Button>
+   431→              {step < totalSteps ? (
+   432→                <Button type="button" onClick={nextStep} className="flex-1 bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90">Suivant</Button>
+   433→              ) : (
+   434→                <Button type="submit" className="flex-1 bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90" disabled={loading}>
+   435→                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+   436→                  S&apos;inscrire
+   437→                </Button>
+   438→              )}
+   439→            </CardFooter>
+   440→          </form>
+   441→        </Card>
+   442→      </motion.div>
+   443→    </div>
+   444→  );
+   445→}
+   446→
+   447→// ─── FORGOT PASSWORD ─────────────────────────────────
+   448→function ForgotPasswordPage() {
+   449→  const { setView } = useAppStore();
+   450→  const [email, setEmail] = useState('');
+   451→  const [code, setCode] = useState('');
+   452→  const [newPassword, setNewPassword] = useState('');
+   453→  const [step, setStep] = useState<'email' | 'code' | 'done'>('email');
+   454→  const [loading, setLoading] = useState(false);
+   455→
+   456→  const handleSendCode = async (e: React.FormEvent) => {
+   457→    e.preventDefault();
+   458→    setLoading(true);
+   459→    try {
+   460→      // In real implementation, this would generate and send a recovery code
+   461→      // For now we show the code input step
+   462→      setStep('code');
+   463→    } catch { /* ignore */ } finally { setLoading(false); }
+   464→  };
+   465→
+   466→  const handleReset = async (e: React.FormEvent) => {
+   467→    e.preventDefault();
+   468→    setLoading(true);
+   469→    try {
+   470→      await apiFetch('/api/auth', {
+   471→        method: 'POST',
+   472→        body: JSON.stringify({ action: 'recovery', email, code, newPassword }),
+   473→      });
+   474→      setStep('done');
+   475→    } catch { /* error handled by apiFetch */ } finally { setLoading(false); }
+   476→  };
+   477→
+   478→  return (
+   479→    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[var(--feua-green-light)] to-background">
+   480→      <motion.div {...pageVariants} className="w-full max-w-md">
+   481→        <Card className="shadow-xl">
+   482→          <CardHeader className="text-center space-y-2">
+   483→            <img src="/feua-logo.png" alt="FEUA" className="h-12 w-12 mx-auto object-contain" />
+   484→            <CardTitle className="text-xl text-[var(--feua-green)]">
+   485→              {step === 'done' ? 'Réinitialisé !' : 'Mot de passe oublié'}
+   486→            </CardTitle>
+   487→          </CardHeader>
+   488→          {step === 'email' && (
+   489→            <form onSubmit={handleSendCode}>
+   490→              <CardContent className="space-y-4">
+   491→                <p className="text-sm text-muted-foreground">Entrez votre email pour recevoir un code de récupération.</p>
+   492→                <div className="relative"><Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input type="email" placeholder="votre@email.bj" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required /></div>
+   493→              </CardContent>
+   494→              <CardFooter>
+   495→                <Button type="submit" className="w-full bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90" disabled={loading}>Envoyer le code</Button>
+   496→              </CardFooter>
+   497→            </form>
+   498→          )}
+   499→          {step === 'code' && (
+   500→            <form onSubmit={handleReset}>
+   501→              <CardContent className="space-y-4">
+   502→                <div className="relative"><Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input placeholder="Code à 6 chiffres" value={code} onChange={(e) => setCode(e.target.value)} className="pl-10" maxLength={6} required /></div>
+   503→                <div className="relative"><Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input type="password" placeholder="Nouveau mot de passe (min 8)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="pl-10" required /></div>
+   504→              </CardContent>
+   505→              <CardFooter className="flex gap-2">
+   506→                <Button variant="outline" type="button" onClick={() => setStep('email')} className="flex-1">Retour</Button>
+   507→                <Button type="submit" className="flex-1 bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90" disabled={loading}>
+   508→                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Réinitialiser
+   509→                </Button>
+   510→              </CardFooter>
+   511→            </form>
+   512→          )}
+   513→          {step === 'done' && (
+   514→            <CardContent className="text-center space-y-4">
+   515→              <CheckCircle2 className="h-16 w-16 mx-auto text-[var(--feua-green)]" />
+   516→              <p className="text-sm">Votre mot de passe a été réinitialisé avec succès.</p>
+   517→              <Button className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90" onClick={() => setView('login')}>
+   518→                Se connecter
+   519→              </Button>
+   520→            </CardContent>
+   521→          )}
+   522→          <CardFooter className="justify-center">
+   523→            <Button variant="link" className="text-sm" onClick={() => setView('login')}>
+   524→              <ArrowLeft className="mr-1 h-4 w-4" />Retour à la connexion
+   525→            </Button>
+   526→          </CardFooter>
+   527→        </Card>
+   528→      </motion.div>
+   529→    </div>
+   530→  );
+   531→}
+   532→
+   533→// ─── DASHBOARD ────────────────────────────────────────
+   534→function DashboardView() {
+   535→  const { member, setView } = useAppStore();
+   536→  const [stats, setStats] = useState<any>(null);
+   537→  const [announcements, setAnnouncements] = useState<any[]>([]);
+   538→  const [loading, setLoading] = useState(true);
+   539→  const [editProfileOpen, setEditProfileOpen] = useState(false);
+   540→  const [editLoading, setEditLoading] = useState(false);
+   541→  const [editForm, setEditForm] = useState({ phone: '', institution: '', filiere: '', niveau: '' });
+   542→
+   543→  useEffect(() => {
+   544→    setEditForm({
+   545→      phone: member?.phone || '',
+   546→      institution: member?.institution || '',
+   547→      filiere: member?.filiere || '',
+   548→      niveau: member?.niveau || '',
+   549→    });
+   550→  }, [member]);
+   551→
+   552→  const handleEditProfile = async () => {
+   553→    setEditLoading(true);
+   554→    try {
+   555→      await apiFetch('/api/members', {
+   556→        method: 'PUT',
+   557→        body: JSON.stringify({ phone: editForm.phone, institution: editForm.institution, filiere: editForm.filiere, niveau: editForm.niveau }),
+   558→      });
+   559→      setEditProfileOpen(false);
+   560→    } catch { /* handled by apiFetch */ } finally { setEditLoading(false); }
+   561→  };
+   562→
+   563→  useEffect(() => {
+   564→    const load = async () => {
+   565→      try {
+   566→        const [s, a] = await Promise.all([
+   567→          apiFetch<any>('/api/stats'),
+   568→          apiFetch<{ announcements: any[] }>('/api/announcements'),
+   569→        ]);
+   570→        setStats(s.stats);
+   571→        setAnnouncements(a.announcements);
+   572→      } catch { /* ignore */ } finally { setLoading(false); }
+   573→    };
+   574→    load();
+   575→  }, []);
+   576→
+   577→  const userLevel = member?.accessLevel || 'IGN';
+   578→  const initials = `${member?.firstName?.[0] || ''}${member?.lastName?.[0] || ''}`.toUpperCase();
+   579→
+   580→  const quickActions = [
+   581→    { label: 'Documents', icon: <FileText className="h-5 w-5" />, view: 'documents' as ViewName, color: 'text-emerald-600 bg-emerald-50' },
+   582→    { label: 'Messagerie', icon: <MessageSquare className="h-5 w-5" />, view: 'messages' as ViewName, color: 'text-[var(--feua-gold)] bg-[var(--feua-gold-light)]' },
+   583→    { label: 'Uniformes', icon: <Shirt className="h-5 w-5" />, view: 'uniforms' as ViewName, color: 'text-emerald-700 bg-emerald-50' },
+   584→  ];
+   585→  if (canAccess(userLevel, 'MASTER')) {
+   586→    quickActions.push({ label: 'Membres', icon: <Users className="h-5 w-5" />, view: 'members' as ViewName, color: 'text-[var(--feua-green)] bg-[var(--feua-green-light)]' });
+   587→    quickActions.push({ label: 'Caisses', icon: <Wallet className="h-5 w-5" />, view: 'cash' as ViewName, color: 'text-[var(--feua-gold)] bg-[var(--feua-gold-light)]' });
+   588→  }
+   589→  if (canAccess(userLevel, 'MAST_IN')) {
+   590→    quickActions.push({ label: 'Admin', icon: <Shield className="h-5 w-5" />, view: 'admin' as ViewName, color: 'text-amber-700 bg-amber-50' });
+   591→  }
+   592→
+   593→  return (
+   594→    <motion.div {...pageVariants} className="space-y-6">
+   595→      {/* Welcome banner */}
+   596→      <div className="rounded-xl bg-gradient-to-r from-[var(--feua-green)] to-emerald-700 p-5 sm:p-6 text-white relative overflow-hidden">
+   597→        <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/5 -translate-y-8 translate-x-8" />
+   598→        <div className="absolute bottom-0 left-1/2 w-24 h-24 rounded-full bg-[var(--feua-gold)]/10 translate-y-12" />
+   599→        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+   600→          <Avatar className="h-14 w-14 border-2 border-white/40 shadow-lg">
+   601→            <AvatarFallback className="bg-white/20 text-white text-lg font-bold backdrop-blur-sm">{initials}</AvatarFallback>
+   602→          </Avatar>
+   603→          <div className="flex-1">
+   604→            <h1 className="text-2xl font-bold">Bienvenue, {member?.firstName} !</h1>
+   605→            <p className="text-white/80 flex items-center gap-2 flex-wrap">
+   606→              <Badge className={`${roleBadgeColor[userLevel] || ''} border-0`}>{ACCESS_LABELS[userLevel] || userLevel}</Badge>
+   607→              <span>•</span>
+   608→              <span>{statusBadge[member?.status || '']?.label || member?.status}</span>
+   609→              {member?.institution && <><span>•</span><span>{member.institution}</span></>}
+   610→            </p>
+   611→          </div>
+   612→          <Dialog open={editProfileOpen} onOpenChange={setEditProfileOpen}>
+   613→            <DialogTrigger asChild>
+   614→              <Button variant="outline" size="sm" className="border-white/30 text-white hover:bg-white/10 hover:text-white">
+   615→                <Pencil className="mr-2 h-4 w-4" />Modifier le profil
+   616→              </Button>
+   617→            </DialogTrigger>
+   618→            <DialogContent>
+   619→              <DialogHeader><DialogTitle>Modifier le profil</DialogTitle><DialogDescription>Mettez à jour vos informations personnelles.</DialogDescription></DialogHeader>
+   620→              <div className="space-y-4">
+   621→                <div className="space-y-2"><Label>Téléphone</Label><Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} placeholder="+229 ..." /></div>
+   622→                <div className="space-y-2"><Label>Institution</Label><Input value={editForm.institution} onChange={(e) => setEditForm({ ...editForm, institution: e.target.value })} placeholder="Université de Lokossa" /></div>
+   623→                <div className="space-y-2"><Label>Filière</Label><Input value={editForm.filiere} onChange={(e) => setEditForm({ ...editForm, filiere: e.target.value })} placeholder="Ex: Droit" /></div>
+   624→                <div className="space-y-2"><Label>Niveau</Label><Input value={editForm.niveau} onChange={(e) => setEditForm({ ...editForm, niveau: e.target.value })} placeholder="Ex: L1, L2, M1" /></div>
+   625→              </div>
+   626→              <DialogFooter>
+   627→                <Button variant="outline" onClick={() => setEditProfileOpen(false)}>Annuler</Button>
+   628→                <Button className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90" disabled={editLoading} onClick={handleEditProfile}>
+   629→                  {editLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Enregistrer
+   630→                </Button>
+   631→              </DialogFooter>
+   632→            </DialogContent>
+   633→          </Dialog>
+   634→        </div>
+   635→      </div>
+   636→
+   637→      {/* Stats */}
+   638→      {loading ? (
+   639→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+   640→          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
+   641→        </div>
+   642→      ) : (
+   643→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+   644→          <Card className="bg-gradient-to-br from-[var(--feua-green)] to-emerald-600 text-white shadow-lg hover:scale-[1.02] transition-transform">
+   645→            <CardContent className="p-3 sm:p-4">
+   646→              <div className="flex items-center justify-between">
+   647→                <div><p className="text-[11px] sm:text-xs opacity-80">Documents</p><p className="text-2xl sm:text-3xl font-bold">{stats?.totalDocs || 0}</p><p className="text-[10px] sm:text-[11px] opacity-60">Documents stockés</p></div>
+   648→                <FileText className="h-8 w-8 opacity-40" />
+   649→              </div>
+   650→            </CardContent>
+   651→          </Card>
+   652→          <Card className="bg-gradient-to-br from-[var(--feua-gold)] to-amber-600 text-white shadow-lg hover:scale-[1.02] transition-transform">
+   653→            <CardContent className="p-3 sm:p-4">
+   654→              <div className="flex items-center justify-between">
+   655→                <div><p className="text-[11px] sm:text-xs opacity-80">Commandes</p><p className="text-2xl sm:text-3xl font-bold">{stats?.totalOrders || 0}</p><p className="text-[10px] sm:text-[11px] opacity-60">Commandes en cours</p></div>
+   656→                <Package className="h-8 w-8 opacity-40" />
+   657→              </div>
+   658→            </CardContent>
+   659→          </Card>
+   660→          <Card className="bg-gradient-to-br from-emerald-800 to-[var(--feua-green)] text-white shadow-lg hover:scale-[1.02] transition-transform">
+   661→            <CardContent className="p-3 sm:p-4">
+   662→              <div className="flex items-center justify-between">
+   663→                <div><p className="text-[11px] sm:text-xs opacity-80">Transactions</p><p className="text-2xl sm:text-3xl font-bold">{stats?.totalTx || 0}</p><p className="text-[10px] sm:text-[11px] opacity-60">Opérations validées</p></div>
+   664→                <DollarSign className="h-8 w-8 opacity-40" />
+   665→              </div>
+   666→            </CardContent>
+   667→          </Card>
+   668→          <Card className="bg-gradient-to-br from-[var(--feua-dark)] to-gray-900 text-white shadow-lg hover:scale-[1.02] transition-transform">
+   669→            <CardContent className="p-3 sm:p-4">
+   670→              <div className="flex items-center justify-between">
+   671→                <div><p className="text-[11px] sm:text-xs opacity-80">Messages</p><p className="text-2xl sm:text-3xl font-bold">{stats?.unreadMsgs || 0}</p><p className="text-[10px] sm:text-[11px] opacity-60">Messages à lire</p></div>
+   672→                <MessageSquare className="h-8 w-8 opacity-40" />
+   673→              </div>
+   674→            </CardContent>
+   675→          </Card>
+   676→        </div>
+   677→      )}
+   678→
+   679→      {/* Quick actions */}
+   680→      <div>
+   681→        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Accès rapide</h2>
+   682→        <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+   683→          {quickActions.map((action) => (
+   684→            <motion.div key={action.view} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+   685→              <Card className="cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all" onClick={() => setView(action.view)}>
+   686→                <CardContent className="p-3 flex flex-col items-center gap-1.5 text-center">
+   687→                  <div className={`p-2.5 rounded-full ${action.color}`}>{action.icon}</div>
+   688→                  <span className="text-xs sm:text-sm font-medium">{action.label}</span>
+   689→                </CardContent>
+   690→              </Card>
+   691→            </motion.div>
+   692→          ))}
+   693→        </div>
+   694→      </div>
+   695→
+   696→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   697→        {/* Announcements */}
+   698→        <Card>
+   699→          <CardHeader className="pb-3">
+   700→            <CardTitle className="text-lg flex items-center gap-2"><Megaphone className="h-5 w-5 text-[var(--feua-green)]" />Annonces récentes</CardTitle>
+   701→          </CardHeader>
+   702→          <CardContent>
+   703→            {announcements.length === 0 ? (
+   704→              <div className="text-center py-6">
+   705→                <Megaphone className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+   706→                <p className="text-sm text-muted-foreground">Aucune annonce</p>
+   707→              </div>
+   708→            ) : (
+   709→              <div className="space-y-3">
+   710→                {announcements.slice(0, 3).map((a) => (
+   711→                  <div key={a.id} className={`p-3 rounded-lg bg-muted/50 space-y-1 ${a.isUrgent ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-[var(--feua-green)]'}`}>
+   712→                    <div className="flex items-center justify-between gap-2">
+   713→                      <div className="flex items-center gap-2 min-w-0">
+   714→                        {a.isUrgent && <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />}
+   715→                        <span className="font-medium text-sm truncate">{a.title}</span>
+   716→                      </div>
+   717→                      <span className="text-[10px] text-muted-foreground flex-shrink-0">{new Date(a.createdAt).toLocaleDateString('fr-FR')}</span>
+   718→                    </div>
+   719→                    <p className="text-xs text-muted-foreground line-clamp-2">{a.content}</p>
+   720→                  </div>
+   721→                ))}
+   722→              </div>
+   723→            )}
+   724→          </CardContent>
+   725→        </Card>
+   726→
+   727→        {/* Recent activity placeholder */}
+   728→        <Card>
+   729→          <CardHeader className="pb-3">
+   730→            <CardTitle className="text-lg flex items-center gap-2"><Activity className="h-5 w-5 text-[var(--feua-gold)]" />Activité récente</CardTitle>
+   731→          </CardHeader>
+   732→          <CardContent>
+   733→            <div className="space-y-3">
+   734→              {[
+   735→                { icon: <LogIn className="h-4 w-4" />, text: 'Connexion réussie', time: 'Maintenant', color: 'text-[var(--feua-green)]' },
+   736→                { icon: <UserPlus className="h-4 w-4" />, text: 'Bienvenue dans la communauté', time: 'Première connexion', color: 'text-[var(--feua-gold)]' },
+   737→              ].map((item, i) => (
+   738→                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+   739→                  <div className={item.color}>{item.icon}</div>
+   740→                  <div className="flex-1 min-w-0">
+   741→                    <p className="text-sm font-medium">{item.text}</p>
+   742→                    <p className="text-xs text-muted-foreground">{item.time}</p>
+   743→                  </div>
+   744→                </div>
+   745→              ))}
+   746→            </div>
+   747→          </CardContent>
+   748→        </Card>
+   749→      </div>
+   750→    </motion.div>
+   751→  );
+   752→}
+   753→
+   754→// ─── MEMBERS VIEW (MASTER+) ──────────────────────────
+   755→function MembersView() {
+   756→  const { member } = useAppStore();
+   757→  const [members, setMembers] = useState<any[]>([]);
+   758→  const [total, setTotal] = useState(0);
+   759→  const [page, setPage] = useState(1);
+   760→  const [search, setSearch] = useState('');
+   761→  const [filterLevel, setFilterLevel] = useState('');
+   762→  const [filterStatus, setFilterStatus] = useState('');
+   763→  const [loading, setLoading] = useState(true);
+   764→
+   765→  const loadMembers = useCallback(async () => {
+   766→    setLoading(true);
+   767→    try {
+   768→      const params = new URLSearchParams({ page: String(page), limit: '10', search, accessLevel: filterLevel, status: filterStatus });
+   769→      const data = await apiFetch<any>(`/api/members?${params}`);
+   770→      setMembers(data.members);
+   771→      setTotal(data.total);
+   772→    } catch { /* ignore */ } finally { setLoading(false); }
+   773→  }, [page, search, filterLevel, filterStatus]);
+   774→
+   775→  useEffect(() => { loadMembers(); }, [loadMembers]);
+   776→  useEffect(() => { setPage(1); }, [search, filterLevel, filterStatus]);
+   777→
+   778→  const [updateDialog, setUpdateDialog] = useState<{ open: boolean; memberId: string; field: string; value: string }>({ open: false, memberId: '', field: '', value: '' });
+   779→
+   780→  const handleUpdate = async () => {
+   781→    try {
+   782→      await apiFetch('/api/members', {
+   783→        method: 'PUT',
+   784→        body: JSON.stringify({
+   785→          memberId: updateDialog.memberId,
+   786→          ...(updateDialog.field === 'accessLevel' ? { accessLevel: updateDialog.value } : {}),
+   787→          ...(updateDialog.field === 'status' ? { status: updateDialog.value } : {}),
+   788→        }),
+   789→      });
+   790→      setUpdateDialog({ open: false, memberId: '', field: '', value: '' });
+   791→      loadMembers();
+   792→    } catch { /* ignore */ }
+   793→  };
+   794→
+   795→  const handleExportCSV = async () => {
+   796→    try {
+   797→      const data = await apiFetch<{ members: any[] }>('/api/members?page=1&limit=999');
+   798→      const rows = data.members.map((m) => ({
+   799→        Matricule: m.matricule,
+   800→        Nom: m.lastName,
+   801→        Prénom: m.firstName,
+   802→        Email: m.email,
+   803→        "Niveau d'accès": ACCESS_LABELS[m.accessLevel] || m.accessLevel,
+   804→        Statut: statusBadge[m.status]?.label || m.status,
+   805→        Institution: m.institution || '',
+   806→        Filière: m.filiere || '',
+   807→      }));
+   808→      const headers = Object.keys(rows[0] || {});
+   809→      const csv = [headers.join(';'), ...rows.map((r) => headers.map((h) => r[h as keyof typeof r]).join(';'))].join('\n');
+   810→      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+   811→      const url = URL.createObjectURL(blob);
+   812→      const a = document.createElement('a');
+   813→      a.href = url; a.download = 'membres_feua.csv'; a.click();
+   814→      URL.revokeObjectURL(url);
+   815→    } catch { /* handled by apiFetch */ }
+   816→  };
+   817→
+   818→  return (
+   819→    <motion.div {...pageVariants} className="space-y-6">
+   820→      <div className="flex items-center justify-between">
+   821→        <h1 className="text-2xl font-bold flex items-center gap-2"><Users className="h-6 w-6 text-[var(--feua-green)]" />Gestion des membres {total > 0 && <span className="text-base font-normal text-muted-foreground">({total} membres)</span>}</h1>
+   822→        <Button variant="outline" size="sm" onClick={handleExportCSV}>
+   823→          <Download className="mr-2 h-4 w-4" />Export CSV
+   824→        </Button>
+   825→      </div>
+   826→
+   827→      {/* Filters */}
+   828→      <Card>
+   829→        <CardContent className="p-4">
+   830→          <div className="flex flex-col sm:flex-row gap-3">
+   831→            <div className="relative flex-1">
+   832→              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+   833→              <Input placeholder="Rechercher par nom, matricule, email..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+   834→            </div>
+   835→            <Select value={filterLevel} onValueChange={(v) => setFilterLevel(v === 'all' ? '' : v)}>
+   836→              <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Niveau" /></SelectTrigger>
+   837→              <SelectContent>
+   838→                <SelectItem value="all">Tous les niveaux</SelectItem>
+   839→                {Object.entries(ACCESS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+   840→              </SelectContent>
+   841→            </Select>
+   842→            <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v === 'all' ? '' : v)}>
+   843→              <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Statut" /></SelectTrigger>
+   844→              <SelectContent>
+   845→                <SelectItem value="all">Tous</SelectItem>
+   846→                <SelectItem value="ACTIVE">Actif</SelectItem>
+   847→                <SelectItem value="PENDING_VALIDATION">En attente</SelectItem>
+   848→                <SelectItem value="ARCHIVED">Archivé</SelectItem>
+   849→              </SelectContent>
+   850→            </Select>
+   851→          </div>
+   852→        </CardContent>
+   853→      </Card>
+   854→
+   855→      {/* Table */}
+   856→      <Card>
+   857→        <CardContent className="p-0">
+   858→          {loading ? (
+   859→            <div className="p-4 space-y-3"><Skeleton className="h-12 w-full" />{[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+   860→          ) : (
+   861→            <>
+   862→              <div className="overflow-x-auto">
+   863→                <Table>
+   864→                  <TableHeader>
+   865→                    <TableRow>
+   866→                      <TableHead>Membre</TableHead>
+   867→                      <TableHead className="hidden sm:table-cell">Matricule</TableHead>
+   868→                      <TableHead className="hidden md:table-cell">Institution</TableHead>
+   869→                      <TableHead>Niveau</TableHead>
+   870→                      <TableHead>Statut</TableHead>
+   871→                      <TableHead className="text-right">Actions</TableHead>
+   872→                    </TableRow>
+   873→                  </TableHeader>
+   874→                  <TableBody>
+   875→                    {members.length === 0 ? (
+   876→                      <TableRow><TableCell colSpan={6} className="text-center py-12">
+   877→                        <div className="flex flex-col items-center gap-2">
+   878→                          <Search className="h-10 w-10 text-muted-foreground/30" />
+   879→                          <p className="text-muted-foreground">Aucun membre trouvé</p>
+   880→                        </div>
+   881→                      </TableCell></TableRow>
+   882→                    ) : members.map((m) => (
+   883→                      <TableRow key={m.id} className="cursor-pointer" onClick={() => { useAppStore.getState().setSelectedMemberId(m.id); useAppStore.getState().setView('member-profile'); }}>
+   884→                        <TableCell>
+   885→                          <div className="flex items-center gap-2">
+   886→                            <Avatar className="h-8 w-8"><AvatarFallback className="text-xs bg-[var(--feua-green)] text-white">{`${m.firstName?.[0] || ''}${m.lastName?.[0] || ''}`.toUpperCase()}</AvatarFallback></Avatar>
+   887→                            <div className="min-w-0">
+   888→                              <p className="font-medium text-sm truncate">{m.firstName} {m.lastName}</p>
+   889→                              <p className="text-xs text-muted-foreground truncate">{m.email}</p>
+   890→                            </div>
+   891→                          </div>
+   892→                        </TableCell>
+   893→                        <TableCell className="hidden sm:table-cell font-mono text-xs">{m.matricule}</TableCell>
+   894→                        <TableCell className="hidden md:table-cell text-sm">{m.institution || '-'}</TableCell>
+   895→                        <TableCell><Badge variant="outline" className="text-xs">{ACCESS_LABELS[m.accessLevel] || m.accessLevel}</Badge></TableCell>
+   896→                        <TableCell><span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusBadgeSoft[m.status] || 'bg-gray-100 text-gray-700'}`}>{statusBadge[m.status]?.label || m.status}</span></TableCell>
+   897→                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+   898→                          <DropdownMenu>
+   899→                            <DropdownMenuTrigger asChild>
+   900→                              <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+   901→                            </DropdownMenuTrigger>
+   902→                            <DropdownMenuContent align="end">
+   903→                              <DropdownMenuItem onClick={() => { useAppStore.getState().setSelectedMemberId(m.id); useAppStore.getState().setView('member-profile'); }}><Eye className="mr-2 h-4 w-4" />Voir le profil</DropdownMenuItem>
+   904→                              {canAccess(member?.accessLevel || 'IGN', 'MASTER') && (
+   905→                                <>
+   906→                                  <DropdownMenuSeparator />
+   907→                                  <DropdownMenuItem onClick={() => setUpdateDialog({ open: true, memberId: m.id, field: 'accessLevel', value: m.accessLevel })}><Shield className="mr-2 h-4 w-4" />Changer le rôle</DropdownMenuItem>
+   908→                                  <DropdownMenuItem onClick={() => setUpdateDialog({ open: true, memberId: m.id, field: 'status', value: m.status })}><CheckCircle className="mr-2 h-4 w-4" />Changer le statut</DropdownMenuItem>
+   909→                                  <DropdownMenuItem onClick={() => { setUpdateDialog({ open: true, memberId: m.id, field: 'status', value: 'ARCHIVED' }); }}><Archive className="mr-2 h-4 w-4" />Archiver</DropdownMenuItem>
+   910→                                </>
+   911→                              )}
+   912→                            </DropdownMenuContent>
+   913→                          </DropdownMenu>
+   914→                        </TableCell>
+   915→                      </TableRow>
+   916→                    ))}
+   917→                  </TableBody>
+   918→                </Table>
+   919→              </div>
+   920→              {/* Pagination */}
+   921→              <div className="flex items-center justify-between p-4 border-t">
+   922→                <p className="text-sm text-muted-foreground">{total} membre(s) — Page {page}</p>
+   923→                <div className="flex gap-1">
+   924→                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+   925→                  <Button variant="outline" size="sm" disabled={page * 10 >= total} onClick={() => setPage(page + 1)}><ChevronRight className="h-4 w-4" /></Button>
+   926→                </div>
+   927→              </div>
+   928→            </>
+   929→          )}
+   930→        </CardContent>
+   931→      </Card>
+   932→
+   933→      {/* Update dialog */}
+   934→      <Dialog open={updateDialog.open} onOpenChange={(o) => setUpdateDialog({ ...updateDialog, open: o })}>
+   935→        <DialogContent>
+   936→          <DialogHeader>
+   937→            <DialogTitle>{updateDialog.field === 'accessLevel' ? 'Changer le niveau d\'accès' : 'Changer le statut'}</DialogTitle>
+   938→          </DialogHeader>
+   939→          <Select value={updateDialog.value} onValueChange={(v) => setUpdateDialog({ ...updateDialog, value: v })}>
+   940→            <SelectTrigger><SelectValue /></SelectTrigger>
+   941→            <SelectContent>
+   942→              {updateDialog.field === 'accessLevel'
+   943→                ? Object.entries(ACCESS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)
+   944→                : [
+   945→                    { value: 'ACTIVE', label: 'Actif' },
+   946→                    { value: 'PENDING_VALIDATION', label: 'En attente' },
+   947→                    { value: 'ARCHIVED', label: 'Archivé' },
+   948→                  ].map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)
+   949→              }
+   950→            </SelectContent>
+   951→          </Select>
+   952→          <DialogFooter>
+   953→            <Button variant="outline" onClick={() => setUpdateDialog({ ...updateDialog, open: false })}>Annuler</Button>
+   954→            <Button className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90" onClick={handleUpdate}>Confirmer</Button>
+   955→          </DialogFooter>
+   956→        </DialogContent>
+   957→      </Dialog>
+   958→    </motion.div>
+   959→  );
+   960→}
+   961→
+   962→// ─── MEMBER PROFILE ──────────────────────────────────
+   963→function MemberProfileView() {
+   964→  const { member, selectedMemberId, setView } = useAppStore();
+   965→  const [profileData, setProfileData] = useState<any>(null);
+   966→  const [loading, setLoading] = useState(true);
+   967→
+   968→  useEffect(() => {
+   969→    if (!selectedMemberId) return;
+   970→    let cancelled = false;
+   971→    (async () => {
+   972→      if (!cancelled) setLoading(true);
+   973→      try {
+   974→        const d = await apiFetch<{ member: any }>(`/api/members/${selectedMemberId}`);
+   975→        if (!cancelled) setProfileData(d.member);
+   976→      } catch { /* ignore */ }
+   977→      if (!cancelled) setLoading(false);
+   978→    })();
+   979→    return () => { cancelled = true; };
+   980→  }, [selectedMemberId]);
+   981→
+   982→  if (loading) {
+   983→    return (
+   984→      <motion.div {...pageVariants} className="space-y-6">
+   985→        <Skeleton className="h-32 w-full" />
+   986→        <Skeleton className="h-64 w-full" />
+   987→      </motion.div>
+   988→    );
+   989→  }
+   990→
+   991→  if (!profileData) {
+   992→    return (
+   993→      <motion.div {...pageVariants} className="text-center py-12">
+   994→        <p className="text-muted-foreground">Membre non trouvé</p>
+   995→        <Button variant="outline" onClick={() => setView('members')} className="mt-4"><ArrowLeft className="mr-2 h-4 w-4" />Retour</Button>
+   996→      </motion.div>
+   997→    );
+   998→  }
+   999→
+  1000→  const initials = `${profileData.firstName?.[0] || ''}${profileData.lastName?.[0] || ''}`.toUpperCase();
+  1001→
+  1002→  return (
+  1003→    <motion.div {...pageVariants} className="space-y-6">
+  1004→      <Button variant="ghost" onClick={() => setView(member?.accessLevel === 'IGN' || member?.accessLevel === 'AMC' ? 'dashboard' : 'members')}><ArrowLeft className="mr-2 h-4 w-4" />Retour</Button>
+  1005→
+  1006→      {/* Profile header */}
+  1007→      <Card>
+  1008→        <CardContent className="p-6">
+  1009→          <div className="flex flex-col sm:flex-row items-center gap-6">
+  1010→            <Avatar className="h-20 w-20 border-2 border-[var(--feua-green)]">
+  1011→              <AvatarFallback className="bg-[var(--feua-green)] text-white text-2xl font-bold">{initials}</AvatarFallback>
+  1012→            </Avatar>
+  1013→            <div className="text-center sm:text-left">
+  1014→              <h1 className="text-2xl font-bold">{profileData.firstName} {profileData.lastName}</h1>
+  1015→              <p className="text-muted-foreground flex flex-wrap items-center gap-2 justify-center sm:justify-start">
+  1016→                <Badge className={roleBadgeColor[profileData.accessLevel] || ''}>{ACCESS_LABELS[profileData.accessLevel]}</Badge>
+  1017→                <Badge variant={statusBadge[profileData.status]?.variant || 'outline'}>{statusBadge[profileData.status]?.label}</Badge>
+  1018→                <span className="text-xs">{profileData.matricule}</span>
+  1019→              </p>
+  1020→              <p className="text-sm text-muted-foreground mt-1">
+  1021→                {profileData.institution && <><Building className="inline h-3 w-3 mr-1" />{profileData.institution}</>}
+  1022→                {profileData.filiere && <><span className="mx-1">•</span><BookOpen className="inline h-3 w-3 mr-1" />{profileData.filiere}</>}
+  1023→                {profileData.niveau && <><span className="mx-1">•</span>{profileData.niveau}</>}
+  1024→              </p>
+  1025→            </div>
+  1026→          </div>
+  1027→        </CardContent>
+  1028→      </Card>
+  1029→
+  1030→      {/* Tabs */}
+  1031→      <Tabs defaultValue="info">
+  1032→        <TabsList>
+  1033→          <TabsTrigger value="info"><User className="h-4 w-4 mr-1" />Informations</TabsTrigger>
+  1034→          <TabsTrigger value="documents"><FileText className="h-4 w-4 mr-1" />Documents</TabsTrigger>
+  1035→          <TabsTrigger value="transactions"><Wallet className="h-4 w-4 mr-1" />Transactions</TabsTrigger>
+  1036→          <TabsTrigger value="orders"><Shirt className="h-4 w-4 mr-1" />Commandes</TabsTrigger>
+  1037→        </TabsList>
+  1038→        <TabsContent value="info" className="mt-4">
+  1039→          <Card>
+  1040→            <CardContent className="p-6">
+  1041→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  1042→                {[
+  1043→                  { label: 'Email', value: profileData.email, icon: <Mail className="h-4 w-4" /> },
+  1044→                  { label: 'Téléphone', value: profileData.phone || '-', icon: <Phone className="h-4 w-4" /> },
+  1045→                  { label: 'Inscrit le', value: profileData.createdAt ? new Date(profileData.createdAt).toLocaleDateString('fr-FR') : '-', icon: <Calendar className="h-4 w-4" /> },
+  1046→                  { label: 'Dernière connexion', value: profileData.lastLoginAt ? new Date(profileData.lastLoginAt).toLocaleDateString('fr-FR') : '-', icon: <Clock className="h-4 w-4" /> },
+  1047→                  { label: 'Date de naissance', value: profileData.dateOfBirth ? new Date(profileData.dateOfBirth).toLocaleDateString('fr-FR') : '-', icon: <Calendar className="h-4 w-4" /> },
+  1048→                  { label: 'Pays', value: profileData.country || 'Bénin', icon: <Globe className="h-4 w-4" /> },
+  1049→                ].map((item) => (
+  1050→                  <div key={item.label} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+  1051→                    <div className="text-muted-foreground">{item.icon}</div>
+  1052→                    <div><p className="text-xs text-muted-foreground">{item.label}</p><p className="text-sm font-medium">{item.value}</p></div>
+  1053→                  </div>
+  1054→                ))}
+  1055→              </div>
+  1056→            </CardContent>
+  1057→          </Card>
+  1058→        </TabsContent>
+  1059→        <TabsContent value="documents" className="mt-4">
+  1060→          <Card>
+  1061→            <CardContent className="p-4">
+  1062→              {profileData.documents?.length === 0 ? (
+  1063→                <p className="text-center text-muted-foreground py-8">Aucun document</p>
+  1064→              ) : (
+  1065→                <Table>
+  1066→                  <TableHeader><TableRow><TableHead>Document</TableHead><TableHead>Type</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
+  1067→                  <TableBody>
+  1068→                    {profileData.documents.map((d: any) => (
+  1069→                      <TableRow key={d.id}>
+  1070→                        <TableCell className="font-medium">{d.title}</TableCell>
+  1071→                        <TableCell><Badge variant="outline">{d.type}</Badge></TableCell>
+  1072→                        <TableCell className="text-sm">{new Date(d.createdAt).toLocaleDateString('fr-FR')}</TableCell>
+  1073→                      </TableRow>
+  1074→                    ))}
+  1075→                  </TableBody>
+  1076→                </Table>
+  1077→              )}
+  1078→            </CardContent>
+  1079→          </Card>
+  1080→        </TabsContent>
+  1081→        <TabsContent value="transactions" className="mt-4">
+  1082→          <Card>
+  1083→            <CardContent className="p-4">
+  1084→              {profileData.cashTransactions?.length === 0 ? (
+  1085→                <p className="text-center text-muted-foreground py-8">Aucune transaction</p>
+  1086→              ) : (
+  1087→                <Table>
+  1088→                  <TableHeader><TableRow><TableHead>Description</TableHead><TableHead>Montant</TableHead><TableHead>Statut</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
+  1089→                  <TableBody>
+  1090→                    {profileData.cashTransactions.map((tx: any) => (
+  1091→                      <TableRow key={tx.id}>
+  1092→                        <TableCell className="font-medium">{tx.description}</TableCell>
+  1093→                        <TableCell>{tx.amount.toLocaleString()} FCFA</TableCell>
+  1094→                        <TableCell><Badge variant={tx.status === 'COMPLETED' ? 'default' : 'secondary'}>{tx.status}</Badge></TableCell>
+  1095→                        <TableCell className="text-sm">{new Date(tx.createdAt).toLocaleDateString('fr-FR')}</TableCell>
+  1096→                      </TableRow>
+  1097→                    ))}
+  1098→                  </TableBody>
+  1099→                </Table>
+  1100→              )}
+  1101→            </CardContent>
+  1102→          </Card>
+  1103→        </TabsContent>
+  1104→        <TabsContent value="orders" className="mt-4">
+  1105→          <Card>
+  1106→            <CardContent className="p-4">
+  1107→              {profileData.uniformOrders?.length === 0 ? (
+  1108→                <p className="text-center text-muted-foreground py-8">Aucune commande</p>
+  1109→              ) : (
+  1110→                <Table>
+  1111→                  <TableHeader><TableRow><TableHead>Taille</TableHead><TableHead>Qté</TableHead><TableHead>Total</TableHead><TableHead>Statut</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
+  1112→                  <TableBody>
+  1113→                    {profileData.uniformOrders.map((o: any) => (
+  1114→                      <TableRow key={o.id}>
+  1115→                        <TableCell>{o.taille}</TableCell>
+  1116→                        <TableCell>{o.quantity}</TableCell>
+  1117→                        <TableCell>{o.totalAmount.toLocaleString()} FCFA</TableCell>
+  1118→                        <TableCell><span className={`px-2 py-1 rounded-full text-xs font-medium ${orderBadge[o.status]?.color || 'bg-gray-100'}`}>{orderBadge[o.status]?.label || o.status}</span></TableCell>
+  1119→                        <TableCell className="text-sm">{new Date(o.createdAt).toLocaleDateString('fr-FR')}</TableCell>
+  1120→                      </TableRow>
+  1121→                    ))}
+  1122→                  </TableBody>
+  1123→                </Table>
+  1124→              )}
+  1125→            </CardContent>
+  1126→          </Card>
+  1127→        </TabsContent>
+  1128→      </Tabs>
+  1129→    </motion.div>
+  1130→  );
+  1131→}
+  1132→
+  1133→// ─── DOCUMENTS VIEW ───────────────────────────────────
+  1134→function DocumentsView() {
+  1135→  const { member } = useAppStore();
+  1136→  const [documents, setDocuments] = useState<any[]>([]);
+  1137→  const [total, setTotal] = useState(0);
+  1138→  const [page, setPage] = useState(1);
+  1139→  const [loading, setLoading] = useState(true);
+  1140→  const [uploadOpen, setUploadOpen] = useState(false);
+  1141→  const [uploading, setUploading] = useState(false);
+  1142→  const [uploadForm, setUploadForm] = useState({ title: '', type: 'AUTRE', anneeScolaire: '2025-2026' });
+  1143→  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  1144→  const fileInputRef = useRef<HTMLInputElement>(null);
+  1145→
+  1146→  const loadDocs = useCallback(async () => {
+  1147→    setLoading(true);
+  1148→    try {
+  1149→      const data = await apiFetch<any>(`/api/documents?page=${page}&limit=12`);
+  1150→      setDocuments(data.documents);
+  1151→      setTotal(data.total);
+  1152→    } catch { /* ignore */ } finally { setLoading(false); }
+  1153→  }, [page]);
+  1154→
+  1155→  useEffect(() => { loadDocs(); }, [loadDocs]);
+  1156→
+  1157→  const handleUpload = async (e: React.FormEvent) => {
+  1158→    e.preventDefault();
+  1159→    if (!selectedFile) return;
+  1160→    setUploading(true);
+  1161→    try {
+  1162→      const formData = new FormData();
+  1163→      formData.append('file', selectedFile);
+  1164→      formData.append('title', uploadForm.title || selectedFile.name);
+  1165→      formData.append('type', uploadForm.type);
+  1166→      formData.append('anneeScolaire', uploadForm.anneeScolaire);
+  1167→      await fetch('/api/upload', { method: 'POST', body: formData, credentials: 'same-origin' });
+  1168→      setUploadOpen(false);
+  1169→      setUploadForm({ title: '', type: 'AUTRE', anneeScolaire: '2025-2026' });
+  1170→      setSelectedFile(null);
+  1171→      if (fileInputRef.current) fileInputRef.current.value = '';
+  1172→      loadDocs();
+  1173→    } catch { /* ignore */ } finally { setUploading(false); }
+  1174→  };
+  1175→
+  1176→  const handleDelete = async (id: string) => {
+  1177→    if (!confirm('Supprimer ce document ?')) return;
+  1178→    try {
+  1179→      await apiFetch(`/api/documents?id=${id}`, { method: 'DELETE' });
+  1180→      loadDocs();
+  1181→    } catch { /* ignore */ }
+  1182→  };
+  1183→
+  1184→  const docTypeIcon: Record<string, string> = {
+  1185→    CARTE_ETUDIANT: '🪪',
+  1186→    FICHE_PRE_INSCRIPTION: '📝',
+  1187→    BULLETIN: '📊',
+  1188→    CERTIFICAT: '📜',
+  1189→    AUTRE: '📄',
+  1190→  };
+  1191→
+  1192→  return (
+  1193→    <motion.div {...pageVariants} className="space-y-6">
+  1194→      <h1 className="text-2xl font-bold flex items-center gap-2"><FileText className="h-6 w-6 text-[var(--feua-green)]" />Mes Documents</h1>
+  1195→
+  1196→      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+  1197→        <DialogContent>
+  1198→          <DialogHeader><DialogTitle>Ajouter un document</DialogTitle><DialogDescription>Sélectionnez un fichier et renseignez les informations.</DialogDescription></DialogHeader>
+  1199→          <form onSubmit={handleUpload}>
+  1200→            <div className="space-y-4">
+  1201→              <div className="space-y-2">
+  1202→                <Label>Fichier *</Label>
+  1203→                <Input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} required />
+  1204→              </div>
+  1205→              <div className="space-y-2"><Label>Titre</Label><Input value={uploadForm.title} onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })} placeholder={selectedFile?.name || 'Titre du document'} /></div>
+  1206→              <div className="space-y-2">
+  1207→                <Label>Type de document</Label>
+  1208→                <Select value={uploadForm.type} onValueChange={(v) => setUploadForm({ ...uploadForm, type: v })}>
+  1209→                  <SelectTrigger><SelectValue /></SelectTrigger>
+  1210→                  <SelectContent>
+  1211→                    <SelectItem value="CARTE_ETUDIANT">Carte étudiant</SelectItem>
+  1212→                    <SelectItem value="FICHE_PRE_INSCRIPTION">Fiche pré-inscription</SelectItem>
+  1213→                    <SelectItem value="BULLETIN">Bulletin</SelectItem>
+  1214→                    <SelectItem value="CERTIFICAT">Certificat</SelectItem>
+  1215→                    <SelectItem value="AUTRE">Autre</SelectItem>
+  1216→                  </SelectContent>
+  1217→                </Select>
+  1218→              </div>
+  1219→              <div className="space-y-2"><Label>Année scolaire</Label><Input value={uploadForm.anneeScolaire} onChange={(e) => setUploadForm({ ...uploadForm, anneeScolaire: e.target.value })} placeholder="2025-2026" /></div>
+  1220→            </div>
+  1221→            <DialogFooter className="mt-4">
+  1222→              <Button variant="outline" type="button" onClick={() => setUploadOpen(false)}>Annuler</Button>
+  1223→              <Button type="submit" className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90" disabled={uploading}>
+  1224→                {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}<FileUp className="mr-2 h-4 w-4" />Téléverser
+  1225→              </Button>
+  1226→            </DialogFooter>
+  1227→          </form>
+  1228→        </DialogContent>
+  1229→      </Dialog>
+  1230→
+  1231→      {loading ? (
+  1232→        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-36" />)}</div>
+  1233→      ) : (
+  1234→        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  1235→          {/* Upload card */}
+  1236→          <Card className="border-2 border-dashed border-[var(--feua-green)] bg-[var(--feua-green-light)]/30 cursor-pointer hover:bg-[var(--feua-green-light)]/50 transition-colors flex items-center justify-center min-h-[140px]" onClick={() => setUploadOpen(true)}>
+  1237→            <CardContent className="p-6 flex flex-col items-center gap-3">
+  1238→              <div className="p-4 rounded-full bg-[var(--feua-green)]/10"><Upload className="h-8 w-8 text-[var(--feua-green)]" /></div>
+  1239→              <span className="font-medium text-sm text-[var(--feua-green)]">Ajouter un document</span>
+  1240→            </CardContent>
+  1241→          </Card>
+  1242→
+  1243→          {documents.length === 0 && (
+  1244→            <div className="col-span-full flex flex-col items-center justify-center py-12">
+  1245→              <FileText className="h-16 w-16 text-muted-foreground/20 mb-4" />
+  1246→              <p className="text-muted-foreground">Aucun document. Cliquez sur le bouton pour ajouter.</p>
+  1247→            </div>
+  1248→          )}
+  1249→
+  1250→          {documents.map((doc) => (
+  1251→            <Card key={doc.id} className="hover:shadow-md transition-shadow">
+  1252→              <CardContent className="p-4 space-y-3">
+  1253→                <div className="flex items-start justify-between gap-2">
+  1254→                  <div className="flex items-center gap-3 min-w-0">
+  1255→                    <div className="p-2 rounded-lg bg-[var(--feua-green-light)] text-lg flex-shrink-0">{docTypeIcon[doc.type] || '📄'}</div>
+  1256→                    <div className="min-w-0">
+  1257→                      <p className="font-medium text-sm truncate">{doc.title}</p>
+  1258→                      <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${docTypeColors[doc.type] || ''}`}>{doc.type.replace(/_/g, ' ')}</span>
+  1259→                    </div>
+  1260→                  </div>
+  1261→                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive flex-shrink-0" onClick={() => handleDelete(doc.id)}><Trash2 className="h-4 w-4" /></Button>
+  1262→                </div>
+  1263→                <div className="flex items-center justify-between text-xs text-muted-foreground">
+  1264→                  <span>{new Date(doc.createdAt).toLocaleDateString('fr-FR')}</span>
+  1265→                  {doc.fileSize && <span>{(doc.fileSize / 1024).toFixed(0)} Ko</span>}
+  1266→                </div>
+  1267→              </CardContent>
+  1268→            </Card>
+  1269→          ))}
+  1270→        </div>
+  1271→      )}
+  1272→
+  1273→      {/* Pagination */}
+  1274→      {total > 12 && (
+  1275→        <div className="flex items-center justify-between">
+  1276→          <p className="text-sm text-muted-foreground">{total} document(s)</p>
+  1277→          <div className="flex gap-1">
+  1278→            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+  1279→            <Button variant="outline" size="sm" disabled={page * 12 >= total} onClick={() => setPage(page + 1)}><ChevronRight className="h-4 w-4" /></Button>
+  1280→          </div>
+  1281→        </div>
+  1282→      )}
+  1283→    </motion.div>
+  1284→  );
+  1285→}
+  1286→
+  1287→// ─── CASH VIEW (MASTER+) ─────────────────────────────
+  1288→function CashView() {
+  1289→  const { member } = useAppStore();
+  1290→  const [members, setMembers] = useState<any[]>([]);
+  1291→  const [registers, setRegisters] = useState<any[]>([]);
+  1292→  const [transactions, setTransactions] = useState<any[]>([]);
+  1293→  const [total, setTotal] = useState(0);
+  1294→  const [page, setPage] = useState(1);
+  1295→  const [filterRegister, setFilterRegister] = useState('');
+  1296→  const [filterType, setFilterType] = useState('');
+  1297→  const [loading, setLoading] = useState(true);
+  1298→  const [txOpen, setTxOpen] = useState(false);
+  1299→  const [txForm, setTxForm] = useState({ registerId: '', type: 'DEPOSIT', amount: '', description: '', paymentMethod: 'ESPECES', memberId: '' });
+  1300→
+  1301→  useEffect(() => {
+  1302→    const load = async () => {
+  1303→      setLoading(true);
+  1304→      try {
+  1305→        const [r, t, m] = await Promise.all([
+  1306→          apiFetch<{ registers: any[] }>('/api/cash/registers'),
+  1307→          apiFetch<{ transactions: any[]; total: number }>('/api/cash?page=1&limit=20'),
+  1308→          apiFetch<{ members: any[] }>('/api/members?page=1&limit=999'),
+  1309→        ]);
+  1310→        setRegisters(r.registers);
+  1311→        setTransactions(t.transactions);
+  1312→        setTotal(t.total);
+  1313→        setMembers(m.members);
+  1314→        if (r.registers.length > 0) setTxForm((f) => ({ ...f, registerId: r.registers[0].id }));
+  1315→      } catch { /* ignore */ } finally { setLoading(false); }
+  1316→    };
+  1317→    load();
+  1318→  }, []);
+  1319→
+  1320→  const loadTransactions = useCallback(async () => {
+  1321→    try {
+  1322→      const params = new URLSearchParams({ page: String(page), limit: '20', registerId: filterRegister, type: filterType });
+  1323→      const data = await apiFetch<{ transactions: any[]; total: number }>(`/api/cash?${params}`);
+  1324→      setTransactions(data.transactions);
+  1325→      setTotal(data.total);
+  1326→    } catch { /* ignore */ }
+  1327→  }, [page, filterRegister, filterType]);
+  1328→
+  1329→  useEffect(() => { loadTransactions(); }, [loadTransactions]);
+  1330→
+  1331→  const handleAddTx = async (e: React.FormEvent) => {
+  1332→    e.preventDefault();
+  1333→    try {
+  1334→      await apiFetch('/api/cash', {
+  1335→        method: 'POST',
+  1336→        body: JSON.stringify({ ...txForm, amount: Number(txForm.amount) }),
+  1337→      });
+  1338→      setTxOpen(false);
+  1339→      setTxForm({ ...txForm, amount: '', description: '', memberId: '' });
+  1340→      loadTransactions();
+  1341→      const r = await apiFetch<{ registers: any[] }>('/api/cash/registers');
+  1342→      setRegisters(r.registers);
+  1343→    } catch { /* ignore */ }
+  1344→  };
+  1345→
+  1346→  const totalBalance = registers.reduce((sum, r) => sum + (r.balance || 0), 0);
+  1347→
+  1348→  return (
+  1349→    <motion.div {...pageVariants} className="space-y-6">
+  1350→      <div className="flex items-center justify-between">
+  1351→        <h1 className="text-2xl font-bold flex items-center gap-2"><Wallet className="h-6 w-6 text-[var(--feua-gold)]" />Caisses</h1>
+  1352→        <Button className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90" onClick={() => setTxOpen(true)}>
+  1353→          <Plus className="mr-2 h-4 w-4" />Transaction
+  1354→        </Button>
+  1355→      </div>
+  1356→
+  1357→      {/* Total balance banner */}
+  1358→      <Card className="bg-gradient-to-r from-[var(--feua-green)] to-emerald-700 text-white shadow-lg">
+  1359→        <CardContent className="p-6 sm:p-8 text-center">
+  1360→          <DollarSign className="h-10 w-10 mx-auto mb-2 opacity-60" />
+  1361→          <p className="text-sm sm:text-base opacity-80">Solde total</p>
+  1362→          <p className="text-3xl sm:text-4xl font-bold mt-1">{totalBalance.toLocaleString()} FCFA</p>
+  1363→          <p className="text-xs opacity-60 mt-2">Solde toutes caisses confondues</p>
+  1364→        </CardContent>
+  1365→      </Card>
+  1366→
+  1367→      {/* Sub-caisses grid */}
+  1368→      <div>
+  1369→        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sous-caisses</h2>
+  1370→        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+  1371→          {registers.map((reg) => (
+  1372→            <Card key={reg.id} className="hover:shadow-md transition-shadow">
+  1373→              <CardContent className="p-4">
+  1374→                <p className="text-sm font-medium text-muted-foreground">{reg.name || 'Caisse principale'}</p>
+  1375→                <p className="text-xl font-bold text-[var(--feua-green)] mt-1">{(reg.balance || 0).toLocaleString()} FCFA</p>
+  1376→                <p className="text-xs text-muted-foreground mt-1">{reg._count?.transactions || 0} transactions</p>
+  1377→              </CardContent>
+  1378→            </Card>
+  1379→          ))}
+  1380→        </div>
+  1381→      </div>
+  1382→
+  1383→      {/* Add transaction dialog */}
+  1384→      <Dialog open={txOpen} onOpenChange={setTxOpen}>
+  1385→        <DialogContent>
+  1386→          <DialogHeader><DialogTitle>Nouvelle transaction</DialogTitle></DialogHeader>
+  1387→          <form onSubmit={handleAddTx}>
+  1388→            <div className="space-y-4">
+  1389→              <div className="space-y-2">
+  1390→                <Label>Caisse</Label>
+  1391→                <Select value={txForm.registerId} onValueChange={(v) => setTxForm({ ...txForm, registerId: v })}>
+  1392→                  <SelectTrigger><SelectValue /></SelectTrigger>
+  1393→                  <SelectContent>{registers.map((r) => <SelectItem key={r.id} value={r.id}>{r.name || 'Caisse'}</SelectItem>)}</SelectContent>
+  1394→                </Select>
+  1395→              </div>
+  1396→              <div className="space-y-2">
+  1397→                <Label>Type</Label>
+  1398→                <Select value={txForm.type} onValueChange={(v) => setTxForm({ ...txForm, type: v })}>
+  1399→                  <SelectTrigger><SelectValue /></SelectTrigger>
+  1400→                  <SelectContent><SelectItem value="DEPOSIT">Dépôt</SelectItem><SelectItem value="WITHDRAWAL">Retrait</SelectItem><SelectItem value="PAYMENT">Paiement</SelectItem></SelectContent>
+  1401→                </Select>
+  1402→              </div>
+  1403→              <div className="space-y-2">
+  1404→                <Label>Membre (optionnel)</Label>
+  1405→                <Select value={txForm.memberId} onValueChange={(v) => setTxForm({ ...txForm, memberId: v === '__none__' ? '' : v })}>
+  1406→                  <SelectTrigger><SelectValue placeholder="Sélectionner un membre" /></SelectTrigger>
+  1407→                  <SelectContent>
+  1408→                    <SelectItem value="__none__">— Aucun —</SelectItem>
+  1409→                    {members.map((m) => <SelectItem key={m.id} value={m.id}>{m.firstName} {m.lastName}</SelectItem>)}
+  1410→                  </SelectContent>
+  1411→                </Select>
+  1412→              </div>
+  1413→              <div className="space-y-2"><Label>Montant (FCFA)</Label><Input type="number" value={txForm.amount} onChange={(e) => setTxForm({ ...txForm, amount: e.target.value })} required /></div>
+  1414→              <div className="space-y-2"><Label>Description</Label><Input value={txForm.description} onChange={(e) => setTxForm({ ...txForm, description: e.target.value })} /></div>
+  1415→              <div className="space-y-2">
+  1416→                <Label>Mode de paiement</Label>
+  1417→                <Select value={txForm.paymentMethod} onValueChange={(v) => setTxForm({ ...txForm, paymentMethod: v })}>
+  1418→                  <SelectTrigger><SelectValue /></SelectTrigger>
+  1419→                  <SelectContent><SelectItem value="ESPECES">Espèces</SelectItem><SelectItem value="MOBILE_MONEY">Mobile Money</SelectItem><SelectItem value="VIREMENT">Virement</SelectItem><SelectItem value="CARTE">Carte</SelectItem></SelectContent>
+  1420→                </Select>
+  1421→              </div>
+  1422→            </div>
+  1423→            <DialogFooter className="mt-4">
+  1424→              <Button variant="outline" type="button" onClick={() => setTxOpen(false)}>Annuler</Button>
+  1425→              <Button type="submit" className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90">Enregistrer</Button>
+  1426→            </DialogFooter>
+  1427→          </form>
+  1428→        </DialogContent>
+  1429→      </Dialog>
+  1430→
+  1431→      {/* Filters */}
+  1432→      <Card>
+  1433→        <CardContent className="p-4">
+  1434→          <div className="flex flex-col sm:flex-row gap-3">
+  1435→            <Select value={filterRegister || 'all'} onValueChange={(v) => setFilterRegister(v === 'all' ? '' : v)}>
+  1436→              <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Caisse" /></SelectTrigger>
+  1437→              <SelectContent><SelectItem value="all">Toutes les caisses</SelectItem>{registers.map((r) => <SelectItem key={r.id} value={r.id}>{r.name || 'Caisse'}</SelectItem>)}</SelectContent>
+  1438→            </Select>
+  1439→            <Select value={filterType || 'all'} onValueChange={(v) => setFilterType(v === 'all' ? '' : v)}>
+  1440→              <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Type" /></SelectTrigger>
+  1441→              <SelectContent><SelectItem value="all">Tous</SelectItem><SelectItem value="DEPOSIT">Dépôts</SelectItem><SelectItem value="WITHDRAWAL">Retraits</SelectItem></SelectContent>
+  1442→            </Select>
+  1443→          </div>
+  1444→        </CardContent>
+  1445→      </Card>
+  1446→
+  1447→      {/* Transactions table */}
+  1448→      <div>
+  1449→        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Transactions récentes</h2>
+  1450→        <Card>
+  1451→          <CardContent className="p-0">
+  1452→            <div className="overflow-x-auto">
+  1453→              <Table>
+  1454→                <TableHeader>
+  1455→                  <TableRow>
+  1456→                    <TableHead>Description</TableHead>
+  1457→                    <TableHead>Type</TableHead>
+  1458→                    <TableHead>Montant</TableHead>
+  1459→                    <TableHead className="hidden sm:table-cell">Mode</TableHead>
+  1460→                    <TableHead className="hidden md:table-cell">Membre</TableHead>
+  1461→                    <TableHead>Statut</TableHead>
+  1462→                    <TableHead>Date</TableHead>
+  1463→                  </TableRow>
+  1464→                </TableHeader>
+  1465→                <TableBody>
+  1466→                  {loading ? (
+  1467→                    [1, 2, 3].map(i => <TableRow key={i}><TableCell colSpan={7}><Skeleton className="h-10 w-full" /></TableCell></TableRow>)
+  1468→                  ) : transactions.length === 0 ? (
+  1469→                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune transaction</TableCell></TableRow>
+  1470→                  ) : transactions.map((tx) => (
+  1471→                    <TableRow key={tx.id}>
+  1472→                      <TableCell className="font-medium text-sm">{tx.description}</TableCell>
+  1473→                      <TableCell><Badge variant={tx.type === 'DEPOSIT' ? 'default' : 'destructive'}>{tx.type === 'DEPOSIT' ? 'Dépôt' : tx.type === 'WITHDRAWAL' ? 'Retrait' : 'Paiement'}</Badge></TableCell>
+  1474→                      <TableCell className="font-mono">{tx.amount.toLocaleString()} FCFA</TableCell>
+  1475→                      <TableCell className="text-sm hidden sm:table-cell">{tx.paymentMethod}</TableCell>
+  1476→                      <TableCell className="text-sm hidden md:table-cell">{tx.member?.firstName} {tx.member?.lastName}</TableCell>
+  1477→                      <TableCell><Badge variant={tx.status === 'COMPLETED' ? 'default' : 'secondary'}>{tx.status}</Badge></TableCell>
+  1478→                      <TableCell className="text-sm">{new Date(tx.createdAt).toLocaleDateString('fr-FR')}</TableCell>
+  1479→                    </TableRow>
+  1480→                  ))}
+  1481→                </TableBody>
+  1482→              </Table>
+  1483→            </div>
+  1484→            <div className="flex items-center justify-between p-4 border-t">
+  1485→              <p className="text-sm text-muted-foreground">{total} transaction(s)</p>
+  1486→              <div className="flex gap-1">
+  1487→                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+  1488→                <Button variant="outline" size="sm" disabled={page * 20 >= total} onClick={() => setPage(page + 1)}><ChevronRight className="h-4 w-4" /></Button>
+  1489→              </div>
+  1490→            </div>
+  1491→          </CardContent>
+  1492→        </Card>
+  1493→      </div>
+  1494→    </motion.div>
+  1495→  );
+  1496→}
+  1497→
+  1498→// ─── MESSAGES VIEW ───────────────────────────────────
+  1499→function MessagesView() {
+  1500→  const { member } = useAppStore();
+  1501→  const [scope, setScope] = useState<'PLENIARY' | 'PRIVATE'>('PLENIARY');
+  1502→  const [messages, setMessages] = useState<any[]>([]);
+  1503→  const [content, setContent] = useState('');
+  1504→  const [loading, setLoading] = useState(true);
+  1505→  const [sentFlash, setSentFlash] = useState(false);
+  1506→  const scrollRef = useRef<HTMLDivElement>(null);
+  1507→
+  1508→  const loadMessages = useCallback(async () => {
+  1509→    setLoading(true);
+  1510→    try {
+  1511→      const data = await apiFetch<{ messages: any[]; total: number }>(`/api/messages?scope=${scope}&limit=50`);
+  1512→      setMessages(data.messages);
+  1513→    } catch { /* ignore */ } finally { setLoading(false); }
+  1514→  }, [scope]);
+  1515→
+  1516→  useEffect(() => { loadMessages(); }, [loadMessages]);
+  1517→  useEffect(() => {
+  1518→    if (scrollRef.current) {
+  1519→      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  1520→    }
+  1521→  }, [messages]);
+  1522→
+  1523→  const handleSend = async (e: React.FormEvent) => {
+  1524→    e.preventDefault();
+  1525→    if (!content.trim()) return;
+  1526→    try {
+  1527→      await apiFetch('/api/messages', {
+  1528→        method: 'POST',
+  1529→        body: JSON.stringify({ content, scope }),
+  1530→      });
+  1531→      setContent('');
+  1532→      setSentFlash(true);
+  1533→      setTimeout(() => setSentFlash(false), 600);
+  1534→      await loadMessages();
+  1535→      setTimeout(() => {
+  1536→        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  1537→      }, 50);
+  1538→    } catch { /* ignore */ }
+  1539→  };
+  1540→
+  1541→  const senderInitials = (m: any) => `${m.sender?.firstName?.[0] || ''}${m.sender?.lastName?.[0] || ''}`.toUpperCase();
+  1542→
+  1543→  return (
+  1544→    <motion.div {...pageVariants} className="space-y-4 flex flex-col" style={{ height: 'calc(100vh - 180px)' }}>
+  1545→      <h1 className="text-2xl font-bold flex items-center gap-2"><MessageSquare className="h-6 w-6 text-[var(--feua-green)]" />Messagerie</h1>
+  1546→
+  1547→      <Tabs value={scope} onValueChange={(v) => setScope(v as 'PLENIARY' | 'PRIVATE')}>
+  1548→        <TabsList>
+  1549→          <TabsTrigger value="PLENIARY"><Users className="h-4 w-4 mr-1" />Plénière</TabsTrigger>
+  1550→          <TabsTrigger value="PRIVATE"><Mail className="h-4 w-4 mr-1" />Privé</TabsTrigger>
+  1551→        </TabsList>
+  1552→      </Tabs>
+  1553→
+  1554→      <Card className="flex-1 flex flex-col overflow-hidden">
+  1555→        {/* Messages list */}
+  1556→        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+  1557→          {loading ? (
+  1558→            <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
+  1559→          ) : messages.length === 0 ? (
+  1560→            <div className="flex items-center justify-center h-full text-muted-foreground">
+  1561→              <p>Aucun message. Soyez le premier à écrire !</p>
+  1562→            </div>
+  1563→          ) : messages.map((m) => {
+  1564→            const isOwn = m.senderId === member?.id;
+  1565→            return (
+  1566→              <motion.div
+  1567→                key={m.id}
+  1568→                initial={{ opacity: 0, y: 10 }}
+  1569→                animate={{ opacity: 1, y: 0 }}
+  1570→                className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
+  1571→              >
+  1572→                <Avatar className="h-8 w-8 flex-shrink-0">
+  1573→                  <AvatarFallback className={`text-xs ${isOwn ? 'bg-[var(--feua-green)] text-white' : 'bg-gray-200 text-gray-700'}`}>{senderInitials(m)}</AvatarFallback>
+  1574→                </Avatar>
+  1575→                <div className={`max-w-[75%] ${isOwn ? 'text-right' : ''}`}>
+  1576→                  <div className="flex items-center gap-2 mb-1">
+  1577→                    <span className={`text-xs font-medium ${isOwn ? 'order-last' : ''}`}>{m.sender?.firstName} {m.sender?.lastName}</span>
+  1578→                    <Badge variant="outline" className="text-[10px]">{ACCESS_LABELS[m.sender?.accessLevel] || m.sender?.accessLevel}</Badge>
+  1579→                  </div>
+  1580→                  <div className={`inline-block px-4 py-2.5 rounded-2xl text-sm shadow-sm ${isOwn ? 'bg-gradient-to-br from-[var(--feua-green)] to-emerald-700 text-white rounded-tr-sm' : 'bg-muted border border-border/50 rounded-tl-sm'}`}>
+  1581→                    {m.content}
+  1582→                  </div>
+  1583→                  <p className={`text-[10px] text-muted-foreground mt-1 ${isOwn ? 'text-right' : ''}`}>{new Date(m.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+  1584→                </div>
+  1585→              </motion.div>
+  1586→            );
+  1587→          })}
+  1588→        </div>
+  1589→
+  1590→        {/* Hierarchical rules */}
+  1591→        <div className="px-4 py-2 border-t bg-muted/30">
+  1592→          <p className="text-xs text-muted-foreground flex items-center gap-1"><Info className="h-3 w-3" />Règles hiérarchiques : MIN ne peut pas envoyer en privé à MIN, MIX ne peut pas envoyer à MIX.</p>
+  1593→        </div>
+  1594→
+  1595→        {/* Input */}
+  1596→        <form onSubmit={handleSend} className="flex gap-2 p-4 border-t bg-muted/40">
+  1597→          <div className="relative flex-1">
+  1598→            {sentFlash && (
+  1599→              <div className="absolute right-3 top-1/2 -translate-y-1/2 animate-msg-sent">
+  1600→                <Check className="h-4 w-4 text-[var(--feua-green)]" />
+  1601→              </div>
+  1602→            )}
+  1603→            <Input
+  1604→              value={content}
+  1605→              onChange={(e) => setContent(e.target.value)}
+  1606→              placeholder={scope === 'PLENIARY' ? "Message à la plénière..." : "Message privé..."}
+  1607→              className="flex-1 bg-background"
+  1608→            />
+  1609→          </div>
+  1610→          <Button type="submit" className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90">
+  1611→            <Send className="h-4 w-4" />
+  1612→          </Button>
+  1613→        </form>
+  1614→      </Card>
+  1615→    </motion.div>
+  1616→  );
+  1617→}
+  1618→
+  1619→// ─── UNIFORMS VIEW ───────────────────────────────────
+  1620→function UniformsView() {
+  1621→  const { member } = useAppStore();
+  1622→  const [orders, setOrders] = useState<any[]>([]);
+  1623→  const [total, setTotal] = useState(0);
+  1624→  const [page, setPage] = useState(1);
+  1625→  const [loading, setLoading] = useState(true);
+  1626→  const [orderOpen, setOrderOpen] = useState(false);
+  1627→  const [orderForm, setOrderForm] = useState({ taille: 'M', quantity: '1', notes: '', paymentMethod: 'ESPECES' });
+  1628→
+  1629→  const userLevel = member?.accessLevel || 'IGN';
+  1630→  const isAdmin = canAccess(userLevel, 'MASTER');
+  1631→
+  1632→  const loadOrders = useCallback(async () => {
+  1633→    setLoading(true);
+  1634→    try {
+  1635→      const data = await apiFetch<{ orders: any[]; total: number }>(`/api/uniforms?page=${page}&limit=20`);
+  1636→      setOrders(data.orders);
+  1637→      setTotal(data.total);
+  1638→    } catch { /* ignore */ } finally { setLoading(false); }
+  1639→  }, [page]);
+  1640→
+  1641→  useEffect(() => { loadOrders(); }, [loadOrders]);
+  1642→
+  1643→  const handleOrder = async (e: React.FormEvent) => {
+  1644→    e.preventDefault();
+  1645→    try {
+  1646→      await apiFetch('/api/uniforms', {
+  1647→        method: 'POST',
+  1648→        body: JSON.stringify({ ...orderForm, quantity: Number(orderForm.quantity) }),
+  1649→      });
+  1650→      setOrderOpen(false);
+  1651→      setOrderForm({ taille: 'M', quantity: '1', notes: '', paymentMethod: 'ESPECES' });
+  1652→      loadOrders();
+  1653→    } catch { /* ignore */ }
+  1654→  };
+  1655→
+  1656→  const handleValidate = async (orderId: string, newStatus: string) => {
+  1657→    try {
+  1658→      await apiFetch('/api/uniforms', {
+  1659→        method: 'PUT',
+  1660→        body: JSON.stringify({ orderId, status: newStatus }),
+  1661→      });
+  1662→      loadOrders();
+  1663→    } catch { /* ignore */ }
+  1664→  };
+  1665→
+  1666→  const tailles = ['S', 'M', 'L', 'XL', 'XXL'];
+  1667→
+  1668→  const validationLabel: Record<string, { label: string; next: string }> = {
+  1669→    EN_ATTENTE: { label: '✓ Valider (étape 1)', next: 'VAL1' },
+  1670→    VAL1: { label: '✓ Valider (étape 2)', next: 'VAL2' },
+  1671→    VAL2: { label: '✓ Marquer livré', next: 'LIVRE' },
+  1672→  };
+  1673→
+  1674→  return (
+  1675→    <motion.div {...pageVariants} className="space-y-6">
+  1676→      <div className="flex items-center justify-between">
+  1677→        <h1 className="text-2xl font-bold flex items-center gap-2"><Shirt className="h-6 w-6 text-[var(--feua-green)]" />Uniformes</h1>
+  1678→        <Button className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90" onClick={() => setOrderOpen(true)}>
+  1679→          <Plus className="mr-2 h-4 w-4" />Nouvelle commande
+  1680→        </Button>
+  1681→      </div>
+  1682→
+  1683→      {/* Order form dialog */}
+  1684→      <Dialog open={orderOpen} onOpenChange={setOrderOpen}>
+  1685→        <DialogContent className="max-w-md">
+  1686→          <DialogHeader><DialogTitle>Commander un uniforme</DialogTitle><DialogDescription>Prix unitaire : 15 000 FCFA</DialogDescription></DialogHeader>
+  1687→          <form onSubmit={handleOrder}>
+  1688→            <div className="space-y-4">
+  1689→              <div className="space-y-2">
+  1690→                <Label>Taille</Label>
+  1691→                <Select value={orderForm.taille} onValueChange={(v) => setOrderForm({ ...orderForm, taille: v })}>
+  1692→                  <SelectTrigger><SelectValue /></SelectTrigger>
+  1693→                  <SelectContent>{tailles.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+  1694→                </Select>
+  1695→              </div>
+  1696→              <div className="space-y-2"><Label>Quantité</Label><Input type="number" min="1" max="10" value={orderForm.quantity} onChange={(e) => setOrderForm({ ...orderForm, quantity: e.target.value })} /></div>
+  1697→              <div className="space-y-2">
+  1698→                <Label>Mode de paiement</Label>
+  1699→                <Select value={orderForm.paymentMethod} onValueChange={(v) => setOrderForm({ ...orderForm, paymentMethod: v })}>
+  1700→                  <SelectTrigger><SelectValue /></SelectTrigger>
+  1701→                  <SelectContent><SelectItem value="ESPECES">Espèces</SelectItem><SelectItem value="MOBILE_MONEY">Mobile Money</SelectItem><SelectItem value="VIREMENT">Virement</SelectItem></SelectContent>
+  1702→                </Select>
+  1703→              </div>
+  1704→              <div className="space-y-2"><Label>Notes</Label><Textarea value={orderForm.notes} onChange={(e) => setOrderForm({ ...orderForm, notes: e.target.value })} rows={2} /></div>
+  1705→              <p className="text-sm font-medium text-[var(--feua-gold)]">Total : {(Number(orderForm.quantity) * 15000).toLocaleString()} FCFA</p>
+  1706→            </div>
+  1707→            <DialogFooter className="mt-4">
+  1708→              <Button variant="outline" type="button" onClick={() => setOrderOpen(false)}>Annuler</Button>
+  1709→              <Button type="submit" className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90">Commander</Button>
+  1710→            </DialogFooter>
+  1711→          </form>
+  1712→        </DialogContent>
+  1713→      </Dialog>
+  1714→
+  1715→      {/* Orders table */}
+  1716→      {loading ? (
+  1717→        <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
+  1718→      ) : orders.length === 0 ? (
+  1719→        <Card className="text-center py-12"><CardContent><Shirt className="h-12 w-12 mx-auto text-muted-foreground/20 mb-3" /><p className="text-muted-foreground">Aucune commande pour le moment.</p></CardContent></Card>
+  1720→      ) : (
+  1721→        <Card>
+  1722→          <CardContent className="p-0">
+  1723→            <div className="overflow-x-auto">
+  1724→              <Table>
+  1725→                <TableHeader>
+  1726→                  <TableRow>
+  1727→                    <TableHead>Date</TableHead>
+  1728→                    <TableHead>Membre</TableHead>
+  1729→                    <TableHead>Taille</TableHead>
+  1730→                    <TableHead className="hidden sm:table-cell">Qté</TableHead>
+  1731→                    <TableHead>Montant</TableHead>
+  1732→                    <TableHead>Statut</TableHead>
+  1733→                    {isAdmin && <TableHead className="text-right">Validation</TableHead>}
+  1734→                  </TableRow>
+  1735→                </TableHeader>
+  1736→                <TableBody>
+  1737→                  {orders.map((o) => (
+  1738→                    <TableRow key={o.id}>
+  1739→                      <TableCell className="text-sm">{new Date(o.createdAt).toLocaleDateString('fr-FR')}</TableCell>
+  1740→                      <TableCell className="text-sm font-medium">{isAdmin && o.member ? `${o.member.firstName} ${o.member.lastName}` : 'Vous'}</TableCell>
+  1741→                      <TableCell className="text-sm">{o.taille}</TableCell>
+  1742→                      <TableCell className="text-sm hidden sm:table-cell">{o.quantity}</TableCell>
+  1743→                      <TableCell className="text-sm font-mono">{(o.totalAmount || 0).toLocaleString()} FCFA</TableCell>
+  1744→                      <TableCell><span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${orderBadge[o.status]?.color || 'bg-gray-100'}`}>{orderBadge[o.status]?.label || o.status}</span></TableCell>
+  1745→                      {isAdmin && (
+  1746→                        <TableCell className="text-right">
+  1747→                          {validationLabel[o.status] && (
+  1748→                            <Button size="sm" className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90 text-white text-xs h-7" onClick={() => handleValidate(o.id, validationLabel[o.status].next)}>
+  1749→                              <CheckCircle className="mr-1 h-3 w-3" />{validationLabel[o.status].label}
+  1750→                            </Button>
+  1751→                          )}
+  1752→                        </TableCell>
+  1753→                      )}
+  1754→                    </TableRow>
+  1755→                  ))}
+  1756→                </TableBody>
+  1757→              </Table>
+  1758→            </div>
+  1759→          </CardContent>
+  1760→        </Card>
+  1761→      )}
+  1762→
+  1763→      {total > 20 && (
+  1764→        <div className="flex items-center justify-between">
+  1765→          <p className="text-sm text-muted-foreground">{total} commande(s)</p>
+  1766→          <div className="flex gap-1">
+  1767→            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+  1768→            <Button variant="outline" size="sm" disabled={page * 20 >= total} onClick={() => setPage(page + 1)}><ChevronRight className="h-4 w-4" /></Button>
+  1769→          </div>
+  1770→        </div>
+  1771→      )}
+  1772→    </motion.div>
+  1773→  );
+  1774→}
+  1775→
+  1776→// ─── ADMIN VIEW (MAST_IN+) ───────────────────────────
+  1777→function AdminView() {
+  1778→  const { member } = useAppStore();
+  1779→  const [tab, setTab] = useState('overview');
+  1780→  const [overview, setOverview] = useState<any>(null);
+  1781→  const [logs, setLogs] = useState<any[]>([]);
+  1782→  const [logTotal, setLogTotal] = useState(0);
+  1783→  const [logPage, setLogPage] = useState(1);
+  1784→  const [loading, setLoading] = useState(true);
+  1785→  const [filterAction, setFilterAction] = useState('');
+  1786→
+  1787→  // Announcement dialog
+  1788→  const [annOpen, setAnnOpen] = useState(false);
+  1789→  const [annForm, setAnnForm] = useState({ title: '', content: '', isUrgent: false });
+  1790→  const [annLoading, setAnnLoading] = useState(false);
+  1791→
+  1792→  const handleCreateAnn = async (e: React.FormEvent) => {
+  1793→    e.preventDefault();
+  1794→    setAnnLoading(true);
+  1795→    try {
+  1796→      await apiFetch('/api/announcements', {
+  1797→        method: 'POST',
+  1798→        body: JSON.stringify(annForm),
+  1799→      });
+  1800→      setAnnOpen(false);
+  1801→      setAnnForm({ title: '', content: '', isUrgent: false });
+  1802→      // Reload overview
+  1803→      const o = await apiFetch<any>('/api/admin?section=overview');
+  1804→      setOverview(o);
+  1805→    } catch { /* ignore */ } finally { setAnnLoading(false); }
+  1806→  };
+  1807→
+  1808→  useEffect(() => {
+  1809→    const load = async () => {
+  1810→      setLoading(true);
+  1811→      try {
+  1812→        const [o] = await Promise.all([
+  1813→          apiFetch<any>('/api/admin?section=overview'),
+  1814→        ]);
+  1815→        setOverview(o);
+  1816→      } catch { /* ignore */ } finally { setLoading(false); }
+  1817→    };
+  1818→    load();
+  1819→  }, []);
+  1820→
+  1821→  useEffect(() => {
+  1822→    if (tab !== 'audit') return;
+  1823→    const loadLogs = async () => {
+  1824→      setLoading(true);
+  1825→      try {
+  1826→        const params = new URLSearchParams({ page: String(logPage), limit: '20' });
+  1827→        if (filterAction) params.set('action', filterAction);
+  1828→        const data = await apiFetch<{ logs: any[]; total: number }>(`/api/admin?section=audit&${params}`);
+  1829→        setLogs(data.logs);
+  1830→        setLogTotal(data.total);
+  1831→      } catch { /* ignore */ } finally { setLoading(false); }
+  1832→    };
+  1833→    loadLogs();
+  1834→  }, [tab, logPage, filterAction]);
+  1835→
+  1836→  const PIE_COLORS = ['#1B7A3D', '#D4A017', '#15803D', '#a16207', '#166534', '#ca8a04', '#14532d', '#854d0e'];
+  1837→
+  1838→  if (loading && tab === 'overview') {
+  1839→    return (
+  1840→      <motion.div {...pageVariants} className="space-y-6">
+  1841→        <Skeleton className="h-8 w-64" />
+  1842→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">{[1, 2, 3, 4, 5, 6, 7, 8].map(i => <Skeleton key={i} className="h-24" />)}</div>
+  1843→        <Skeleton className="h-64" />
+  1844→      </motion.div>
+  1845→    );
+  1846→  }
+  1847→
+  1848→  return (
+  1849→    <motion.div {...pageVariants} className="space-y-6">
+  1850→      <div className="flex items-center justify-between">
+  1851→        <h1 className="text-2xl font-bold flex items-center gap-2"><Shield className="h-6 w-6 text-[var(--feua-gold)]" />Administration</h1>
+  1852→        {canAccess(member?.accessLevel || 'IGN', 'MAST') && (
+  1853→          <Button className="bg-[var(--feua-gold)] hover:bg-[var(--feua-gold)]/90 text-[var(--feua-dark)]" onClick={() => setAnnOpen(true)}>
+  1854→            <Megaphone className="mr-2 h-4 w-4" />Créer une annonce
+  1855→          </Button>
+  1856→        )}
+  1857→      </div>
+  1858→
+  1859→      <Tabs value={tab} onValueChange={setTab}>
+  1860→        <TabsList>
+  1861→          <TabsTrigger value="overview"><BarChart3 className="h-4 w-4 mr-1" />Vue d&apos;ensemble</TabsTrigger>
+  1862→          <TabsTrigger value="audit"><Clock className="h-4 w-4 mr-1" />Mémoire H (Audit)</TabsTrigger>
+  1863→        </TabsList>
+  1864→      </Tabs>
+  1865→
+  1866→      {/* Create announcement dialog */}
+  1867→      <Dialog open={annOpen} onOpenChange={setAnnOpen}>
+  1868→        <DialogContent>
+  1869→          <DialogHeader><DialogTitle>Créer une annonce</DialogTitle><DialogDescription>Les annonces sont visibles par tous les membres.</DialogDescription></DialogHeader>
+  1870→          <form onSubmit={handleCreateAnn}>
+  1871→            <div className="space-y-4">
+  1872→              <div className="space-y-2"><Label>Titre *</Label><Input value={annForm.title} onChange={(e) => setAnnForm({ ...annForm, title: e.target.value })} required placeholder="Titre de l'annonce" /></div>
+  1873→              <div className="space-y-2"><Label>Contenu *</Label><Textarea value={annForm.content} onChange={(e) => setAnnForm({ ...annForm, content: e.target.value })} required placeholder="Détails de l'annonce..." rows={3} /></div>
+  1874→              <div className="flex items-center justify-between">
+  1875→                <Label>Marquer comme urgente</Label>
+  1876→                <Switch checked={annForm.isUrgent} onCheckedChange={(c) => setAnnForm({ ...annForm, isUrgent: c })} />
+  1877→              </div>
+  1878→            </div>
+  1879→            <DialogFooter className="mt-4">
+  1880→              <Button variant="outline" type="button" onClick={() => setAnnOpen(false)}>Annuler</Button>
+  1881→              <Button type="submit" className="bg-[var(--feua-gold)] hover:bg-[var(--feua-gold)]/90 text-[var(--feua-dark)]" disabled={annLoading}>
+  1882→                {annLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Publier
+  1883→              </Button>
+  1884→            </DialogFooter>
+  1885→          </form>
+  1886→        </DialogContent>
+  1887→      </Dialog>
+  1888→
+  1889→      {tab === 'overview' && overview && (
+  1890→        <div className="space-y-6">
+  1891→          {/* Stats grid */}
+  1892→          <div>
+  1893→            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Statistiques</h2>
+  1894→            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+  1895→              <Card className="bg-gradient-to-br from-[var(--feua-green)] to-emerald-700 text-white shadow-lg hover:scale-[1.02] transition-transform">
+  1896→                <CardContent className="p-3 sm:p-4"><p className="text-[11px] sm:text-xs opacity-80">Total membres</p><p className="text-2xl sm:text-3xl font-bold">{overview.totalMembers}</p></CardContent>
+  1897→              </Card>
+  1898→              <Card className="bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg hover:scale-[1.02] transition-transform">
+  1899→                <CardContent className="p-3 sm:p-4"><p className="text-[11px] sm:text-xs opacity-80">Membres actifs</p><p className="text-2xl sm:text-3xl font-bold">{overview.activeMembers}</p></CardContent>
+  1900→              </Card>
+  1901→              <Card className="bg-gradient-to-br from-[var(--feua-gold)] to-amber-600 text-white shadow-lg hover:scale-[1.02] transition-transform">
+  1902→                <CardContent className="p-3 sm:p-4"><p className="text-[11px] sm:text-xs opacity-80">En attente</p><p className="text-2xl sm:text-3xl font-bold">{overview.pendingMembers}</p></CardContent>
+  1903→              </Card>
+  1904→              <Card className="bg-gradient-to-br from-emerald-800 to-[var(--feua-green)] text-white shadow-lg hover:scale-[1.02] transition-transform">
+  1905→                <CardContent className="p-3 sm:p-4"><p className="text-[11px] sm:text-xs opacity-80">Total soldes</p><p className="text-2xl sm:text-3xl font-bold">{(overview.totalBalance || 0).toLocaleString()}</p><p className="text-[10px] opacity-60">FCFA</p></CardContent>
+  1906→              </Card>
+  1907→              <Card className="bg-gradient-to-br from-emerald-600 to-emerald-800 text-white shadow-lg hover:scale-[1.02] transition-transform">
+  1908→                <CardContent className="p-3 sm:p-4"><p className="text-[11px] sm:text-xs opacity-80">Transactions</p><p className="text-2xl sm:text-3xl font-bold">{overview.totalTransactions}</p></CardContent>
+  1909→              </Card>
+  1910→              <Card className="bg-gradient-to-br from-[var(--feua-gold)] to-amber-700 text-white shadow-lg hover:scale-[1.02] transition-transform">
+  1911→                <CardContent className="p-3 sm:p-4"><p className="text-[11px] sm:text-xs opacity-80">Commandes</p><p className="text-2xl sm:text-3xl font-bold">{overview.totalOrders}</p></CardContent>
+  1912→              </Card>
+  1913→              <Card className="bg-gradient-to-br from-[var(--feua-dark)] to-emerald-900 text-white shadow-lg hover:scale-[1.02] transition-transform">
+  1914→                <CardContent className="p-3 sm:p-4"><p className="text-[11px] sm:text-xs opacity-80">Commandes en cours</p><p className="text-2xl sm:text-3xl font-bold">{overview.pendingOrders}</p></CardContent>
+  1915→              </Card>
+  1916→              <Card className="bg-gradient-to-br from-amber-500 to-[var(--feua-gold)] text-white shadow-lg hover:scale-[1.02] transition-transform">
+  1917→                <CardContent className="p-3 sm:p-4"><p className="text-[11px] sm:text-xs opacity-80">Connexions (7j)</p><p className="text-2xl sm:text-3xl font-bold">{overview.recentLogins}</p></CardContent>
+  1918→              </Card>
+  1919→            </div>
+  1920→          </div>
+  1921→
+  1922→          {/* Charts */}
+  1923→          <div>
+  1924→            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Répartition</h2>
+  1925→            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  1926→              <Card className="shadow-lg">
+  1927→                <CardHeader className="pb-2"><CardTitle className="text-base">Répartition par niveau</CardTitle></CardHeader>
+  1928→                <CardContent className="p-4">
+  1929→                  <div className="h-64">
+  1930→                    <ResponsiveContainer width="100%" height="100%">
+  1931→                      <BarChart data={(overview.membersByLevel || []).map((m: any) => ({ name: ACCESS_LABELS[m.accessLevel] || m.accessLevel, count: m._count }))}>
+  1932→                        <CartesianGrid strokeDasharray="3 3" />
+  1933→                        <XAxis dataKey="name" fontSize={11} />
+  1934→                        <YAxis fontSize={11} />
+  1935→                        <Tooltip />
+  1936→                        <Bar dataKey="count" fill="#1B7A3D" radius={[4, 4, 0, 0]} />
+  1937→                      </BarChart>
+  1938→                    </ResponsiveContainer>
+  1939→                  </div>
+  1940→                </CardContent>
+  1941→              </Card>
+  1942→              <Card className="shadow-lg">
+  1943→                <CardHeader className="pb-2"><CardTitle className="text-base">Répartition par institution</CardTitle></CardHeader>
+  1944→                <CardContent className="p-4">
+  1945→                  <div className="h-64">
+  1946→                    <ResponsiveContainer width="100%" height="100%">
+  1947→                      <PieChart>
+  1948→                        <Pie data={(overview.membersByInstitution || []).map((m: any) => ({ name: m.institution || 'N/A', value: m._count }))} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}>
+  1949→                          {(overview.membersByInstitution || []).map((_: any, index: number) => <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />)}
+  1950→                        </Pie>
+  1951→                        <Tooltip />
+  1952→                      </PieChart>
+  1953→                    </ResponsiveContainer>
+  1954→                  </div>
+  1955→                </CardContent>
+  1956→              </Card>
+  1957→            </div>
+  1958→          </div>
+  1959→        </div>
+  1960→      )}
+  1961→
+  1962→      {tab === 'audit' && (
+  1963→        <div>
+  1964→          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Mémoire H (Audit)</h2>
+  1965→          {/* Filters */}
+  1966→          <Card className="mb-4">
+  1967→            <CardContent className="p-4">
+  1968→              <div className="flex flex-col sm:flex-row gap-3">
+  1969→                <Select value={filterAction || 'all'} onValueChange={(v) => { setFilterAction(v === 'all' ? '' : v); setLogPage(1); }}>
+  1970→                  <SelectTrigger className="w-full sm:w-56"><SelectValue placeholder="Type d'action" /></SelectTrigger>
+  1971→                  <SelectContent>
+  1972→                    <SelectItem value="all">Toutes les actions</SelectItem>
+  1973→                    <SelectItem value="MEMBER_LOGIN">Connexion</SelectItem>
+  1974→                    <SelectItem value="MEMBER_UPDATE">Modification membre</SelectItem>
+  1975→                    <SelectItem value="DOCUMENT_UPLOAD">Upload document</SelectItem>
+  1976→                    <SelectItem value="CASH_TRANSACTION">Transaction caisse</SelectItem>
+  1977→                    <SelectItem value="UNIFORM_ORDER">Commande uniforme</SelectItem>
+  1978→                    <SelectItem value="ANNOUNCEMENT_CREATE">Annonce</SelectItem>
+  1979→                  </SelectContent>
+  1980→                </Select>
+  1981→              </div>
+  1982→            </CardContent>
+  1983→          </Card>
+  1984→          <Card>
+  1985→            <CardContent className="p-0">
+  1986→              <div className="overflow-x-auto">
+  1987→                <Table>
+  1988→                  <TableHeader>
+  1989→                    <TableRow>
+  1990→                      <TableHead>Date</TableHead>
+  1991→                      <TableHead>Action</TableHead>
+  1992→                      <TableHead>Acteur</TableHead>
+  1993→                      <TableHead className="hidden sm:table-cell">Entité</TableHead>
+  1994→                      <TableHead>Détails</TableHead>
+  1995→                    </TableRow>
+  1996→                  </TableHeader>
+  1997→                  <TableBody>
+  1998→                    {loading ? (
+  1999→                      [1, 2, 3, 4, 5].map(i => <TableRow key={i}><TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell></TableRow>)
+  2000→                    ) : logs.length === 0 ? (
+
+[showing lines 1-2000 of 2234; use offset=2001 with limit to continue reading]

@@ -1,0 +1,636 @@
+  1296→// ─── MESSAGES VIEW ───────────────────────────────────
+  1297→function MessagesView() {
+  1298→  const { member } = useAppStore();
+  1299→  const [scope, setScope] = useState<'PLENIARY' | 'PRIVATE'>('PLENIARY');
+  1300→  const [messages, setMessages] = useState<any[]>([]);
+  1301→  const [content, setContent] = useState('');
+  1302→  const [loading, setLoading] = useState(true);
+  1303→  const scrollRef = useRef<HTMLDivElement>(null);
+  1304→
+  1305→  const loadMessages = useCallback(async () => {
+  1306→    setLoading(true);
+  1307→    try {
+  1308→      const data = await apiFetch<{ messages: any[]; total: number }>(`/api/messages?scope=${scope}&limit=50`);
+  1309→      setMessages(data.messages);
+  1310→    } catch { /* ignore */ } finally { setLoading(false); }
+  1311→  }, [scope]);
+  1312→
+  1313→  useEffect(() => { loadMessages(); }, [loadMessages]);
+  1314→  useEffect(() => {
+  1315→    if (scrollRef.current) {
+  1316→      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  1317→    }
+  1318→  }, [messages]);
+  1319→
+  1320→  const handleSend = async (e: React.FormEvent) => {
+  1321→    e.preventDefault();
+  1322→    if (!content.trim()) return;
+  1323→    try {
+  1324→      await apiFetch('/api/messages', {
+  1325→        method: 'POST',
+  1326→        body: JSON.stringify({ content, scope }),
+  1327→      });
+  1328→      setContent('');
+  1329→      loadMessages();
+  1330→    } catch { /* ignore */ }
+  1331→  };
+  1332→
+  1333→  const senderInitials = (m: any) => `${m.sender?.firstName?.[0] || ''}${m.sender?.lastName?.[0] || ''}`.toUpperCase();
+  1334→
+  1335→  return (
+  1336→    <motion.div {...pageVariants} className="space-y-4 flex flex-col" style={{ height: 'calc(100vh - 180px)' }}>
+  1337→      <h1 className="text-2xl font-bold flex items-center gap-2"><MessageSquare className="h-6 w-6 text-[var(--feua-green)]" />Messagerie</h1>
+  1338→
+  1339→      <Tabs value={scope} onValueChange={(v) => setScope(v as 'PLENIARY' | 'PRIVATE')}>
+  1340→        <TabsList>
+  1341→          <TabsTrigger value="PLENIARY"><Users className="h-4 w-4 mr-1" />Plénière</TabsTrigger>
+  1342→          <TabsTrigger value="PRIVATE"><Mail className="h-4 w-4 mr-1" />Privé</TabsTrigger>
+  1343→        </TabsList>
+  1344→      </Tabs>
+  1345→
+  1346→      <Card className="flex-1 flex flex-col overflow-hidden">
+  1347→        {/* Messages list */}
+  1348→        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+  1349→          {loading ? (
+  1350→            <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
+  1351→          ) : messages.length === 0 ? (
+  1352→            <div className="flex items-center justify-center h-full text-muted-foreground">
+  1353→              <p>Aucun message. Soyez le premier à écrire !</p>
+  1354→            </div>
+  1355→          ) : messages.map((m) => {
+  1356→            const isOwn = m.senderId === member?.id;
+  1357→            return (
+  1358→              <motion.div
+  1359→                key={m.id}
+  1360→                initial={{ opacity: 0, y: 10 }}
+  1361→                animate={{ opacity: 1, y: 0 }}
+  1362→                className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
+  1363→              >
+  1364→                <Avatar className="h-8 w-8 flex-shrink-0">
+  1365→                  <AvatarFallback className={`text-xs ${isOwn ? 'bg-[var(--feua-green)] text-white' : 'bg-gray-200 text-gray-700'}`}>{senderInitials(m)}</AvatarFallback>
+  1366→                </Avatar>
+  1367→                <div className={`max-w-[75%] ${isOwn ? 'text-right' : ''}`}>
+  1368→                  <div className="flex items-center gap-2 mb-1">
+  1369→                    <span className={`text-xs font-medium ${isOwn ? 'order-last' : ''}`}>{m.sender?.firstName} {m.sender?.lastName}</span>
+  1370→                    <Badge variant="outline" className="text-[10px]">{ACCESS_LABELS[m.sender?.accessLevel] || m.sender?.accessLevel}</Badge>
+  1371→                    <span className="text-[10px] text-muted-foreground">{new Date(m.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+  1372→                  </div>
+  1373→                  <div className={`inline-block px-3 py-2 rounded-lg text-sm ${isOwn ? 'bg-[var(--feua-green)] text-white rounded-tr-none' : 'bg-muted rounded-tl-none'}`}>
+  1374→                    {m.content}
+  1375→                  </div>
+  1376→                </div>
+  1377→              </motion.div>
+  1378→            );
+  1379→          })}
+  1380→        </div>
+  1381→
+  1382→        {/* Hierarchical rules */}
+  1383→        <div className="px-4 py-2 border-t bg-muted/30">
+  1384→          <p className="text-xs text-muted-foreground flex items-center gap-1"><Info className="h-3 w-3" />Règles hiérarchiques : MIN ne peut pas envoyer en privé à MIN, MIX ne peut pas envoyer à MIX.</p>
+  1385→        </div>
+  1386→
+  1387→        {/* Input */}
+  1388→        <form onSubmit={handleSend} className="flex gap-2 p-4 border-t">
+  1389→          <Input
+  1390→            value={content}
+  1391→            onChange={(e) => setContent(e.target.value)}
+  1392→            placeholder={scope === 'PLENIARY' ? "Message à la plénière..." : "Message privé..."}
+  1393→            className="flex-1"
+  1394→          />
+  1395→          <Button type="submit" className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90">
+  1396→            <Send className="h-4 w-4" />
+  1397→          </Button>
+  1398→        </form>
+  1399→      </Card>
+  1400→    </motion.div>
+  1401→  );
+  1402→}
+  1403→
+  1404→// ─── UNIFORMS VIEW ───────────────────────────────────
+  1405→function UniformsView() {
+  1406→  const { member } = useAppStore();
+  1407→  const [orders, setOrders] = useState<any[]>([]);
+  1408→  const [total, setTotal] = useState(0);
+  1409→  const [page, setPage] = useState(1);
+  1410→  const [loading, setLoading] = useState(true);
+  1411→  const [orderOpen, setOrderOpen] = useState(false);
+  1412→  const [orderForm, setOrderForm] = useState({ taille: 'M', quantity: '1', notes: '', paymentMethod: 'ESPECES' });
+  1413→
+  1414→  const userLevel = member?.accessLevel || 'IGN';
+  1415→  const isAdmin = canAccess(userLevel, 'MASTER');
+  1416→
+  1417→  const loadOrders = useCallback(async () => {
+  1418→    setLoading(true);
+  1419→    try {
+  1420→      const data = await apiFetch<{ orders: any[]; total: number }>(`/api/uniforms?page=${page}&limit=15`);
+  1421→      setOrders(data.orders);
+  1422→      setTotal(data.total);
+  1423→    } catch { /* ignore */ } finally { setLoading(false); }
+  1424→  }, [page]);
+  1425→
+  1426→  useEffect(() => { loadOrders(); }, [loadOrders]);
+  1427→
+  1428→  const handleOrder = async (e: React.FormEvent) => {
+  1429→    e.preventDefault();
+  1430→    try {
+  1431→      await apiFetch('/api/uniforms', {
+  1432→        method: 'POST',
+  1433→        body: JSON.stringify({ ...orderForm, quantity: Number(orderForm.quantity) }),
+  1434→      });
+  1435→      setOrderOpen(false);
+  1436→      setOrderForm({ taille: 'M', quantity: '1', notes: '', paymentMethod: 'ESPECES' });
+  1437→      loadOrders();
+  1438→    } catch { /* ignore */ }
+  1439→  };
+  1440→
+  1441→  const handleValidate = async (orderId: string, newStatus: string) => {
+  1442→    try {
+  1443→      await apiFetch('/api/uniforms', {
+  1444→        method: 'PUT',
+  1445→        body: JSON.stringify({ orderId, status: newStatus }),
+  1446→      });
+  1447→      loadOrders();
+  1448→    } catch { /* ignore */ }
+  1449→  };
+  1450→
+  1451→  const tailles = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  1452→
+  1453→  return (
+  1454→    <motion.div {...pageVariants} className="space-y-6">
+  1455→      <div className="flex items-center justify-between">
+  1456→        <h1 className="text-2xl font-bold flex items-center gap-2"><Shirt className="h-6 w-6 text-purple-600" />Uniformes</h1>
+  1457→        <Button className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90" onClick={() => setOrderOpen(true)}>
+  1458→          <Plus className="mr-2 h-4 w-4" />Nouvelle commande
+  1459→        </Button>
+  1460→      </div>
+  1461→
+  1462→      {/* Order form dialog */}
+  1463→      <Dialog open={orderOpen} onOpenChange={setOrderOpen}>
+  1464→        <DialogContent>
+  1465→          <DialogHeader><DialogTitle>Commander un uniforme</DialogTitle><DialogDescription>Prix unitaire : 15 000 FCFA</DialogDescription></DialogHeader>
+  1466→          <form onSubmit={handleOrder}>
+  1467→            <div className="space-y-4">
+  1468→              <div className="space-y-2">
+  1469→                <Label>Taille</Label>
+  1470→                <div className="flex flex-wrap gap-2">
+  1471→                  {tailles.map((t) => (
+  1472→                    <Button key={t} type="button" variant={orderForm.taille === t ? 'default' : 'outline'} size="sm" className={orderForm.taille === t ? 'bg-[var(--feua-green)]' : ''} onClick={() => setOrderForm({ ...orderForm, taille: t })}>{t}</Button>
+  1473→                  ))}
+  1474→                </div>
+  1475→              </div>
+  1476→              <div className="space-y-2">
+  1477→                <Label>Quantité</Label>
+  1478→                <Input type="number" min="1" max="10" value={orderForm.quantity} onChange={(e) => setOrderForm({ ...orderForm, quantity: e.target.value })} />
+  1479→              </div>
+  1480→              <div className="space-y-2">
+  1481→                <Label>Notes</Label>
+  1482→                <Textarea value={orderForm.notes} onChange={(e) => setOrderForm({ ...orderForm, notes: e.target.value })} />
+  1483→              </div>
+  1484→              <div className="space-y-2">
+  1485→                <Label>Mode de paiement</Label>
+  1486→                <Select value={orderForm.paymentMethod} onValueChange={(v) => setOrderForm({ ...orderForm, paymentMethod: v })}>
+  1487→                  <SelectTrigger><SelectValue /></SelectTrigger>
+  1488→                  <SelectContent><SelectItem value="ESPECES">Espèces</SelectItem><SelectItem value="MOBILE_MONEY">Mobile Money</SelectItem><SelectItem value="VIREMENT">Virement</SelectItem></SelectContent>
+  1489→                </Select>
+  1490→              </div>
+  1491→              <p className="text-sm font-medium text-[var(--feua-gold)]">Total : {(Number(orderForm.quantity) * 15000).toLocaleString()} FCFA</p>
+  1492→            </div>
+  1493→            <DialogFooter className="mt-4">
+  1494→              <Button variant="outline" type="button" onClick={() => setOrderOpen(false)}>Annuler</Button>
+  1495→              <Button type="submit" className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90">Commander</Button>
+  1496→            </DialogFooter>
+  1497→          </form>
+  1498→        </DialogContent>
+  1499→      </Dialog>
+  1500→
+  1501→      {/* Orders list */}
+  1502→      {loading ? (
+  1503→        <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>
+  1504→      ) : orders.length === 0 ? (
+  1505→        <Card className="text-center py-12"><CardContent><p className="text-muted-foreground">Aucune commande pour le moment.</p></CardContent></Card>
+  1506→      ) : (
+  1507→        <div className="space-y-3">
+  1508→          {orders.map((o) => (
+  1509→            <Card key={o.id}>
+  1510→              <CardContent className="p-4">
+  1511→                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+  1512→                  <div className="flex items-center gap-3">
+  1513→                    <div className="p-3 rounded-full bg-purple-50"><Package className="h-5 w-5 text-purple-600" /></div>
+  1514→                    <div>
+  1515→                      <div className="flex items-center gap-2 flex-wrap">
+  1516→                        <span className="font-medium text-sm">Taille {o.taille} × {o.quantity}</span>
+  1517→                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${orderBadge[o.status]?.color || 'bg-gray-100'}`}>{orderBadge[o.status]?.label || o.status}</span>
+  1518→                      </div>
+  1519→                      {isAdmin && o.member && <p className="text-xs text-muted-foreground">{o.member.firstName} {o.member.lastName} ({o.member.matricule})</p>}
+  1520→                      <p className="text-xs text-muted-foreground">{new Date(o.createdAt).toLocaleDateString('fr-FR')} • {(o.totalAmount || 0).toLocaleString()} FCFA</p>
+  1521→                    </div>
+  1522→                  </div>
+  1523→                  {isAdmin && o.status !== 'LIVRE' && o.status !== 'ANNULE' && (
+  1524→                    <div className="flex gap-1">
+  1525→                      {o.status === 'EN_ATTENTE' && (
+  1526→                        <Button size="sm" variant="outline" onClick={() => handleValidate(o.id, 'VAL1')} className="text-xs">
+  1527→                          <CheckCircle className="mr-1 h-3 w-3" />Valider 1
+  1528→                        </Button>
+  1529→                      )}
+  1530→                      {o.status === 'VAL1' && (
+  1531→                        <Button size="sm" variant="outline" onClick={() => handleValidate(o.id, 'VAL2')} className="text-xs">
+  1532→                          <CheckCircle className="mr-1 h-3 w-3" />Valider 2
+  1533→                        </Button>
+  1534→                      )}
+  1535→                      {o.status === 'VAL2' && (
+  1536→                        <Button size="sm" variant="outline" onClick={() => handleValidate(o.id, 'LIVRE')} className="text-xs bg-[var(--feua-green)] text-white hover:bg-[var(--feua-green)]/90">
+  1537→                          <CheckCircle className="mr-1 h-3 w-3" />Marquer livré
+  1538→                        </Button>
+  1539→                      )}
+  1540→                    </div>
+  1541→                  )}
+  1542→                </div>
+  1543→              </CardContent>
+  1544→            </Card>
+  1545→          ))}
+  1546→        </div>
+  1547→      )}
+  1548→
+  1549→      {total > 15 && (
+  1550→        <div className="flex items-center justify-between">
+  1551→          <p className="text-sm text-muted-foreground">{total} commande(s)</p>
+  1552→          <div className="flex gap-1">
+  1553→            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+  1554→            <Button variant="outline" size="sm" disabled={page * 15 >= total} onClick={() => setPage(page + 1)}><ChevronRight className="h-4 w-4" /></Button>
+  1555→          </div>
+  1556→        </div>
+  1557→      )}
+  1558→    </motion.div>
+  1559→  );
+  1560→}
+  1561→
+  1562→// ─── ADMIN VIEW (MAST_IN+) ───────────────────────────
+  1563→function AdminView() {
+  1564→  const { member } = useAppStore();
+  1565→  const [tab, setTab] = useState('overview');
+  1566→  const [overview, setOverview] = useState<any>(null);
+  1567→  const [logs, setLogs] = useState<any[]>([]);
+  1568→  const [logTotal, setLogTotal] = useState(0);
+  1569→  const [logPage, setLogPage] = useState(1);
+  1570→  const [loading, setLoading] = useState(true);
+  1571→
+  1572→  useEffect(() => {
+  1573→    const load = async () => {
+  1574→      setLoading(true);
+  1575→      try {
+  1576→        const [o] = await Promise.all([
+  1577→          apiFetch<any>('/api/admin?section=overview'),
+  1578→        ]);
+  1579→        setOverview(o);
+  1580→      } catch { /* ignore */ } finally { setLoading(false); }
+  1581→    };
+  1582→    load();
+  1583→  }, []);
+  1584→
+  1585→  useEffect(() => {
+  1586→    if (tab !== 'audit') return;
+  1587→    const loadLogs = async () => {
+  1588→      setLoading(true);
+  1589→      try {
+  1590→        const data = await apiFetch<{ logs: any[]; total: number }>(`/api/admin?section=audit&page=${logPage}&limit=20`);
+  1591→        setLogs(data.logs);
+  1592→        setLogTotal(data.total);
+  1593→      } catch { /* ignore */ } finally { setLoading(false); }
+  1594→    };
+  1595→    loadLogs();
+  1596→  }, [tab, logPage]);
+  1597→
+  1598→  const COLORS = ['#1B7A3D', '#D4A017', '#8B5CF6', '#EF4444', '#06B6D4', '#F97316', '#EC4899'];
+  1599→
+  1600→  if (loading && tab === 'overview') {
+  1601→    return (
+  1602→      <motion.div {...pageVariants} className="space-y-6">
+  1603→        <Skeleton className="h-8 w-64" />
+  1604→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24" />)}</div>
+  1605→        <Skeleton className="h-64" />
+  1606→      </motion.div>
+  1607→    );
+  1608→  }
+  1609→
+  1610→  return (
+  1611→    <motion.div {...pageVariants} className="space-y-6">
+  1612→      <h1 className="text-2xl font-bold flex items-center gap-2"><Shield className="h-6 w-6 text-[var(--feua-gold)]" />Administration</h1>
+  1613→
+  1614→      <Tabs value={tab} onValueChange={setTab}>
+  1615→        <TabsList>
+  1616→          <TabsTrigger value="overview"><BarChart3 className="h-4 w-4 mr-1" />Vue d&apos;ensemble</TabsTrigger>
+  1617→          <TabsTrigger value="audit"><Clock className="h-4 w-4 mr-1" />Mémoire H (Audit)</TabsTrigger>
+  1618→        </TabsList>
+  1619→      </Tabs>
+  1620→
+  1621→      {tab === 'overview' && overview && (
+  1622→        <div className="space-y-6">
+  1623→          {/* Stats grid */}
+  1624→          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  1625→            {[
+  1626→              { label: 'Total membres', value: overview.totalMembers, color: 'text-[var(--feua-green)]' },
+  1627→              { label: 'Membres actifs', value: overview.activeMembers, color: 'text-emerald-600' },
+  1628→              { label: 'En attente', value: overview.pendingMembers, color: 'text-[var(--feua-gold)]' },
+  1629→              { label: 'Solde caisses', value: `${(overview.totalBalance || 0).toLocaleString()} FCFA`, color: 'text-[var(--feua-gold)]' },
+  1630→              { label: 'Transactions', value: overview.totalTransactions, color: 'text-[var(--feua-green)]' },
+  1631→              { label: 'Commandes', value: overview.totalOrders, color: 'text-purple-600' },
+  1632→              { label: 'Commandes en attente', value: overview.pendingOrders, color: 'text-orange-600' },
+  1633→              { label: 'Connexions (7j)', value: overview.recentLogins, color: 'text-teal-600' },
+  1634→            ].map((s, i) => (
+  1635→              <Card key={i}>
+  1636→                <CardContent className="p-4">
+  1637→                  <p className="text-xs text-muted-foreground">{s.label}</p>
+  1638→                  <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+  1639→                </CardContent>
+  1640→              </Card>
+  1641→            ))}
+  1642→          </div>
+  1643→
+  1644→          {/* Charts */}
+  1645→          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  1646→            <Card>
+  1647→              <CardHeader className="pb-2"><CardTitle className="text-lg">Membres par niveau</CardTitle></CardHeader>
+  1648→              <CardContent>
+  1649→                <div className="h-64">
+  1650→                  <ResponsiveContainer width="100%" height="100%">
+  1651→                    <BarChart data={(overview.membersByLevel || []).map((m: any) => ({ name: ACCESS_LABELS[m.accessLevel] || m.accessLevel, count: m._count }))}>
+  1652→                      <CartesianGrid strokeDasharray="3 3" />
+  1653→                      <XAxis dataKey="name" fontSize={12} />
+  1654→                      <YAxis fontSize={12} />
+  1655→                      <Tooltip />
+  1656→                      <Bar dataKey="count" fill="#1B7A3D" radius={[4, 4, 0, 0]} />
+  1657→                    </BarChart>
+  1658→                  </ResponsiveContainer>
+  1659→                </div>
+  1660→              </CardContent>
+  1661→            </Card>
+  1662→            <Card>
+  1663→              <CardHeader className="pb-2"><CardTitle className="text-lg">Répartition par institution</CardTitle></CardHeader>
+  1664→              <CardContent>
+  1665→                <div className="h-64">
+  1666→                  <ResponsiveContainer width="100%" height="100%">
+  1667→                    <PieChart>
+  1668→                      <Pie data={(overview.membersByInstitution || []).map((m: any) => ({ name: m.institution || 'N/A', value: m._count }))} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}>
+  1669→                        {(overview.membersByInstitution || []).map((_: any, index: number) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
+  1670→                      </Pie>
+  1671→                      <Tooltip />
+  1672→                    </PieChart>
+  1673→                  </ResponsiveContainer>
+  1674→                </div>
+  1675→              </CardContent>
+  1676→            </Card>
+  1677→          </div>
+  1678→        </div>
+  1679→      )}
+  1680→
+  1681→      {tab === 'audit' && (
+  1682→        <Card>
+  1683→          <CardContent className="p-0">
+  1684→            <div className="overflow-x-auto">
+  1685→              <Table>
+  1686→                <TableHeader>
+  1687→                  <TableRow>
+  1688→                    <TableHead>Date</TableHead>
+  1689→                    <TableHead>Action</TableHead>
+  1690→                    <TableHead>Acteur</TableHead>
+  1691→                    <TableHead>Entité</TableHead>
+  1692→                    <TableHead>Détails</TableHead>
+  1693→                  </TableRow>
+  1694→                </TableHeader>
+  1695→                <TableBody>
+  1696→                  {loading ? (
+  1697→                    [1, 2, 3, 4, 5].map(i => <TableRow key={i}><TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell></TableRow>)
+  1698→                  ) : logs.length === 0 ? (
+  1699→                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucune entrée d&apos;audit</TableCell></TableRow>
+  1700→                  ) : logs.map((log) => (
+  1701→                    <TableRow key={log.id}>
+  1702→                      <TableCell className="text-sm">{new Date(log.createdAt).toLocaleString('fr-FR')}</TableCell>
+  1703→                      <TableCell><Badge variant="outline">{log.action}</Badge></TableCell>
+  1704→                      <TableCell className="text-sm">
+  1705→                        {log.actor ? `${log.actor.firstName} ${log.actor.lastName}` : '-'}
+  1706→                        <br />
+  1707→                        <span className="text-xs text-muted-foreground">{log.actor?.matricule}</span>
+  1708→                      </TableCell>
+  1709→                      <TableCell className="text-sm">{log.entityType}{log.entityId ? ` (${log.entityId.slice(0, 8)}...)` : ''}</TableCell>
+  1710→                      <TableCell className="text-sm max-w-xs truncate">{log.details}</TableCell>
+  1711→                    </TableRow>
+  1712→                  ))}
+  1713→                </TableBody>
+  1714→              </Table>
+  1715→            </div>
+  1716→            <div className="flex items-center justify-between p-4 border-t">
+  1717→              <p className="text-sm text-muted-foreground">{logTotal} entrée(s)</p>
+  1718→              <div className="flex gap-1">
+  1719→                <Button variant="outline" size="sm" disabled={logPage <= 1} onClick={() => setLogPage(logPage - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+  1720→                <Button variant="outline" size="sm" disabled={logPage * 20 >= logTotal} onClick={() => setLogPage(logPage + 1)}><ChevronRight className="h-4 w-4" /></Button>
+  1721→              </div>
+  1722→            </div>
+  1723→          </CardContent>
+  1724→        </Card>
+  1725→      )}
+  1726→    </motion.div>
+  1727→  );
+  1728→}
+  1729→
+  1730→// ─── LANDA VIEW (public) ─────────────────────────────
+  1731→function LandaView() {
+  1732→  const { member, setView, announcements } = useAppStore();
+  1733→  const [orderOpen, setOrderOpen] = useState(false);
+  1734→  const [form, setForm] = useState({ name: '', phone: '', taille: 'M', quantity: '1', notes: '' });
+  1735→  const [loading, setLoading] = useState(false);
+  1736→  const [success, setSuccess] = useState(false);
+  1737→
+  1738→  const handleSubmit = async (e: React.FormEvent) => {
+  1739→    e.preventDefault();
+  1740→    setLoading(true);
+  1741→    try {
+  1742→      // For non-members, we'd need a special endpoint - for now show success
+  1743→      setSuccess(true);
+  1744→      setOrderOpen(false);
+  1745→    } catch { /* ignore */ } finally { setLoading(false); }
+  1746→  };
+  1747→
+  1748→  return (
+  1749→    <motion.div {...pageVariants} className="space-y-8">
+  1750→      {/* Header */}
+  1751→      <div className="text-center space-y-4">
+  1752→        <img src="/feua-logo.png" alt="FEUA" className="h-20 w-20 mx-auto object-contain" />
+  1753→        <h1 className="text-3xl font-bold text-[var(--feua-green)]">Espace Landa</h1>
+  1754→        <p className="text-muted-foreground max-w-xl mx-auto">
+  1755→          Bienvenue sur l&apos;espace public de la FEUA. Découvrez notre organisation et commandez vos uniformes même sans être membre.
+  1756→        </p>
+  1757→      </div>
+  1758→
+  1759→      {/* About FEUA */}
+  1760→      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  1761→        <Card>
+  1762→          <CardHeader>
+  1763→            <CardTitle className="flex items-center gap-2"><Heart className="h-5 w-5 text-red-500" />À propos de FEUA</CardTitle>
+  1764→          </CardHeader>
+  1765→          <CardContent className="text-sm text-muted-foreground space-y-3">
+  1766→            <p>La <strong className="text-foreground">Fédération des Étudiants Universitaires Associés (FEUA)</strong> est une organisation étudiante basée à Lokossa, au Bénin.</p>
+  1767→            <p>Notre mission est d&apos;unir les étudiants pour défendre leurs droits, favoriser la solidarité et créer un environnement propice à la réussite académique.</p>
+  1768→            <p>Le <strong className="text-foreground">Bureau Syndical (BS) de Lokossa</strong> est l&apos;organe local de la FEUA, gérant les activités syndicales et communautaires dans la région.</p>
+  1769→          </CardContent>
+  1770→        </Card>
+  1771→        <Card>
+  1772→          <CardHeader>
+  1773→            <CardTitle className="flex items-center gap-2"><Star className="h-5 w-5 text-[var(--feua-gold)]" />Nos valeurs</CardTitle>
+  1774→          </CardHeader>
+  1775→          <CardContent>
+  1776→            <ul className="space-y-3">
+  1777→              {[
+  1778→                { title: 'Solidarité', desc: 'Ensemble, nous sommes plus forts.' },
+  1779→                { title: 'Excellence', desc: 'Visons le succès académique et professionnel.' },
+  1780→                { title: 'Intégrité', desc: 'Agissons avec honnêteté et transparence.' },
+  1781→                { title: 'Engagement', desc: 'Nous nous investissons pour notre communauté.' },
+  1782→              ].map((v) => (
+  1783→                <li key={v.title} className="flex gap-3">
+  1784→                  <div className="w-2 h-2 rounded-full bg-[var(--feua-green)] mt-2 flex-shrink-0" />
+  1785→                  <div><p className="font-medium text-sm">{v.title}</p><p className="text-xs text-muted-foreground">{v.desc}</p></div>
+  1786→                </li>
+  1787→              ))}
+  1788→            </ul>
+  1789→          </CardContent>
+  1790→        </Card>
+  1791→      </div>
+  1792→
+  1793→      {/* Announcements */}
+  1794→      {announcements.length > 0 && (
+  1795→        <Card>
+  1796→          <CardHeader><CardTitle className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-[var(--feua-gold)]" />Annonces</CardTitle></CardHeader>
+  1797→          <CardContent>
+  1798→            <div className="space-y-3">
+  1799→              {announcements.slice(0, 3).map((a) => (
+  1800→                <div key={a.id} className="p-3 rounded-lg bg-muted/50">
+  1801→                  <div className="flex items-center gap-2 mb-1">
+  1802→                    {a.isUrgent && <AlertTriangle className="h-4 w-4 text-red-500" />}
+  1803→                    <span className="font-medium text-sm">{a.title}</span>
+  1804→                  </div>
+  1805→                  <p className="text-xs text-muted-foreground">{a.content}</p>
+  1806→                </div>
+  1807→              ))}
+  1808→            </div>
+  1809→          </CardContent>
+  1810→        </Card>
+  1811→      )}
+  1812→
+  1813→      {/* Order uniform for non-members */}
+  1814→      <Card className="border-[var(--feua-green)]">
+  1815→        <CardHeader>
+  1816→          <CardTitle className="text-[var(--feua-green)] flex items-center gap-2"><Shirt className="h-5 w-5" />Commander un uniforme</CardTitle>
+  1817→          <CardDescription>Pas besoin d&apos;être membre pour commander !</CardDescription>
+  1818→        </CardHeader>
+  1819→        <CardContent>
+  1820→          {success ? (
+  1821→            <div className="text-center py-8 space-y-3">
+  1822→              <CheckCircle2 className="h-16 w-16 mx-auto text-[var(--feua-green)]" />
+  1823→              <p className="font-medium">Votre demande a été envoyée !</p>
+  1824→              <p className="text-sm text-muted-foreground">Nous vous contacterons pour confirmer votre commande.</p>
+  1825→            </div>
+  1826→          ) : (
+  1827→            <form onSubmit={handleSubmit} className="space-y-4">
+  1828→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  1829→                <div className="space-y-2"><Label>Nom complet *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
+  1830→                <div className="space-y-2"><Label>Téléphone *</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required /></div>
+  1831→              </div>
+  1832→              <div className="grid grid-cols-2 gap-4">
+  1833→                <div className="space-y-2">
+  1834→                  <Label>Taille</Label>
+  1835→                  <Select value={form.taille} onValueChange={(v) => setForm({ ...form, taille: v })}>
+  1836→                    <SelectTrigger><SelectValue /></SelectTrigger>
+  1837→                    <SelectContent>{['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+  1838→                  </Select>
+  1839→                </div>
+  1840→                <div className="space-y-2"><Label>Quantité</Label><Input type="number" min="1" max="10" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /></div>
+  1841→              </div>
+  1842→              <div className="space-y-2"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+  1843→              <p className="text-sm text-[var(--feua-gold)] font-medium">Prix : 15 000 FCFA par unité</p>
+  1844→              <Button type="submit" className="w-full bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90" disabled={loading}>
+  1845→                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Envoyer la demande
+  1846→              </Button>
+  1847→            </form>
+  1848→          )}
+  1849→        </CardContent>
+  1850→      </Card>
+  1851→
+  1852→      {/* Login prompt */}
+  1853→      {!member && (
+  1854→        <div className="text-center space-y-3">
+  1855→          <Separator />
+  1856→          <p className="text-sm text-muted-foreground">Déjà membre de la FEUA ?</p>
+  1857→          <Button className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90" onClick={() => setView('login')}>
+  1858→            <LogIn className="mr-2 h-4 w-4" />Se connecter
+  1859→          </Button>
+  1860→        </div>
+  1861→      )}
+  1862→    </motion.div>
+  1863→  );
+  1864→}
+  1865→
+  1866→// ─── MAIN PAGE (SPA Router) ──────────────────────────
+  1867→export default function Home() {
+  1868→  const { isAuthenticated, loading, currentView, checkSession } = useAppStore();
+  1869→
+  1870→  useEffect(() => {
+  1871→    checkSession();
+  1872→  }, [checkSession]);
+  1873→
+  1874→  // Show loading screen
+  1875→  if (loading && currentView === 'landing') {
+  1876→    return (
+  1877→      <div className="min-h-screen flex items-center justify-center">
+  1878→        <motion.div
+  1879→          animate={{ rotate: 360 }}
+  1880→          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+  1881→          className="h-16 w-16"
+  1882→        >
+  1883→          <img src="/feua-logo.png" alt="FEUA" className="h-full w-full object-contain" />
+  1884→        </motion.div>
+  1885→      </div>
+  1886→    );
+  1887→  }
+  1888→
+  1889→  // Public views (no layout)
+  1890→  const isPublicView = ['landing', 'login', 'register', 'forgot-password'].includes(currentView);
+  1891→
+  1892→  if (isPublicView) {
+  1893→    return (
+  1894→      <AnimatePresence mode="wait">
+  1895→        <motion.div key={currentView}>
+  1896→          {currentView === 'landing' && <LandingPage />}
+  1897→          {currentView === 'login' && <LoginPage />}
+  1898→          {currentView === 'register' && <RegisterPage />}
+  1899→          {currentView === 'forgot-password' && <ForgotPasswordPage />}
+  1900→        </motion.div>
+  1901→      </AnimatePresence>
+  1902→    );
+  1903→  }
+  1904→
+  1905→  // Authenticated views with layout
+  1906→  return (
+  1907→    <div className="min-h-screen flex flex-col">
+  1908→      <Sidebar />
+  1909→      <div className="flex-1 lg:pl-64 flex flex-col min-h-screen">
+  1910→        <Header />
+  1911→        <main className="flex-1 p-4 lg:p-6">
+  1912→          <AnimatePresence mode="wait">
+  1913→            <motion.div key={currentView}>
+  1914→              {currentView === 'dashboard' && <DashboardView />}
+  1915→              {currentView === 'members' && <MembersView />}
+  1916→              {currentView === 'member-profile' && <MemberProfileView />}
+  1917→              {currentView === 'documents' && <DocumentsView />}
+  1918→              {currentView === 'cash' && <CashView />}
+  1919→              {currentView === 'messages' && <MessagesView />}
+  1920→              {currentView === 'uniforms' && <UniformsView />}
+  1921→              {currentView === 'admin' && <AdminView />}
+  1922→              {currentView === 'landa' && <LandaView />}
+  1923→            </motion.div>
+  1924→          </AnimatePresence>
+  1925→        </main>
+  1926→        <Footer />
+  1927→      </div>
+  1928→    </div>
+  1929→  );
+  1930→}
+  1931→

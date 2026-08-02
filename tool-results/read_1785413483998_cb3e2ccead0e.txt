@@ -1,0 +1,1218 @@
+     1→     1→=== Page 1 ===
+     2→     2→ 
+     3→     3→ 
+     4→     4→ 
+     5→     5→ 
+     6→     6→FEDERATION DES ETUDIANTS UNIVERSITAIRES ASSOCIES 
+     7→     7→Bureau Syndical de Lokossa (BS-Lokossa) 
+     8→     8→PLAN DE REALISATION 
+     9→     9→Application Web BS-Lokossa — Version corrigee 
+    10→    10→ 
+    11→    11→Juillet a Novembre 2026  ·  18 semaines  ·  10 phases 
+    12→    12→Next.js + React + Supabase + Vercel 
+    13→    13→Corrections integrees v2.0 — Juillet 2026 
+    14→    14→ 
+    15→    15→
+    16→    16→
+    17→    17→=== Page 2 ===
+    18→    18→1. Passage a une application web 
+    19→    19→Cette version du plan adapte le projet BS-Lokossa d'une application mobile Flutter vers une application web 
+    20→    20→Next.js / React. Toutes les fonctionnalites du cahier des charges sont conservees. Le backend Supabase reste 
+    21→    21→identique. Cette version integre les corrections structurelles suivantes : phase P0 scindee en P0A (Infrastructure) 
+    22→    22→et P0B (Architecture), tests de validation a la fin de chaque phase, Design System, documentation BDD et API, 
+    23→    23→securite renforcee et strategie Git. 
+    24→    24→ 
+    25→    25→1.1 Avantages de l'application web pour BS-Lokossa 
+    26→    26→• Acces immediat : aucune installation requise, depuis n'importe quel navigateur (PC, telephone, tablette) 
+    27→    27→• Mises a jour instantanees : une modification deployee est visible par tous sans action de l'utilisateur 
+    28→    28→• Economies : 0 USD pour le deploiement (Vercel gratuit) contre 25 USD pour le Play Store mobile 
+    29→    29→• Equipe plus large : les developpeurs React/JS sont bien plus nombreux que les developpeurs Flutter/Dart 
+    30→    30→• PWA optionnelle : l'app web peut etre installee sur l'ecran d'accueil du telephone comme une vraie app 
+    31→    31→• Maintenance simplifiee : pas de versions APK, pas de validation externe 
+    32→    32→ 
+    33→    33→1.2 Stack technique adoptee 
+    34→    34→• Frontend : Next.js 14 (App Router) + React + TypeScript 
+    35→    35→• Styles : Tailwind CSS + shadcn/ui (composants prebuilt accessibles et reutilisables) 
+    36→    36→• Backend : Supabase (PostgreSQL + Auth JWT + Storage + Realtime) — identique a la version mobile 
+    37→    37→• Notifications push : Web Push API + Service Worker + Firebase Cloud Messaging web 
+    38→    38→• Paiement : FedaPay JavaScript SDK (MTN MoMo, Moov Money, carte bancaire) 
+    39→    39→• Hebergement : Vercel (gratuit pour Next.js) avec domaine personnalise 
+    40→    40→• Securite : Zod (validation), Rate Limiting, CSP, CORS, cookies HTTP-only, RLS Supabase 
+    41→    41→• Monitoring : Sentry (erreurs) + Vercel Analytics + Supabase Logs 
+    42→    42→ 
+    43→    43→1.3 Repartition des roles 
+    44→    44→• Developpeur Frontend 1 (Next.js / React / TypeScript) — pages, interfaces utilisateur, navigation, formulaires 
+    45→    45→• Developpeur Frontend 2 (React / TypeScript) — composants reutilisables, Design System, state management 
+    46→    46→• Developpeur Backend 1 (Supabase / SQL) — schema BDD, RLS, triggers PostgreSQL, Edge Functions 
+    47→    47→• Developpeur Backend 2 (Next.js / Securite) — API Routes, middleware, authentification, crons 
+    48→    48→• Developpeur Integration (Dev 5) — FedaPay SDK web, WhatsApp API, Web Push, SMTP, filigrane PDF 
+    49→    49→ 
+    50→    50→ 
+    51→    51→
+    52→    52→
+    53→    53→=== Page 3 ===
+    54→    54→2. Planning detaille par phase 
+    55→    55→La phase P0 a ete scindee en deux sous-etapes : P0A (Infrastructure) et P0B (Architecture). Chaque phase inclut 
+    56→    56→desormais des tests de validation en fin de phase, critere obligatoire avant de passer a la suivante. 
+    57→    57→ 
+    58→    58→Phase 
+    59→    59→Nom 
+    60→    60→Dates (Duree) 
+    61→    61→Objectif 
+    62→    62→P0A 
+    63→    63→Infrastructure & 
+    64→    64→Environnement 
+    65→    65→20 – 26 Juillet 2026 (1 
+    66→    66→semaine) 
+    67→    67→Git + Next.js + Supabase + Vercel CI/CD + 
+    68→    68→ESLint/Prettier. 
+    69→    69→P0B 
+    70→    70→Architecture & Design 
+    71→    71→System 
+    72→    72→27 Juillet – 2 Août 
+    73→    73→2026 (1 semaine) 
+    74→    74→Schema BDD + diagramme ER + Design System + 
+    75→    75→architecture des routes. 
+    76→    76→P1 
+    77→    77→Authentification & Niveaux 
+    78→    78→d'acces 
+    79→    79→3 – 16 Août 2026 (2 
+    80→    80→semaines) 
+    81→    81→Connexion web, WebAuthn (passkeys), 8 
+    82→    82→niveaux RLS, middleware routes. 
+    83→    83→P2 
+    84→    84→Inscription & Gestion des 
+    85→    85→membres 
+    86→    86→17 Août – 6 
+    87→    87→Septembre 2026 (3 
+    88→    88→semaines) 
+    89→    89→Invitation email, formulaire inscription, 
+    90→    90→validation Master, profil, transitions roles. 
+    91→    91→P3 
+    92→    92→Gestion documentaire & 
+    93→    93→Recherche 
+    94→    94→7 – 20 Septembre 
+    95→    95→2026 (2 semaines) 
+    96→    96→Stockage documents, telechargement payant 
+    97→    97→(2eme+), filigrane cote serveur, AMC. 
+    98→    98→P4 
+    99→    99→Systeme de paiement & 
+   100→   100→Caisses 
+   101→   101→21 Septembre – 4 
+   102→   102→Octobre 2026 (2 
+   103→   103→semaines) 
+   104→   104→FedaPay SDK web (MoMo, Moov, carte), caisses 
+   105→   105→virtuelles, retraits valides, recus PDF. 
+   106→   106→P5 
+   107→   107→Messagerie & Notifications 
+   108→   108→5 – 18 Octobre 2026 
+   109→   109→(2 semaines) 
+   110→   110→Messagerie temps reel, regles hierarchiques, 
+   111→   111→Web Push, WhatsApp + email. 
+   112→   112→P6 
+   113→   113→Commandes uniformes & 
+   114→   114→Espace Landa 
+   115→   115→19 – 25 Octobre 2026 
+   116→   116→(1 semaine) 
+   117→   117→Module uniforme membres (cycle + double 
+   118→   118→validation) + page Landa sans compte. 
+   119→   119→P7 
+   120→   120→Administration, Audit & 
+   121→   121→Archivage 
+   122→   122→26 Octobre – 8 
+   123→   123→Novembre 2026 (2 
+   124→   124→semaines) 
+   125→   125→Memoire H immuable, archivage annuel auto, 
+   126→   126→transitions AMC/IGN, dashboard admin. 
+   127→   127→P8 
+   128→   128→Tests, optimisation & 
+   129→   129→deploiement 
+   130→   130→9 – 22 Novembre 
+   131→   131→2026 (2 semaines) 
+   132→   132→Tests cross-navigateur + responsivite + PWA + 
+   133→   133→deploiement Vercel + monitoring. 
+   134→   134→ 
+   135→   135→ 
+   136→   136→
+   137→   137→
+   138→   138→=== Page 4 ===
+   139→   139→3. Detail de chaque phase 
+   140→   140→Chaque phase est decrite avec ses taches par role, ses tests de fin de phase et ses livrables. Les tests de phase 
+   141→   141→sont obligatoires avant de commencer la phase suivante. 
+   142→   142→ 
+   143→   143→P0A  —  Infrastructure & Environnement 
+   144→   144→Periode : 20 – 26 Juillet 2026     |     Duree : 1 semaine 
+   145→   145→Mise en place de toute l'infrastructure de developpement : depot Git, projet Next.js, connexion Supabase, pipeline 
+   146→   146→CI/CD sur Vercel et configuration des outils qualite de code. 
+   147→   147→Taches par role 
+   148→   148→Developpeur Frontend 1 
+   149→   149→• Setup Next.js 14 (App Router + TypeScript strict) + Tailwind CSS + shadcn/ui 
+   150→   150→• Configuration ESLint + Prettier + conventions de code TypeScript 
+   151→   151→ 
+   152→   152→Developpeur Frontend 2 
+   153→   153→• Structure de dossiers Next.js : app/, components/, lib/, types/, hooks/ 
+   154→   154→ 
+   155→   155→Developpeur Backend 1 
+   156→   156→• Creer projet Supabase (Auth, BDD PostgreSQL, Storage, Realtime) 
+   157→   157→• Variables d'environnement (.env.local) + secrets Vercel 
+   158→   158→ 
+   159→   159→Developpeur Backend 2 
+   160→   160→• Firebase Web SDK pour les notifications push navigateur 
+   161→   161→ 
+   162→   162→Equipe 
+   163→   163→• Depot Git + GitFlow simplifie (main / develop / feature/*) 
+   164→   164→• Configuration CI/CD sur Vercel depuis la branche develop 
+   165→   165→• Definition des environnements : dev local / staging / production 
+   166→   166→• Tests de smoke : verification deploiement automatique fonctionne 
+   167→   167→ 
+   168→   168→Livrables de cette phase : 
+   169→   169→✓  Depot Git structure et workflows CI/CD actifs 
+   170→   170→✓  Projet Next.js deploye sur Vercel (env. staging) 
+   171→   171→✓  Supabase + Firebase configures et connectes 
+   172→   172→ 
+   173→   173→P0B  —  Architecture & Design System 
+   174→   174→Periode : 27 Juillet – 2 Août 2026     |     Duree : 1 semaine 
+   175→   175→
+   176→   176→
+   177→   177→=== Page 5 ===
+   178→   178→Conception de l'architecture technique complete : schema de base de donnees avec diagramme entite-association, 
+   179→   179→dictionnaire de donnees, Design System (composants reutilisables), et architecture des routes protegees. 
+   180→   180→Ce travail d'architecture realise en P0B evite de reprendre la structure BDD ou les composants au milieu du 
+   181→   181→developpement. Ne pas sauter cette etape. 
+   182→   182→Taches par role 
+   183→   183→Developpeur Frontend 1 
+   184→   184→• Design System : composants reutilisables (Button, Input, Modal, Table, Badge, Pagination, Toast, Skeleton) 
+   185→   185→• Theme couleurs FEUA + typographie + espacements (tokens Tailwind) 
+   186→   186→ 
+   187→   187→Developpeur Frontend 2 
+   188→   188→• Charte graphique responsive validee (desktop / tablette / mobile) 
+   189→   189→ 
+   190→   190→Developpeur Backend 1 
+   191→   191→• Schema BDD complet : members, roles, documents, caisses, messages, uniforms, audit_log 
+   192→   192→• Diagramme Entite-Association (ER) via dbdiagram.io 
+   193→   193→ 
+   194→   194→Developpeur Backend 2 
+   195→   195→• Dictionnaire de donnees : types, contraintes, index, cles etrangeres, vues SQL 
+   196→   196→• Politiques RLS pour les 8 niveaux d'acces + tests d'acces croise 
+   197→   197→ 
+   198→   198→Equipe 
+   199→   199→• Architecture des routes Next.js App Router (routes protegees par middleware) 
+   200→   200→• Documentation API Routes : parametres, reponses JSON, codes d'erreur, permissions 
+   201→   201→• Convention de nommage BDD + API + composants validee par l'equipe 
+   202→   202→ 
+   203→   203→Livrables de cette phase : 
+   204→   204→✓  Schema BDD valide + diagramme ER documente 
+   205→   205→✓  Design System de base (8+ composants) 
+   206→   206→✓  Architecture routes + conventions documentees 
+   207→   207→ 
+   208→   208→P1  —  Authentification & Niveaux d'acces 
+   209→   209→Periode : 3 – 16 Août 2026     |     Duree : 2 semaines 
+   210→   210→Systeme de connexion web complet : formulaire email/mot de passe, WebAuthn (passkeys) pour l'equivalent de la 
+   211→   211→biometrie, code de recuperation (8 min), protection des routes par middleware Next.js. 
+   212→   212→Taches par role 
+   213→   213→Developpeur Frontend 1 
+   214→   214→• Page d'accueil : choix Membre FEUA / Etudiant Landa + bandeau communiques defilant 
+   215→   215→• Formulaire de connexion web (email + mot de passe) + WebAuthn / Passkeys 
+   216→   216→
+   217→   217→
+   218→   218→=== Page 6 ===
+   219→   219→ 
+   220→   220→Developpeur Frontend 2 
+   221→   221→• Page de recuperation de compte (code email, expiration 8 minutes) 
+   222→   222→• Page connexion AMC (email + mot de passe initial, acces restreint) 
+   223→   223→ 
+   224→   224→Developpeur Backend 1 
+   225→   225→• Supabase Auth : JWT + cookies HTTP-only securises 
+   226→   226→• Middleware Next.js (middleware.ts) : protection des routes selon le role 
+   227→   227→• RLS complet pour les 8 niveaux (CEO → AMC) + tests d'acces 
+   228→   228→ 
+   229→   229→Developpeur Backend 2 
+   230→   230→• Expiration session 24h (Min/Mix/Master), prolongee pour Mast/Mast In 
+   231→   231→• Blocage apres 5 tentatives + envoi code de recuperation 
+   232→   232→ 
+   233→   233→Equipe (Tests de fin de phase) 
+   234→   234→• Tests securite : XSS, CSRF, brute force, injection SQL 
+   235→   235→• Tests cross-navigateur : Chrome, Firefox, Safari, Edge 
+   236→   236→• Tests de connexion pour chacun des 8 niveaux (droits reels) 
+   237→   237→• Tests middleware : tentative d'acces non autorise → redirecƟon correcte 
+   238→   238→ 
+   239→   239→Livrables de cette phase : 
+   240→   240→✓  Connexion web fonctionnelle (8 niveaux) 
+   241→   241→✓  WebAuthn (passkeys) operationnel 
+   242→   242→✓  RLS implemante et teste 
+   243→   243→✓  Tests de securite auth passes 
+   244→   244→ 
+   245→   245→P2  —  Inscription & Gestion des membres 
+   246→   246→Periode : 17 Août – 6 Septembre 2026     |     Duree : 3 semaines 
+   247→   247→Flow complet d'invitation email, formulaire d'inscription web (15+ champs), validation par Master, interface profil 
+   248→   248→membre, archive Donnees indiscipline et transitions de roles. 
+   249→   249→Taches par role 
+   250→   250→Developpeur Frontend 1 
+   251→   251→• Flow invitation : Master saisit email + telephone → lien envoye automaƟquement 
+   252→   252→• Formulaire inscription web multi-etapes (matricule, filiere, entite, date de naissance, photo...) 
+   253→   253→ 
+   254→   254→Developpeur Frontend 2 
+   255→   255→• Interface profil membre (tableau de bord) + interface admin Master (liste, recherche, modifier) 
+   256→   256→• Barre de recherche globale (membres actifs + archives) avec filtres 
+   257→   257→
+   258→   258→
+   259→   259→=== Page 7 ===
+   260→   260→ 
+   261→   261→Developpeur Backend 1 
+   262→   262→• Email d'invitation automatique via SMTP (Resend ou Nodemailer) 
+   263→   263→• Notification Master + email confirmation post-validation 
+   264→   264→• Archive "Donnees indiscipline" lors de la suppression d'un compte 
+   265→   265→ 
+   266→   266→Developpeur Backend 2 
+   267→   267→• Logique transitions de niveaux + verification unicite matricule/email 
+   268→   268→• Validation Zod cote serveur pour tous les formulaires 
+   269→   269→ 
+   270→   270→Equipe (Tests de fin de phase) 
+   271→   271→• Tests du cycle complet d'inscription bout en bout 
+   272→   272→• Verification des regles de transition (tableau §2.2 du CDC) 
+   273→   273→• Tests de charge : 10 inscriptions simultanees → pas de doublon 
+   274→   274→• Tests validation Zod : champs invalides, injection tentee 
+   275→   275→ 
+   276→   276→Livrables de cette phase : 
+   277→   277→✓  Inscription bout en bout fonctionnelle 
+   278→   278→✓  Profils membres complets 
+   279→   279→✓  Transitions de roles testees 
+   280→   280→✓  Validation Zod cote serveur 
+   281→   281→ 
+   282→   282→P3  —  Gestion documentaire & Recherche 
+   283→   283→Periode : 7 – 20 Septembre 2026     |     Duree : 2 semaines 
+   284→   284→Stockage securise des documents via Supabase Storage (protege par RLS), telechargement gratuit pour le 1er puis 
+   285→   285→payant (500 FCFA minimum), filigrane numerique cote serveur et espace AMC. 
+   286→   286→Taches par role 
+   287→   287→Developpeur Frontend 1 
+   288→   288→• Upload carte etudiante (PDF/image) + fiche pre-inscription via formulaire web 
+   289→   289→• Interface "Mes documents" : liste, apercu, telechargement 
+   290→   290→ 
+   291→   291→Developpeur Frontend 2 
+   292→   292→• Interface AMC : archives consultables + telechargement payant 
+   293→   293→• Barre recherche avancee par nom, matricule, annee + export CSV/PDF 
+   294→   294→ 
+   295→   295→Developpeur Backend 1 
+   296→   296→• Supabase Storage avec signed URLs (acces securise et temporaire, RLS par membre) 
+   297→   297→• Compteur telechargements : 1er gratuit, 500 FCFA minimum a partir du 2eme 
+   298→   298→
+   299→   299→
+   300→   300→=== Page 8 ===
+   301→   301→ 
+   302→   302→Developpeur Backend 2 
+   303→   303→• API Route export liste membres (CSV/PDF) 
+   304→   304→ 
+   305→   305→Developpeur Integration (Dev 5) 
+   306→   306→• Filigrane numerique cote serveur (sharp.js pour images, pdf-lib pour PDF) : nom + matricule 
+   307→   307→• Lien paiement conditionnel avant 2eme telechargement 
+   308→   308→• Recu auto-genere et envoye par email + WhatsApp pour les AMC 
+   309→   309→ 
+   310→   310→Equipe (Tests de fin de phase) 
+   311→   311→• Tests telechargement : 1er gratuit (OK), 2eme bloque (redirect paiement) 
+   312→   312→• Tests filigrane : lisibilite, positionnement, cas limite (noms longs) 
+   313→   313→• Tests acces croise : un membre ne peut pas acceder aux docs d'un autre 
+   314→   314→ 
+   315→   315→Livrables de cette phase : 
+   316→   316→✓  Stockage documents securise (RLS) 
+   317→   317→✓  Filigrane cote serveur operationnel 
+   318→   318→✓  Interface AMC fonctionnelle 
+   319→   319→✓  Tests d'acces croise passes 
+   320→   320→ 
+   321→   321→P4  —  Systeme de paiement & Caisses 
+   322→   322→Periode : 21 Septembre – 4 Octobre 2026     |     Duree : 2 semaines 
+   323→   323→Integration FedaPay via SDK web (MTN MoMo, Moov Money, carte Visa/Mastercard), gestion des caisses virtuelles 
+   324→   324→multi-services, flux de validation des retraits TG/TGA et recus PDF automatiques. 
+   325→   325→ATTENTION : Faire la demande d'activation du compte marchand FedaPay des la semaine 1 (delai de 3 a 7 jours 
+   326→   326→ouvrables). Ne pas attendre P4. 
+   327→   327→Taches par role 
+   328→   328→Developpeur Frontend 1 
+   329→   329→• Page paiement web (MTN MoMo, Moov Money, carte) via FedaPay Checkout 
+   330→   330→• Dashboard soldes caisses (Master, Mast, Mast In) + interface retrait TG/TGA 
+   331→   331→ 
+   332→   332→Developpeur Frontend 2 
+   333→   333→• Page bilan comptable avec filtres par periode 
+   334→   334→ 
+   335→   335→Developpeur Backend 1 
+   336→   336→• Gestion multi-caisses virtuelles (principale, uniformes, services numeriques) 
+   337→   337→• Flux validation retrait : TG/TGA soumet → Mast In valide (Supabase RealƟme) 
+   338→   338→ 
+   339→   339→
+   340→   340→
+   341→   341→=== Page 9 ===
+   342→   342→Developpeur Backend 2 
+   343→   343→• Webhook FedaPay : confirmation paiement cote serveur 
+   344→   344→• Import document budgetaire (Excel/PDF) + bilan comptable automatique 
+   345→   345→ 
+   346→   346→Developpeur Integration (Dev 5) 
+   347→   347→• FedaPay JavaScript SDK + API Routes Next.js securisees 
+   348→   348→• Generation recu PDF cote serveur (pdf-lib ou Puppeteer) 
+   349→   349→• Envoi automatique recu par email + WhatsApp 
+   350→   350→ 
+   351→   351→Equipe (Tests de fin de phase) 
+   352→   352→• Tests paiement sandbox : MoMo, Moov, carte (succes + echec + timeout) 
+   353→   353→• Tests flux retrait : TG soumet → Mast In valide → noƟﬁcaƟon temps reel 
+   354→   354→• Tests webhook : signature FedaPay, idempotence (doublon) 
+   355→   355→• Verification recus PDF : contenu correct, envoi email + WhatsApp 
+   356→   356→ 
+   357→   357→Livrables de cette phase : 
+   358→   358→✓  Paiement web operationnel (sandbox valide) 
+   359→   359→✓  Caisses multi-services gerees 
+   360→   360→✓  Recus PDF envoyes automatiquement 
+   361→   361→✓  Tous les tests paiement passes 
+   362→   362→ 
+   363→   363→P5  —  Messagerie & Notifications 
+   364→   364→Periode : 5 – 18 Octobre 2026     |     Duree : 2 semaines 
+   365→   365→Messagerie pleniere et privee avec regles hierarchiques (Min-Min bloque), notifications push navigateur via Web 
+   366→   366→Push API, et canaux externes WhatsApp Business API et email SMTP. 
+   367→   367→ATTENTION : Entamer la verification du compte Meta Business des la semaine 3 (delai jusqu'a 2 semaines). En 
+   368→   368→attendant, utiliser le sandbox Twilio WhatsApp pour les tests. 
+   369→   369→Taches par role 
+   370→   370→Developpeur Frontend 1 
+   371→   371→• UI messagerie pleniere (Acces All, lecture + ecriture, temps reel) 
+   372→   372→• UI messagerie privee : regles hierarchiques (§4.6 du CDC) 
+   373→   373→ 
+   374→   374→Developpeur Frontend 2 
+   375→   375→• Centre notifications in-app + bandeau defilant communiques 
+   376→   376→ 
+   377→   377→Developpeur Backend 1 
+   378→   378→• Supabase Realtime : canaux messages temps reel + logique blocage Min-Min et Mix-Mix 
+   379→   379→• Service Worker (sw.js) + Web Push API + FCM Web SDK 
+   380→   380→
+   381→   381→
+   382→   382→=== Page 10 ===
+   383→   383→ 
+   384→   384→Developpeur Backend 2 
+   385→   385→• Fonction relance globale CEO : re-notification membres sans fiche soumise 
+   386→   386→ 
+   387→   387→Developpeur Integration (Dev 5) 
+   388→   388→• WhatsApp Business API (Twilio ou Infobip) 
+   389→   389→• Email SMTP (Resend) pour convocations et communiques 
+   390→   390→• Facebook Messenger via Meta Graph API (optionnel) 
+   391→   391→• Canaux actifs meme si la page est fermee (Service Worker en arriere-plan) 
+   392→   392→ 
+   393→   393→Equipe (Tests de fin de phase) 
+   394→   394→• Tests messagerie temps reel (envoi, reception, persistance) 
+   395→   395→• Tests blocage hierarchique (tous les cas du tableau §4.6) 
+   396→   396→• Tests push navigateur (Chrome, Firefox, Edge) 
+   397→   397→• Tests WhatsApp sandbox + email : reception, contenu correct 
+   398→   398→ 
+   399→   399→Livrables de cette phase : 
+   400→   400→✓  Messagerie temps reel fonctionnelle 
+   401→   401→✓  Web Push notifications operationnel 
+   402→   402→✓  Regles hierarchiques testees et validees 
+   403→   403→✓  WhatsApp + email operationnels (sandbox) 
+   404→   404→ 
+   405→   405→P6  —  Commandes uniformes & Espace Landa 
+   406→   406→Periode : 19 – 25 Octobre 2026     |     Duree : 1 semaine 
+   407→   407→Module de commande d'uniforme pour membres (cycle annuel avec double validation Master) et page web publique 
+   408→   408→pour les etudiants landa sans creation de compte. 
+   409→   409→Taches par role 
+   410→   410→Developpeur Frontend 1 
+   411→   411→• Module commande uniforme : bouton cyclique (1ere / 2eme / Neme annee) + recap admin 
+   412→   412→ 
+   413→   413→Developpeur Frontend 2 
+   414→   414→• Page publique Espace Landa (route non protegee) + formulaire complet (upload recu, CGU) 
+   415→   415→ 
+   416→   416→Developpeur Backend 1 
+   417→   417→• Logique cycle commande BDD (etats : en_attente → val1 → val2 → livre) 
+   418→   418→ 
+   419→   419→Developpeur Backend 2 
+   420→   420→
+   421→   421→
+   422→   422→=== Page 11 ===
+   423→   423→• Comptage automatique via requete SQL COUNT (pas d'IA requise) 
+   424→   424→ 
+   425→   425→Developpeur Integration (Dev 5) 
+   426→   426→• Notifications multi-canaux Landa quand uniforme pret (email + WhatsApp + Facebook) 
+   427→   427→• Recu numerique avec numero d'identification unique a la soumission 
+   428→   428→ 
+   429→   429→Equipe (Tests de fin de phase) 
+   430→   430→• Tests cycle commande complet (3 cycles successifs) 
+   431→   431→• Tests Espace Landa : soumission, paiement, reception recu, notification ready 
+   432→   432→• Tests acces : page Landa accessible sans connexion, protegee correctement 
+   433→   433→ 
+   434→   434→Livrables de cette phase : 
+   435→   435→✓  Commandes membres fonctionnelles (3 cycles testes) 
+   436→   436→✓  Espace Landa public operationnel 
+   437→   437→✓  Notifications Landa multi-canaux 
+   438→   438→✓  Tests P6 passes 
+   439→   439→ 
+   440→   440→P7  —  Administration, Audit & Archivage 
+   441→   441→Periode : 26 Octobre – 8 Novembre 2026     |     Duree : 2 semaines 
+   442→   442→Memoire H (journal PostgreSQL immuable et horodate), archivage automatique annuel, regles de transition de statut 
+   443→   443→(3 ans→AMC, IGN +2 ans) et dashboard administrateur pour le Mast In. 
+   444→   444→IMPORTANT : La Memoire H doit etre immuable des la creation. Politique RLS PostgreSQL WITH CHECK (false) sur 
+   445→   445→UPDATE et DELETE. Meme le CEO ne peut pas modifier les entrees. 
+   446→   446→Taches par role 
+   447→   447→Developpeur Frontend 1 
+   448→   448→• Dashboard Memoire H (CEO + Mast In seulement) : tableau filtre, tri par date/acteur/action 
+   449→   449→• Interface archives par annee scolaire (lecture seule) + dashboard statistiques Mast In 
+   450→   450→ 
+   451→   451→Developpeur Frontend 2 
+   452→   452→• Extraction et export coordonnees (email/tel) par niveau d'acces 
+   453→   453→ 
+   454→   454→Developpeur Backend 1 
+   455→   455→• Memoire H : table PostgreSQL append-only (RLS WITH CHECK (false) sur UPDATE/DELETE) 
+   456→   456→• Triggers archivage automatique fin d'annee + regle 3 ans → AMC (cron Edge FuncƟon) 
+   457→   457→ 
+   458→   458→Developpeur Backend 2 
+   459→   459→• Extension IGN (+2 ans) + blocage membres sans fiche + messages Felicitations/Du courage 
+   460→   460→• Anti-doublon totaux cumules inter-archives + sauvegardes automatiques Supabase 
+   461→   461→
+   462→   462→
+   463→   463→=== Page 12 ===
+   464→   464→ 
+   465→   465→Equipe (Tests de fin de phase) 
+   466→   466→• Tests immuabilite Memoire H : modifier/supprimer → erreur pour tous les niveaux (CEO inclus) 
+   467→   467→• Tests transitions AMC et IGN sur donnees realistes 
+   468→   468→• Tests archivage : archive correcte, acces lecture seule uniquement 
+   469→   469→• Tests sauvegardes : restauration d'une archive 
+   470→   470→ 
+   471→   471→Livrables de cette phase : 
+   472→   472→✓  Memoire H immuable (tests passes pour tous niveaux) 
+   473→   473→✓  Archivage annuel automatise et teste 
+   474→   474→✓  Dashboard admin complet 
+   475→   475→✓  Sauvegardes automatiques configurees 
+   476→   476→ 
+   477→   477→P8  —  Tests, optimisation & deploiement 
+   478→   478→Periode : 9 – 22 Novembre 2026     |     Duree : 2 semaines 
+   479→   479→Tests unitaires et d'integration, tests de responsivite, beta test terrain avec membres FEUA, configuration PWA, 
+   480→   480→deploiement sur Vercel avec domaine personnalise et monitoring de production. 
+   481→   481→Taches par role 
+   482→   482→Developpeur Frontend 1 
+   483→   483→• Tests responsivite : mobile (375px), tablette (768px), desktop (1280px+) + corrections 
+   484→   484→• Configuration PWA : manifest.json + Service Worker + installation ecran d'accueil 
+   485→   485→ 
+   486→   486→Developpeur Frontend 2 
+   487→   487→• Optimisation Core Web Vitals : Lighthouse score > 85, next/image, code splitting 
+   488→   488→ 
+   489→   489→Developpeur Backend 1 
+   490→   490→• Tests integration flux critiques (auth, paiement, archivage) 
+   491→   491→• Audit securite : RLS exhaustif, cookies HTTP-only, headers CSP/CORS, Rate Limiting 
+   492→   492→ 
+   493→   493→Developpeur Backend 2 
+   494→   494→• Conformite APDP (loi beninoise protection donnees) + HTTPS/TLS 1.3 production 
+   495→   495→ 
+   496→   496→Equipe 
+   497→   497→• Tests cross-navigateur (Chrome, Firefox, Safari, Edge) avec Playwright ou manuel 
+   498→   498→• Beta test avec 5 a 10 membres FEUA (desktop + mobile) + correction bugs prioritaires 
+   499→   499→• Configuration Sentry (error tracking) + Vercel Analytics + alertes uptime 
+   500→   500→• Deploiement Vercel production + domaine personnalise + guide utilisateur + formation equipe 
+   501→   501→ 
+   502→   502→
+   503→   503→
+   504→   504→=== Page 13 ===
+   505→   505→Livrables de cette phase : 
+   506→   506→✓  Application web deployee sur Vercel (production) 
+   507→   507→✓  PWA installable sur mobile 
+   508→   508→✓  Rapport de tests final valide 
+   509→   509→✓  Monitoring Sentry + Analytics actifs 
+   510→   510→✓  Equipe BS-Lokossa formee 
+   511→   511→ 
+   512→   512→ 
+   513→   513→
+   514→   514→
+   515→   515→=== Page 14 ===
+   516→   516→4. Inventaire complet des outils IA gratuits 
+   517→   517→Inventaire de tous les outils d'intelligence artificielle gratuits utilisables pour realiser le projet BS-Lokossa. 
+   518→   518→Organise par categorie de besoin pour faciliter le choix selon la tache a accomplir. La plupart ont un plan gratuit 
+   519→   519→suffisant pour toute la duree du projet (juillet a novembre 2026). 
+   520→   520→IMPORTANT : Ces outils sont complementaires. Un developpeur utilisera typiquement 3 a 4 outils en parallele selon la 
+   521→   521→nature de la tache. La strategie recommandee est presentee en section 4.9. 
+   522→   522→4.1 1 — Assistants IA polyvalents 
+   523→   523→Outils d'IA conversationnels utilisables pour generer du code, expliquer des concepts, ecrire de la 
+   524→   524→documentation ou deboguer des problemes complexes. 
+   525→   525→ 
+   526→   526→Outil 
+   527→   527→Description 
+   528→   528→Plan gratuit 
+   529→   529→Usage pour BS-Lokossa 
+   530→   530→Claude (claude.ai) 
+   531→   531→IA generative Anthropic, 
+   532→   532→excellente pour le code 
+   533→   533→complexe, l'architecture et la 
+   534→   534→documentation longue. 
+   535→   535→Oui — plan gratuit 
+   536→   536→avec limites 
+   537→   537→quotidiennes 
+   538→   538→(Claude Sonnet) 
+   539→   539→Architecture Next.js, code 
+   540→   540→complexe, politiques RLS, 
+   541→   541→revue de code, 
+   542→   542→documentation technique 
+   543→   543→ChatGPT (GPT-4o) 
+   544→   544→IA OpenAI tres repandue, 
+   545→   545→polyvalente pour le code et 
+   546→   546→l'explication de concepts. 
+   547→   547→Oui — GPT-4o avec 
+   548→   548→limites 
+   549→   549→quotidiennes, GPT-
+   550→   550→3.5 illimite 
+   551→   551→Generation de code, debug, 
+   552→   552→questions rapides, explication 
+   553→   553→d'algorithmes 
+   554→   554→Google Gemini 
+   555→   555→IA Google avec acces au web en 
+   556→   556→temps reel. Tres integree avec 
+   557→   557→l'ecosysteme Google. 
+   558→   558→Oui — Gemini 1.5 
+   559→   559→Pro limite, Gemini 
+   560→   560→1.0 Pro plus libre 
+   561→   561→Firebase, APIs Google, 
+   562→   562→recherche avec sources 
+   563→   563→recentes, integrations Cloud 
+   564→   564→Mistral Le Chat 
+   565→   565→IA europeenne performante, 
+   566→   566→bonne en raisonnement logique 
+   567→   567→et code structure. 
+   568→   568→Oui — acces web 
+   569→   569→illimite sur 
+   570→   570→chat.mistral.ai 
+   571→   571→Code technique, 
+   572→   572→raisonnement, alternatives a 
+   573→   573→Claude/ChatGPT 
+   574→   574→DeepSeek 
+   575→   575→IA chinoise tres performante sur 
+   576→   576→les taches de code, comparable a 
+   577→   577→GPT-4. 
+   578→   578→Oui — acces web 
+   579→   579→illimite sur 
+   580→   580→deepseek.com 
+   581→   581→Code complexe, algorithmes, 
+   582→   582→generation de code 
+   583→   583→TypeScript/SQL 
+   584→   584→Meta AI (Llama 3) 
+   585→   585→IA Meta accessible directement 
+   586→   586→dans WhatsApp, Facebook et 
+   587→   587→Instagram. 
+   588→   588→Oui — sans limite 
+   589→   589→connue 
+   590→   590→Questions rapides, integration 
+   591→   591→naturelle WhatsApp pour 
+   592→   592→tester des prompts 
+   593→   593→ 
+   594→   594→ 
+   595→   595→4.2 2 — IDE et assistants de code integres 
+   596→   596→Environnements de developpement ou extensions qui integrent l'IA directement dans l'editeur de code pour 
+   597→   597→l'autocompletion et le refactoring. 
+   598→   598→ 
+   599→   599→
+   600→   600→
+   601→   601→=== Page 15 ===
+   602→   602→Outil 
+   603→   603→Description 
+   604→   604→Plan gratuit 
+   605→   605→Usage pour BS-Lokossa 
+   606→   606→Windsurf 
+   607→   607→(Codeium) 
+   608→   608→IDE base sur VSCode avec IA 
+   609→   609→profondement integree. 
+   610→   610→Comprend tout le codebase du 
+   611→   611→projet. 
+   612→   612→Oui — plan gratuit 
+   613→   613→tres liberal, sans 
+   614→   614→limite stricte 
+   615→   615→Developpement Next.js au 
+   616→   616→quotidien, refactoring, 
+   617→   617→generation de composants 
+   618→   618→React 
+   619→   619→Cursor 
+   620→   620→IDE fork de VSCode avec IA 
+   621→   621→integree. Permet de "chatter" 
+   622→   622→avec tout le codebase. 
+   623→   623→Oui — 150 
+   624→   624→requetes/mois 
+   625→   625→gratuites 
+   626→   626→Questions sur le codebase 
+   627→   627→complet, navigation, 
+   628→   628→comprendre des erreurs 
+   629→   629→complexes 
+   630→   630→GitHub Copilot 
+   631→   631→Autocompletion de code en 
+   632→   632→temps reel, integree dans VS 
+   633→   633→Code et autres IDE. 
+   634→   634→Oui — gratuit pour 
+   635→   635→etudiants via 
+   636→   636→GitHub Education 
+   637→   637→Pack 
+   638→   638→Autocompletion 
+   639→   639→TypeScript/React, generation 
+   640→   640→de fonctions, tests unitaires 
+   641→   641→Codeium 
+   642→   642→(extension) 
+   643→   643→Extension d'autocompletion IA 
+   644→   644→legere, compatible avec VS 
+   645→   645→Code, JetBrains, Vim. 
+   646→   646→Oui — illimite sur le 
+   647→   647→plan gratuit 
+   648→   648→Autocompletion rapide, 
+   649→   649→alternative gratuite a Copilot 
+   650→   650→sans limite d'essai 
+   651→   651→Blackbox AI 
+   652→   652→IA specialisee dans la generation 
+   653→   653→et l'extraction de code depuis 
+   654→   654→n'importe quelle source. 
+   655→   655→Oui — plan de base 
+   656→   656→gratuit 
+   657→   657→Generer des snippets rapides, 
+   658→   658→convertir du pseudo-code en 
+   659→   659→TypeScript 
+   660→   660→Amazon Q 
+   661→   661→Developer 
+   662→   662→Assistant IA AWS pour le code, 
+   663→   663→avec analyse de securite 
+   664→   664→integree. 
+   665→   665→Oui — tier gratuit 
+   666→   666→individuel sans 
+   667→   667→carte requise 
+   668→   668→Analyse de vulnerabilites dans 
+   669→   669→le code Next.js, suggestions 
+   670→   670→securite 
+   671→   671→Tabnine 
+   672→   672→Autocompletion IA disponible 
+   673→   673→sur la plupart des IDE. 
+   674→   674→Oui — plan de base 
+   675→   675→gratuit (modele 
+   676→   676→local) 
+   677→   677→Complement d'autocompletion 
+   678→   678→si Codeium ou Copilot ne sont 
+   679→   679→pas disponibles 
+   680→   680→ 
+   681→   681→ 
+   682→   682→4.3 3 — Generation d'interfaces UI (React / Next.js) 
+   683→   683→Outils specialises pour generer des composants React et des pages Next.js directement exploitables dans le 
+   684→   684→projet, avec Tailwind CSS. 
+   685→   685→ 
+   686→   686→Outil 
+   687→   687→Description 
+   688→   688→Plan gratuit 
+   689→   689→Usage pour BS-Lokossa 
+   690→   690→v0.dev (Vercel) 
+   691→   691→Genere des composants React + 
+   692→   692→Tailwind CSS directement reutilisables 
+   693→   693→dans Next.js. Ideal pour prototyper 
+   694→   694→des UI complexes. 
+   695→   695→Oui — quota 
+   696→   696→mensuel gratuit 
+   697→   697→(relance chaque 
+   698→   698→mois) 
+   699→   699→Formulaires, tableaux de 
+   700→   700→bord, messagerie, pages 
+   701→   701→admin, composants 
+   702→   702→complexes 
+   703→   703→Bolt.new 
+   704→   704→(StackBlitz) 
+   705→   705→Genere des applications web 
+   706→   706→completes en quelques secondes 
+   707→   707→depuis une description. 
+   708→   708→Oui — quota 
+   709→   709→quotidien gratuit 
+   710→   710→Prototyper rapidement une 
+   711→   711→nouvelle fonctionnalite 
+   712→   712→avant de l'integrer dans le 
+   713→   713→projet 
+   714→   714→
+   715→   715→
+   716→   716→=== Page 16 ===
+   717→   717→Outil 
+   718→   718→Description 
+   719→   719→Plan gratuit 
+   720→   720→Usage pour BS-Lokossa 
+   721→   721→Lovable.dev 
+   722→   722→Genere des applications React full-
+   723→   723→stack avec logique et UI en une seule 
+   724→   724→description. 
+   725→   725→Oui — 5 projets 
+   726→   726→par mois 
+   727→   727→Prototyper des ecrans 
+   728→   728→complets (tableau de bord 
+   729→   729→Mast In, messagerie, Espace 
+   730→   730→Landa) 
+   731→   731→Uizard 
+   732→   732→Outil de prototypage rapide avec IA, 
+   733→   733→permet de transformer une image en 
+   734→   734→UI. 
+   735→   735→Oui — 2 projets 
+   736→   736→sur le plan gratuit 
+   737→   737→Creer des wireframes et 
+   738→   738→maquettes des ecrans 
+   739→   739→principaux avant le 
+   740→   740→developpement 
+   741→   741→Galileo AI 
+   742→   742→Genere des maquettes UI depuis une 
+   743→   743→description textuelle. 
+   744→   744→Acces gratuit 
+   745→   745→limite (liste 
+   746→   746→d'attente) 
+   747→   747→Generer des concepts visuels 
+   748→   748→d'ecrans complexes a valider 
+   749→   749→avec l'equipe 
+   750→   750→ 
+   751→   751→ 
+   752→   752→4.4 4 — Base de donnees et SQL 
+   753→   753→Outils IA specialises dans la conception de schemas, la generation de requetes SQL et la gestion des politiques de 
+   754→   754→securite en base de donnees. 
+   755→   755→ 
+   756→   756→Outil 
+   757→   757→Description 
+   758→   758→Plan gratuit 
+   759→   759→Usage pour BS-Lokossa 
+   760→   760→Supabase AI 
+   761→   761→(integre) 
+   762→   762→Assistant SQL directement dans 
+   763→   763→l'editeur Supabase. Genere des 
+   764→   764→tables, des politiques RLS et des 
+   765→   765→Edge Functions. 
+   766→   766→Oui — integre a la 
+   767→   767→plateforme 
+   768→   768→Supabase (plan 
+   769→   769→gratuit) 
+   770→   770→Creer les tables, ecrire les 
+   771→   771→politiques RLS, optimiser les 
+   772→   772→requetes, generer les triggers 
+   773→   773→AI2sql.io 
+   774→   774→Convertit des descriptions en 
+   775→   775→langage naturel en requetes SQL 
+   776→   776→optimisees. 
+   777→   777→Oui — 10 requetes 
+   778→   778→par jour (sans 
+   779→   779→compte) 
+   780→   780→Generer des requetes 
+   781→   781→complexes (ex: stats membres 
+   782→   782→par institution par annee 
+   783→   783→scolaire) 
+   784→   784→Chat2DB 
+   785→   785→IDE de base de donnees avec 
+   786→   786→assistant IA integre pour 
+   787→   787→explorer et optimiser la BDD. 
+   788→   788→Oui — plan open 
+   789→   789→source gratuit 
+   790→   790→Explorer la base Supabase, 
+   791→   791→optimiser les requetes lentes, 
+   792→   792→analyser les index 
+   793→   793→dbdiagram.io 
+   794→   794→Outil de creation de diagrammes 
+   795→   795→ER (Entite-Association) depuis un 
+   796→   796→schema textuel DBML. 
+   797→   797→Oui — illimite pour 
+   798→   798→les diagrammes 
+   799→   799→publics 
+   800→   800→Creer et partager le diagramme 
+   801→   801→ER du projet BS-Lokossa 
+   802→   802→(obligatoire en P0B) 
+   803→   803→DrawSQL 
+   804→   804→Conception visuelle de schemas 
+   805→   805→de bases de donnees avec export 
+   806→   806→SQL. 
+   807→   807→Oui — plan gratuit 
+   808→   808→avec 1 schema 
+   809→   809→Modeliser la BDD visuellement 
+   810→   810→et exporter le SQL initial pour 
+   811→   811→Supabase 
+   812→   812→ 
+   813→   813→ 
+   814→   814→4.5 5 — Recherche technique et documentation 
+   815→   815→
+   816→   816→
+   817→   817→=== Page 17 ===
+   818→   818→Moteurs de recherche specialises dans les questions de developpement, avec sources verifiees et exemples de 
+   819→   819→code. 
+   820→   820→ 
+   821→   821→Outil 
+   822→   822→Description 
+   823→   823→Plan gratuit 
+   824→   824→Usage pour BS-Lokossa 
+   825→   825→Perplexity AI 
+   826→   826→Moteur de recherche IA avec 
+   827→   827→citations. Repond aux questions 
+   828→   828→techniques avec des sources 
+   829→   829→recentes. 
+   830→   830→Oui — plan gratuit 
+   831→   831→avec acces au web 
+   832→   832→Integrer FedaPay en Next.js, 
+   833→   833→WhatsApp Business API, 
+   834→   834→WebAuthn, Supabase Realtime 
+   835→   835→Phind 
+   836→   836→Moteur de recherche specialise 
+   837→   837→pour les developpeurs. Repond 
+   838→   838→avec du code et des explications. 
+   839→   839→Oui — illimite 
+   840→   840→(modele Phind-70B) 
+   841→   841→Erreurs Next.js/TypeScript, 
+   842→   842→solutions Supabase, patterns 
+   843→   843→React courants 
+   844→   844→You.com (YouCode) 
+   845→   845→Moteur de recherche avec 
+   846→   846→assistant IA et mode code dedie. 
+   847→   847→Oui — acces de 
+   848→   848→base gratuit 
+   849→   849→Recherche de bibliotheques 
+   850→   850→npm, documentation APIs, 
+   851→   851→exemples de code 
+   852→   852→Devv.ai 
+   853→   853→Moteur de recherche IA dedie 
+   854→   854→aux developpeurs, avec 
+   855→   855→indexation de GitHub. 
+   856→   856→Oui — illimite 
+   857→   857→Questions techniques precises 
+   858→   858→avec exemples du code open 
+   859→   859→source pertinents 
+   860→   860→Mintlify Writer 
+   861→   861→Genere automatiquement de la 
+   862→   862→documentation a partir du code 
+   863→   863→source. 
+   864→   864→Oui — plan gratuit 
+   865→   865→pour 
+   866→   866→documentation 
+   867→   867→publique 
+   868→   868→Generer la documentation des 
+   869→   869→API Routes et des composants 
+   870→   870→du projet 
+   871→   871→ 
+   872→   872→ 
+   873→   873→4.6 6 — Tests et qualite de code 
+   874→   874→Outils d'analyse statique, de tests automatises et de qualite de code avec assistance IA. 
+   875→   875→ 
+   876→   876→Outil 
+   877→   877→Description 
+   878→   878→Plan gratuit 
+   879→   879→Usage pour BS-Lokossa 
+   880→   880→Snyk (ex-
+   881→   881→DeepCode) 
+   882→   882→Analyse de securite du code avec 
+   883→   883→IA. Detecte les vulnerabilites en 
+   884→   884→temps reel. 
+   885→   885→Oui — gratuit pour 
+   886→   886→projets open source, 
+   887→   887→200 tests/mois sinon 
+   888→   888→Detecter les failles dans le 
+   889→   889→code Next.js, les dependances 
+   890→   890→npm vulnerables 
+   891→   891→SonarCloud 
+   892→   892→Analyse statique de qualite du 
+   893→   893→code : bugs, code smells, 
+   894→   894→couverture des tests. 
+   895→   895→Oui — gratuit pour 
+   896→   896→projets publics 
+   897→   897→GitHub 
+   898→   898→Maintenir la qualite du code 
+   899→   899→tout au long du projet, integre 
+   900→   900→dans la CI/CD 
+   901→   901→Playwright (IA-
+   902→   902→assisted) 
+   903→   903→Framework de tests E2E (end-to-
+   904→   904→end) avec generation de tests via 
+   905→   905→IA (Copilot/Cursor). 
+   906→   906→Oui — open source 
+   907→   907→gratuit 
+   908→   908→Tests cross-navigateur 
+   909→   909→automatises (Chrome, Firefox, 
+   910→   910→Safari, Edge) en P8 
+   911→   911→CodeClimate 
+   912→   912→Analyse de maintenabilite et de 
+   913→   913→complexite du code. 
+   914→   914→Oui — gratuit pour 
+   915→   915→depots publics 
+   916→   916→Surveiller la dette technique 
+   917→   917→tout au long du projet 
+   918→   918→
+   919→   919→
+   920→   920→=== Page 18 ===
+   921→   921→Outil 
+   922→   922→Description 
+   923→   923→Plan gratuit 
+   924→   924→Usage pour BS-Lokossa 
+   925→   925→GitHub Actions 
+   926→   926→CI/CD avec workflows IA-generes 
+   927→   927→(via Copilot) pour automatiser 
+   928→   928→les tests. 
+   929→   929→Oui — 2000 
+   930→   930→minutes/mois pour 
+   931→   931→depots prives 
+   932→   932→Executer automatiquement 
+   933→   933→les tests a chaque pull request 
+   934→   934→(lint, build, tests) 
+   935→   935→ 
+   936→   936→ 
+   937→   937→4.7 7 — Design et prototypage 
+   938→   938→Outils de conception visuelle avec fonctionnalites IA pour creer des maquettes, des icones et des visuels pour 
+   939→   939→l'application. 
+   940→   940→ 
+   941→   941→Outil 
+   942→   942→Description 
+   943→   943→Plan gratuit 
+   944→   944→Usage pour BS-Lokossa 
+   945→   945→Figma (plan 
+   946→   946→gratuit) 
+   947→   947→Outil de design collaboratif de 
+   948→   948→reference. Le plan gratuit inclut 
+   949→   949→3 projets actifs. 
+   950→   950→Oui — 3 fichiers 
+   951→   951→actifs, 
+   952→   952→collaborateurs 
+   953→   953→illimites 
+   954→   954→Maquettes haute fidelite des 
+   955→   955→ecrans BS-Lokossa avant 
+   956→   956→developpement 
+   957→   957→Excalidraw 
+   958→   958→Outil de diagrammes informels 
+   959→   959→(style dessin a la main). Open 
+   960→   960→source. 
+   961→   961→Oui — illimite, sans 
+   962→   962→compte 
+   963→   963→Diagrammes d'architecture 
+   964→   964→rapides, flows utilisateur, 
+   965→   965→schemas de BDD informels 
+   966→   966→Canva AI 
+   967→   967→Creation de visuels avec IA 
+   968→   968→generative pour icones, 
+   969→   969→illustrations et presentatins. 
+   970→   970→Oui — plan gratuit 
+   971→   971→avec acces limite 
+   972→   972→aux fonctions IA 
+   973→   973→Icones de l'application, visuels 
+   974→   974→pour les communiques FEUA, 
+   975→   975→presentation du projet 
+   976→   976→Framer 
+   977→   977→Outil de prototypage interactif 
+   978→   978→avec IA pour animer les 
+   979→   979→composants. 
+   980→   980→Oui — plan gratuit 
+   981→   981→(branding Framer 
+   982→   982→visible) 
+   983→   983→Prototypes interactifs des ecrans 
+   984→   984→de connexion ou du tableau de 
+   985→   985→bord 
+   986→   986→Icons8 / Iconify 
+   987→   987→Bibliotheques d'icones avec 
+   988→   988→assistant de recherche IA. 
+   989→   989→Oui — milliers 
+   990→   990→d'icones gratuites 
+   991→   991→Icones de l'application 
+   992→   992→(membres, documents, caisses, 
+   993→   993→notifications...) 
+   994→   994→ 
+   995→   995→ 
+   996→   996→4.8 8 — Monitoring, erreurs et observabilite 
+   997→   997→Outils de surveillance de l'application en production pour detecter les erreurs, analyser les performances et 
+   998→   998→suivre les comportements utilisateurs. 
+   999→   999→ 
+  1000→  1000→Outil 
+  1001→  1001→Description 
+  1002→  1002→Plan gratuit 
+  1003→  1003→Usage pour BS-Lokossa 
+  1004→  1004→Sentry 
+  1005→  1005→Error tracking en temps reel 
+  1006→  1006→pour JavaScript/Next.js. Capture 
+  1007→  1007→les erreurs avec contexte 
+  1008→  1008→complet. 
+  1009→  1009→Oui — 5 000 
+  1010→  1010→evenements/mois, 
+  1011→  1011→1 projet 
+  1012→  1012→Detecter et corriger les erreurs 
+  1013→  1013→JavaScript en production apres 
+  1014→  1014→le deploiement P8 
+  1015→  1015→
+  1016→  1016→
+  1017→  1017→=== Page 19 ===
+  1018→  1018→Outil 
+  1019→  1019→Description 
+  1020→  1020→Plan gratuit 
+  1021→  1021→Usage pour BS-Lokossa 
+  1022→  1022→Vercel Analytics 
+  1023→  1023→Analytics integres a Vercel : 
+  1024→  1024→visiteurs, Core Web Vitals, 
+  1025→  1025→performance par page. 
+  1026→  1026→Oui — integre a 
+  1027→  1027→Vercel sans 
+  1028→  1028→configuration 
+  1029→  1029→Suivre les performances et 
+  1030→  1030→l'usage de l'application BS-
+  1031→  1031→Lokossa 
+  1032→  1032→Highlight.io 
+  1033→  1033→Session replay + logs + erreurs. 
+  1034→  1034→Permet de revivre exactement 
+  1035→  1035→ce que l'utilisateur a vu. 
+  1036→  1036→Oui — 500 sessions 
+  1037→  1037→+ 1000 
+  1038→  1038→erreurs/mois 
+  1039→  1039→Comprendre les bugs UX 
+  1040→  1040→signales par les membres FEUA 
+  1041→  1041→en production 
+  1042→  1042→Uptime Robot 
+  1043→  1043→Surveillance de la disponibilite 
+  1044→  1044→(uptime) du site avec alertes 
+  1045→  1045→email/SMS. 
+  1046→  1046→Oui — 50 
+  1047→  1047→moniteurs, 
+  1048→  1048→verifications toutes 
+  1049→  1049→les 5 min 
+  1050→  1050→Etre alerte immediatement si 
+  1051→  1051→l'application BS-Lokossa 
+  1052→  1052→devient indisponible 
+  1053→  1053→Supabase Logs 
+  1054→  1054→Journaux d'acces et d'erreurs 
+  1055→  1055→integres a Supabase (Auth, BDD, 
+  1056→  1056→Storage, Edge Functions). 
+  1057→  1057→Oui — 1 heure de 
+  1058→  1058→logs sur le plan 
+  1059→  1059→gratuit, 7 jours sur 
+  1060→  1060→Pro 
+  1061→  1061→Surveiller les erreurs de base 
+  1062→  1062→de donnees, les echecs d'auth, 
+  1063→  1063→les requetes lentes 
+  1064→  1064→ 
+  1065→  1065→ 
+  1066→  1066→4.9 Strategie d'usage recommandee 
+  1067→  1067→Combinaison optimale selon la tache en cours : 
+  1068→  1068→• Developpement Next.js au quotidien → Windsurf ou Cursor (voient tout le projet) + GitHub Copilot 
+  1069→  1069→(autocompletion) 
+  1070→  1070→• Probleme d'architecture ou blocage complexe → Claude (raisonnement long) ou ChatGPT 
+  1071→  1071→• Prototyper un nouvel ecran rapidement → v0.dev (composants React+Tailwind directement uƟlisables) 
+  1072→  1072→• Integrer une API externe (FedaPay, WhatsApp) → Perplexity (recherche sources) puis Claude (adapter le code) 
+  1073→  1073→• Base de donnees et SQL → Supabase AI (dans l'editeur) + AI2sql.io (requetes complexes) 
+  1074→  1074→• Detecter une vulnerabilite ou un bug de securite → Snyk + Amazon Q Developer 
+  1075→  1075→• Surveiller la production apres deploiement → Sentry + Vercel AnalyƟcs + UpƟme Robot 
+  1076→  1076→• Creer des maquettes pour valider un ecran → Figma (plan gratuit) + Excalidraw (schemas rapides) 
+  1077→  1077→ 
+  1078→  1078→ 
+  1079→  1079→
+  1080→  1080→
+  1081→  1081→=== Page 20 ===
+  1082→  1082→5. Bonnes pratiques techniques 
+  1083→  1083→Regles et recommandations techniques a respecter tout au long du projet pour garantir la qualite, la securite et 
+  1084→  1084→la maintenabilite de l'application BS-Lokossa. 
+  1085→  1085→5.1 Architecture de la base de donnees 
+  1086→  1086→• Creer le diagramme Entite-Association (ER) via dbdiagram.io avant tout developpement (obligation P0B) 
+  1087→  1087→• Rediger un dictionnaire de donnees : type, contrainte, description, valeurs possibles pour chaque colonne 
+  1088→  1088→• Definir les index sur les colonnes tres requetees (matricule, email, niveau_acces, institution) 
+  1089→  1089→• Nommer les tables en snake_case pluriel : members, audit_logs, cash_transactions, uniform_orders 
+  1090→  1090→• Toutes les tables doivent avoir un champ id (uuid), created_at et updated_at (timestamps auto) 
+  1091→  1091→• Les cles etrangeres doivent avoir une contrainte ON DELETE (CASCADE ou SET NULL selon le cas) 
+  1092→  1092→ 
+  1093→  1093→5.2 Documentation des API Routes 
+  1094→  1094→• Chaque API Route Next.js doit etre documentee : methode HTTP, parametres, reponse JSON, codes d'erreur 
+  1095→  1095→• Utiliser Zod pour valider les donnees entrantes de chaque route (schema strict cote serveur) 
+  1096→  1096→• Les routes protegees verifient le token Supabase Auth en debut de fonction (getServerSession ou 
+  1097→  1097→createServerClient) 
+  1098→  1098→• Retourner des codes HTTP semantiques : 200 (OK), 201 (cree), 400 (invalide), 401 (non auth), 403 (interdit), 
+  1099→  1099→404 (introuvable), 500 (erreur serveur) 
+  1100→  1100→• Documenter les permissions : quel niveau d'acces peut appeler chaque route 
+  1101→  1101→ 
+  1102→  1102→5.3 Design System 
+  1103→  1103→• Creer les composants de base des P0B : Button, Input, Textarea, Select, Modal, Table, Badge, Pagination, Toast, 
+  1104→  1104→Skeleton, Avatar 
+  1105→  1105→• Definir les tokens Tailwind dans tailwind.config.ts : couleurs FEUA, espacements, rayon de bordure, ombres 
+  1106→  1106→• Chaque composant doit etre accessible (aria-label, role, focus visible) et responsive 
+  1107→  1107→• Documenter chaque composant avec ses props TypeScript et ses cas d'usage (Storybook optionnel) 
+  1108→  1108→• Ne jamais dupliquer un composant : tout element reutilisable va dans components/ui/ et est importe 
+  1109→  1109→ 
+  1110→  1110→5.4 Securite renforcee 
+  1111→  1111→• Rate Limiting : limiter les routes publiques (login, inscription, paiement) avec upstash/ratelimit ou similaire 
+  1112→  1112→• Content Security Policy (CSP) : configurer les headers dans next.config.js pour bloquer XSS 
+  1113→  1113→• Validation Zod : valider TOUTES les donnees entrantes cote serveur (ne jamais faire confiance au client) 
+  1114→  1114→• Sauvegardes automatiques : activer les sauvegardes quotidiennes Supabase (plan Pro) ou exporter 
+  1115→  1115→manuellement chaque semaine 
+  1116→  1116→• Journalisation centralisee : tous les appels API Routes sont loggues (Supabase Logs + Sentry) 
+  1117→  1117→• Surveillance des performances : activer Vercel Speed Insights pour detecter les pages lentes 
+  1118→  1118→ 
+  1119→  1119→
+  1120→  1120→
+  1121→  1121→=== Page 21 ===
+  1122→  1122→5.5 Strategie Git (GitFlow simplifie) 
+  1123→  1123→• Branches principales : main (production) et develop (integration) 
+  1124→  1124→• Branches de fonctionnalite : feature/nom-de-la-feature (ex: feature/auth-webauthn) 
+  1125→  1125→• Branches de correctif : fix/description-du-bug (ex: fix/upload-photo-timeout) 
+  1126→  1126→• Pull Requests obligatoires : toute modification de develop ou main passe par une PR avec revue de code 
+  1127→  1127→• Convention de commits : "type(scope): message" — ex: feat(auth): add WebAuthn support 
+  1128→  1128→• Tags de version : taguer chaque fin de phase (ex: v0.1.0-P0B, v0.2.0-P1, ..., v1.0.0-P8) 
+  1129→  1129→ 
+  1130→  1130→5.6 Monitoring et observabilite en production 
+  1131→  1131→• Sentry : integrer des P8 pour capturer toutes les erreurs JavaScript Next.js en production 
+  1132→  1132→• Vercel Analytics : activer pour suivre les Core Web Vitals et le trafic des pages 
+  1133→  1133→• Supabase Logs : consulter regulierement les logs Auth (echecs connexion), BDD (requetes lentes) et Edge 
+  1134→  1134→Functions 
+  1135→  1135→• Uptime Robot : configurer un moniteur sur l'URL de production (alerte email si site tombe) 
+  1136→  1136→• Alertes Sentry : configurer des notifications Slack ou email pour les erreurs critiques en production 
+  1137→  1137→ 
+  1138→  1138→ 
+  1139→  1139→
+  1140→  1140→
+  1141→  1141→=== Page 22 ===
+  1142→  1142→6. Risques et points d'attention 
+  1143→  1143→Risques specifiques a l'application web, avec leurs mitigations. Un nouveau risque a ete ajoute par rapport a la 
+  1144→  1144→version initiale : l'absence de tests par phase. 
+  1145→  1145→ 
+  1146→  1146→Risque 
+  1147→  1147→Description 
+  1148→  1148→Mitigation 
+  1149→  1149→Web Push sur iOS 
+  1150→  1150→Safari 
+  1151→  1151→Les notifications push Web ne sont 
+  1152→  1152→supportees sur iPhone que depuis iOS 16.4 
+  1153→  1153→(2023) et restent limitees. 
+  1154→  1154→Privilegier WhatsApp + email comme 
+  1155→  1155→canaux principaux sur iOS. Indiquer la 
+  1156→  1156→compatibilite requise. 
+  1157→  1157→Delai activation APIs 
+  1158→  1158→externes 
+  1159→  1159→FedaPay (compte marchand) et WhatsApp 
+  1160→  1160→Business (verification Meta) peuvent 
+  1161→  1161→prendre jusqu'a 2 semaines. 
+  1162→  1162→Lancer les demandes des la semaine 1, en 
+  1163→  1163→parallele de P0A. 
+  1164→  1164→SEO et securite des 
+  1165→  1165→routes 
+  1166→  1166→En Next.js App Router, une route mal 
+  1167→  1167→configuree peut exposer des donnees 
+  1168→  1168→protegees. 
+  1169→  1169→Tester le middleware.ts rigoureusement. 
+  1170→  1170→Valider chaque route avec un compte Min 
+  1171→  1171→et sans connexion. 
+  1172→  1172→Conformite APDP 
+  1173→  1173→La loi beninoise impose une politique de 
+  1174→  1174→confidentialite acceptee lors de 
+  1175→  1175→l'inscription. 
+  1176→  1176→Rediger la politique en P0B, l'integrer dans 
+  1177→  1177→le formulaire en P2. 
+  1178→  1178→Memoire H 
+  1179→  1179→modifiable 
+  1180→  1180→Si creee comme table ordinaire, les entrees 
+  1181→  1181→pourraient etre modifiees 
+  1182→  1182→accidentellement. 
+  1183→  1183→Politique RLS PostgreSQL WITH CHECK 
+  1184→  1184→(false) sur UPDATE et DELETE des la 
+  1185→  1185→creation en P0B. 
+  1186→  1186→Performance sur 
+  1187→  1187→connexion lente 
+  1188→  1188→Les etudes en Benin se font souvent sur 
+  1189→  1189→des connexions 3G/4G variables. 
+  1190→  1190→next/image, cache HTTP, ISR/SSG pour 
+  1191→  1191→pages statiques, test Chrome DevTools en 
+  1192→  1192→3G lente. 
+  1193→  1193→Absence de tests par 
+  1194→  1194→phase 
+  1195→  1195→Sans tests a chaque phase, les bugs 
+  1196→  1196→s'accumulent et deviennent difficiles a 
+  1197→  1197→corriger en P8. 
+  1198→  1198→Executer les tests de fin de phase avant de 
+  1199→  1199→demarrer la phase suivante (critere de 
+  1200→  1200→passage obligatoire). 
+  1201→  1201→ 
+  1202→  1202→6.1 Note sur la PWA (Progressive Web App) 
+  1203→  1203→La configuration PWA en P8 permet aux membres d'installer l'application web sur l'ecran d'accueil de leur 
+  1204→  1204→telephone. Sur Android (Chrome), l'experience est tres proche d'une app native. Sur iPhone (Safari), les 
+  1205→  1205→notifications push restent limitees (iOS 16.3 et anterieur ne les supportent pas). La PWA est optionnelle : l'app 
+  1206→  1206→fonctionne parfaitement sans elle, directement dans le navigateur. 
+  1207→  1207→ 
+  1208→  1208→6.2 Priorites en cas de retard 
+  1209→  1209→• Indispensables au lancement : P0A, P0B, P1 (Auth), P2 (Membres), P4 (Paiements), P6 (Uniformes) 
+  1210→  1210→• Peuvent etre simplifies : P3 (filigrane reportable), P5 (Facebook Messenger optionnel) 
+  1211→  1211→• Reportables apres v1 : PWA (P8), archivage auto P7 (declenchable manuellement), dashboard avance 
+  1212→  1212→ 
+  1213→  1213→ 
+  1214→  1214→
+  1215→  1215→
+  1216→  1216→=== Page 23 ===
+  1217→  1217→ 
+  1218→  1218→FEUA / BS-Lokossa  ·  Plan de realisation Web v2.0 corrige  ·  Juillet 2026 

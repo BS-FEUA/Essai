@@ -1,0 +1,8 @@
+{
+  "name": "BS-Lokossa FEUA",
+  "description": "Bureau Syndical de Lokossa - Fédération des Étudiants Universitaires Associés",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

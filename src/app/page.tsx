@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useAppStore } from '@/lib/store';
-import { LandingView } from '@/components/views/LandingView';
+import { HomeLanding } from '@/components/views/HomeLanding';
 
 export default function HomePage() {
   const { checkSession } = useAppStore();
@@ -11,5 +11,5 @@ export default function HomePage() {
     checkSession();
   }, [checkSession]);
 
-  return <LandingView />;
+  return <HomeLanding />;
 }

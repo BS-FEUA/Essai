@@ -108,6 +108,14 @@ export function Header() {
               </div>
             )}
           </ScrollArea>
+          <div className="border-t">
+            <button
+              onClick={() => { setNotifOpen(false); router.push('/notifications'); }}
+              className="w-full py-2.5 text-xs text-center text-[var(--feua-green)] hover:bg-muted/50 transition-colors font-medium"
+            >
+              Voir toutes les notifications →
+            </button>
+          </div>
         </PopoverContent>
       </Popover>
 

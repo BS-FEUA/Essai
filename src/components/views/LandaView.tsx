@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  Heart, Star, Megaphone, AlertTriangle, Shirt, CheckCircle2, LogIn, Loader2,
+  Heart, Star, Megaphone, AlertTriangle, Shirt, CheckCircle2, LogIn, Loader2, ArrowLeft,
 } from 'lucide-react';
 
 const pageVariants = {
@@ -25,6 +26,7 @@ const pageVariants = {
 
 export function LandaView() {
   const { member, announcements } = useAppStore();
+  const router = useRouter();
   const [form, setForm] = useState({ name: '', phone: '', email: '', taille: 'M', quantity: '1', institution: '', notes: '' });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -55,9 +57,13 @@ export function LandaView() {
   };
 
   return (
-    <motion.div {...pageVariants} className="space-y-8">
+    <motion.div {...pageVariants} className="space-y-8 relative">
+      <Button variant="ghost" className="absolute -top-4 -left-4 sm:top-0 sm:left-0 z-10" onClick={() => router.back()}>
+        <ArrowLeft className="mr-2 h-4 w-4" /> Retour
+      </Button>
+
       {/* Header */}
-      <div className="text-center space-y-4">
+      <div className="text-center space-y-4 pt-10 sm:pt-0">
         <img src="/feua-logo.png" alt="FEUA" className="h-20 w-20 mx-auto object-contain" />
         <h1 className="text-3xl font-bold text-[var(--feua-green)]">Espace Landa</h1>
         <p className="text-muted-foreground max-w-xl mx-auto">

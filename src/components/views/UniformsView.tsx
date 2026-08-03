@@ -20,7 +20,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  Shirt, Plus, ChevronLeft, ChevronRight, CheckCircle,
+  Shirt, Plus, ChevronLeft, ChevronRight, CheckCircle, Trash2,
 } from 'lucide-react';
 
 const pageVariants = {
@@ -40,6 +40,7 @@ export function UniformsView() {
 
   const userLevel = member?.accessLevel || 'IGN';
   const isAdmin = canAccess(userLevel, 'MASTER');
+  const isSuperAdmin = userLevel === 'CEO';
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -78,6 +79,14 @@ export function UniformsView() {
       });
       loadOrders();
     } catch { /* ignore */ }
+  };
+
+  const handleDelete = async (orderId: string) => {
+    if (!confirm('Supprimer définitivement cette commande ?')) return;
+    try {
+      await apiFetch(`/api/uniforms?id=${orderId}`, { method: 'DELETE' });
+      loadOrders();
+    } catch { /* handled by apiFetch */ }
   };
 
   const tailles = ['S', 'M', 'L', 'XL', 'XXL'];
@@ -148,6 +157,7 @@ export function UniformsView() {
                     <TableHead>Montant</TableHead>
                     <TableHead>Statut</TableHead>
                     {isAdmin && <TableHead className="text-right">Validation</TableHead>}
+                    {isSuperAdmin && <TableHead className="text-right">Contrôle CEO</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -168,6 +178,7 @@ export function UniformsView() {
                           )}
                         </TableCell>
                       )}
+                      {isSuperAdmin && <TableCell className="text-right"><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(o.id)} title="Supprimer la commande"><Trash2 className="h-4 w-4" /></Button></TableCell>}
                     </TableRow>
                   ))}
                 </TableBody>

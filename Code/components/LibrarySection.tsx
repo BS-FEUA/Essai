@@ -18,14 +18,24 @@ import { formatDate } from "@/lib/utils";
 interface LibrarySectionProps {
   documents: DocumentItem[];
   searchQuery: string;
+  canUpload?: boolean;
+  onAddDocument?: (document: { file: File; title: string; category: DocumentItem["category"]; description: string }) => void;
 }
 
 export const LibrarySection: React.FC<LibrarySectionProps> = ({
   documents,
   searchQuery,
+  canUpload = false,
+  onAddDocument,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("Tous");
   const [downloadCounts, setDownloadCounts] = useState<Record<string, number>>({});
+  const [showUpload, setShowUpload] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState<DocumentItem["category"]>("Rapports d'Activités");
+  const [description, setDescription] = useState("");
+  const [uploadError, setUploadError] = useState("");
 
   const categories = [
     "Tous",
@@ -63,6 +73,16 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const handleUpload = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!file || !title.trim() || !description.trim()) return setUploadError("Tous les champs sont obligatoires.");
+    const allowed = ["application/pdf", "image/png", "image/jpeg", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"];
+    if (!allowed.includes(file.type)) return setUploadError("Format refusé. Autorisés : PDF, DOC/DOCX, PNG et JPG.");
+    if (file.size > 10 * 1024 * 1024) return setUploadError("Document trop volumineux : maximum 10 Mo.");
+    onAddDocument?.({ file, title: title.trim(), category, description: description.trim() });
+    setFile(null); setTitle(""); setDescription(""); setUploadError(""); setShowUpload(false);
+  };
+
   return (
     <section className="space-y-6">
       {/* Header */}
@@ -78,6 +98,8 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({
             Téléchargez les modèles de réclamation, les statuts du syndicat, la charte de l&apos;étudiant et les comptes-rendus financiers.
           </p>
         </div>
+
+        {canUpload && <button onClick={() => setShowUpload(true)} className="rounded-xl bg-feua px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-feua-dark">Ajouter un document</button>}
 
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
           {categories.map((cat) => (
@@ -95,6 +117,18 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({
           ))}
         </div>
       </div>
+
+      {showUpload && (
+        <form onSubmit={handleUpload} className="glass rounded-2xl p-5 space-y-3">
+          <div className="flex items-center justify-between"><h3 className="font-bold text-slate-900">Ajouter un document officiel</h3><button type="button" onClick={() => setShowUpload(false)} className="text-xs font-bold text-slate-500">Annuler</button></div>
+          <p className="text-xs text-slate-600">PDF, DOC/DOCX, PNG ou JPG uniquement — taille maximale : 10 Mo. Tout ajout est journalisé dans la version connectée.</p>
+          <div className="grid gap-3 sm:grid-cols-2"><input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Titre du document" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" /><select value={category} onChange={(e) => setCategory(e.target.value as DocumentItem["category"])} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">{categories.slice(1).map((item) => <option key={item}>{item}</option>)}</select></div>
+          <textarea required value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description et usage du document" className="min-h-20 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
+          <input required type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={(e) => { setFile(e.target.files?.[0] ?? null); setUploadError(""); }} className="block w-full text-xs" />
+          {uploadError && <p className="text-xs font-semibold text-rose-600">{uploadError}</p>}
+          <button className="rounded-xl bg-feua px-4 py-2 text-xs font-bold text-white hover:bg-feua-dark">Enregistrer le document</button>
+        </form>
+      )}
 
       {/* Document Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -102,3 +102,40 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    if (session.accessLevel !== 'CEO') return NextResponse.json({ error: 'Action réservée au CEO' }, { status: 403 });
+
+    const { searchParams } = new URL(req.url);
+    const memberId = searchParams.get('id');
+    if (!memberId) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
+
+    if (memberId === session.id) {
+      return NextResponse.json({ error: 'Impossible de supprimer votre propre compte CEO' }, { status: 400 });
+    }
+
+    const target = await db.member.findUnique({ where: { id: memberId } });
+    if (!target) return NextResponse.json({ error: 'Membre non trouvé' }, { status: 404 });
+
+    await db.member.delete({ where: { id: memberId } });
+
+    await db.auditLog.create({
+      data: {
+        action: 'DELETE',
+        actorId: session.id,
+        entityType: 'Member',
+        entityId: memberId,
+        details: `Suppression du membre ${target.firstName} ${target.lastName} (${target.email}, ${target.matricule})`,
+      },
+    });
+
+    return NextResponse.json({ success: true, message: 'Membre supprimé avec succès' });
+  } catch (error) {
+    console.error('Members DELETE error:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}
+

@@ -5,7 +5,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        feua: { DEFAULT: "#0B5D3B", dark: "#06442B", light: "#E8F4ED" },
+        feua: { DEFAULT: "#0f9f7a", dark: "#087a5d", light: "#d9f8ec" },
       },
     },
   },

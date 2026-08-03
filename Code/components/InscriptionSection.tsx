@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   UserPlus,
   ShieldCheck,
@@ -36,6 +36,10 @@ export const InscriptionSection: React.FC<InscriptionSectionProps> = ({
   onUpdateRegistrationStatus,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<"form" | "card" | "admin">("form");
+
+  useEffect(() => {
+    if (isAdminMode) setActiveSubTab("admin");
+  }, [isAdminMode]);
 
   // Form State
   const [category, setCategory] = useState<UserCategory>("membre_feua");

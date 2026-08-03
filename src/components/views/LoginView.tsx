@@ -89,9 +89,7 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
       if (success) {
         setRegSubmitted(true);
         setRegError('');
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 1200);
+        // No automatic login/redirection anymore because validation is pending
       } else {
         setRegError('La création du compte a échoué. Vérifiez vos informations.');
       }
@@ -363,7 +361,10 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                           <CheckCircle2 className="h-8 w-8" />
                         </div>
                         <h4 className="font-bold text-lg text-emerald-300">Compte créé avec succès !</h4>
-                        <p className="text-xs text-slate-300">Redirection automatique vers votre tableau de bord...</p>
+                        <p className="text-xs text-slate-300">Votre inscription est terminée. Votre compte doit être validé par un administrateur (CEO) avant que vous ne puissiez vous connecter.</p>
+                        <Button variant="outline" className="mt-4" onClick={() => { setRegSubmitted(false); setActiveTab('login'); }}>
+                          Retour à la connexion
+                        </Button>
                       </div>
                     ) : (
                       <form onSubmit={handleRegisterSubmit} className="space-y-3">

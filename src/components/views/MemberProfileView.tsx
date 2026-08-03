@@ -15,7 +15,10 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  ArrowLeft, Building, BookOpen, User, FileText, Wallet, Shirt, Mail, Phone, Calendar, Clock, Globe,
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  ArrowLeft, Building, BookOpen, User, FileText, Wallet, Shirt, Mail, Phone, Calendar, Clock, Globe, Trash2, AlertTriangle,
 } from 'lucide-react';
 
 const pageVariants = {
@@ -29,6 +32,16 @@ export function MemberProfileView() {
   const router = useRouter();
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  const handleDeleteMember = async () => {
+    if (!profileData?.id) return;
+    try {
+      await apiFetch(`/api/members?id=${profileData.id}`, { method: 'DELETE' });
+      setDeleteConfirmOpen(false);
+      router.push('/members');
+    } catch { /* handled by apiFetch */ }
+  };
 
   useEffect(() => {
     if (!selectedMemberId) return;
@@ -66,28 +79,37 @@ export function MemberProfileView() {
 
   return (
     <motion.div {...pageVariants} className="space-y-6">
-      <Button variant="ghost" onClick={() => router.push(member?.accessLevel === 'IGN' || member?.accessLevel === 'AMC' ? '/dashboard' : '/members')}><ArrowLeft className="mr-2 h-4 w-4" />Retour</Button>
+      <Button variant="ghost" onClick={() => router.back()}>
+        <ArrowLeft className="mr-2 h-4 w-4" />Retour
+      </Button>
 
       {/* Profile header */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <Avatar className="h-20 w-20 border-2 border-[var(--feua-green)]">
-              <AvatarFallback className="bg-[var(--feua-green)] text-white text-2xl font-bold">{initials}</AvatarFallback>
-            </Avatar>
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl font-bold">{profileData.firstName} {profileData.lastName}</h1>
-              <p className="text-muted-foreground flex flex-wrap items-center gap-2 justify-center sm:justify-start mt-1">
-                <Badge className={roleBadgeColor[profileData.accessLevel] || ''}>{ACCESS_LABELS[profileData.accessLevel]}</Badge>
-                <Badge variant={statusBadge[profileData.status]?.variant || 'outline'}>{statusBadge[profileData.status]?.label}</Badge>
-                <span className="text-xs">{profileData.matricule}</span>
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {profileData.institution && <><Building className="inline h-3 w-3 mr-1" />{profileData.institution}</>}
-                {profileData.filiere && <><span className="mx-1">•</span><BookOpen className="inline h-3 w-3 mr-1" />{profileData.filiere}</>}
-                {profileData.niveau && <><span className="mx-1">•</span>{profileData.niveau}</>}
-              </p>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <Avatar className="h-20 w-20 border-2 border-[var(--feua-green)]">
+                <AvatarFallback className="bg-[var(--feua-green)] text-white text-2xl font-bold">{initials}</AvatarFallback>
+              </Avatar>
+              <div className="text-center sm:text-left">
+                <h1 className="text-2xl font-bold">{profileData.firstName} {profileData.lastName}</h1>
+                <p className="text-muted-foreground flex flex-wrap items-center gap-2 justify-center sm:justify-start mt-1">
+                  <Badge className={roleBadgeColor[profileData.accessLevel] || ''}>{ACCESS_LABELS[profileData.accessLevel]}</Badge>
+                  <Badge variant={statusBadge[profileData.status]?.variant || 'outline'}>{statusBadge[profileData.status]?.label}</Badge>
+                  <span className="text-xs">{profileData.matricule}</span>
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {profileData.institution && <><Building className="inline h-3 w-3 mr-1" />{profileData.institution}</>}
+                  {profileData.filiere && <><span className="mx-1">•</span><BookOpen className="inline h-3 w-3 mr-1" />{profileData.filiere}</>}
+                  {profileData.niveau && <><span className="mx-1">•</span>{profileData.niveau}</>}
+                </p>
+              </div>
             </div>
+            {member?.accessLevel === 'CEO' && profileData.id !== member.id && (
+              <Button variant="destructive" size="sm" onClick={() => setDeleteConfirmOpen(true)}>
+                <Trash2 className="mr-2 h-4 w-4" />Supprimer le membre
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -191,6 +213,27 @@ export function MemberProfileView() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Delete Member Modal (CEO) */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" /> Confirmation de suppression CEO
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mt-2">
+            Voulez-vous vraiment supprimer définitivement le membre{' '}
+            <strong className="text-foreground">{profileData.firstName} {profileData.lastName}</strong> ({profileData.email}) ?
+            <br /><br />
+            <span className="text-xs text-red-500 font-semibold">Cette action est irréversible et sera enregistrée dans le journal d'audit Mémoire H.</span>
+          </p>
+          <DialogFooter className="mt-4 gap-2">
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={handleDeleteMember}>Supprimer définitivement</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

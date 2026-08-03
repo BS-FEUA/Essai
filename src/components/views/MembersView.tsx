@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAppStore, canAccess, ACCESS_LABELS, apiFetch } from '@/lib/store';
 import { statusBadge, statusBadgeSoft } from './view-utils';
@@ -24,7 +25,7 @@ import {
 } from '@/components/ui/select';
 import {
   Users, Search, ChevronLeft, ChevronRight, Download, Eye,
-  MoreVertical, Shield, CheckCircle, Archive,
+  MoreVertical, Shield, CheckCircle, Archive, Trash2, AlertTriangle,
 } from 'lucide-react';
 
 const pageVariants = {
@@ -35,6 +36,7 @@ const pageVariants = {
 
 export function MembersView() {
   const { member } = useAppStore();
+  const router = useRouter();
   const [members, setMembers] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -68,6 +70,16 @@ export function MembersView() {
   }, [search, filterLevel, filterStatus]);
 
   const [updateDialog, setUpdateDialog] = useState<{ open: boolean; memberId: string; field: string; value: string }>({ open: false, memberId: '', field: '', value: '' });
+  const [deleteConfirmMember, setDeleteConfirmMember] = useState<any>(null);
+
+  const handleDeleteMember = async () => {
+    if (!deleteConfirmMember) return;
+    try {
+      await apiFetch(`/api/members?id=${deleteConfirmMember.id}`, { method: 'DELETE' });
+      setDeleteConfirmMember(null);
+      loadMembers();
+    } catch { /* handled by apiFetch */ }
+  };
 
   const handleUpdate = async () => {
     try {
@@ -172,7 +184,7 @@ export function MembersView() {
                         </div>
                       </TableCell></TableRow>
                     ) : members.map((m) => (
-                      <TableRow key={m.id} className="cursor-pointer" onClick={() => { useAppStore.getState().setSelectedMemberId(m.id); useAppStore.getState().setView('member-profile'); }}>
+                      <TableRow key={m.id} className="cursor-pointer" onClick={() => router.push(`/members/${m.id}`)}>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8"><AvatarFallback className="text-xs bg-[var(--feua-green)] text-white">{`${m.firstName?.[0] || ''}${m.lastName?.[0] || ''}`.toUpperCase()}</AvatarFallback></Avatar>
@@ -192,13 +204,21 @@ export function MembersView() {
                               <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => { useAppStore.getState().setSelectedMemberId(m.id); useAppStore.getState().setView('member-profile'); }}><Eye className="mr-2 h-4 w-4" />Voir le profil</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push(`/members/${m.id}`)}><Eye className="mr-2 h-4 w-4" />Voir le profil</DropdownMenuItem>
                               {canAccess(member?.accessLevel || 'IGN', 'MASTER') && (
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => setUpdateDialog({ open: true, memberId: m.id, field: 'accessLevel', value: m.accessLevel })}><Shield className="mr-2 h-4 w-4" />Changer le rôle</DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => setUpdateDialog({ open: true, memberId: m.id, field: 'status', value: m.status })}><CheckCircle className="mr-2 h-4 w-4" />Changer le statut</DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => { setUpdateDialog({ open: true, memberId: m.id, field: 'status', value: 'ARCHIVED' }); }}><Archive className="mr-2 h-4 w-4" />Archiver</DropdownMenuItem>
+                                </>
+                              )}
+                              {member?.accessLevel === 'CEO' && m.id !== member.id && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50" onClick={() => setDeleteConfirmMember(m)}>
+                                    <Trash2 className="mr-2 h-4 w-4 text-red-600" />Supprimer le membre
+                                  </DropdownMenuItem>
                                 </>
                               )}
                             </DropdownMenuContent>
@@ -244,6 +264,27 @@ export function MembersView() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setUpdateDialog({ ...updateDialog, open: false })}>Annuler</Button>
             <Button className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90 text-white" onClick={handleUpdate}>Confirmer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Member Confirmation Modal (CEO) */}
+      <Dialog open={Boolean(deleteConfirmMember)} onOpenChange={(open) => !open && setDeleteConfirmMember(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" /> Confirmation de suppression CEO
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mt-2">
+            Voulez-vous vraiment supprimer définitivement le membre{' '}
+            <strong className="text-foreground">{deleteConfirmMember?.firstName} {deleteConfirmMember?.lastName}</strong> ({deleteConfirmMember?.email}) ?
+            <br /><br />
+            <span className="text-xs text-red-500 font-semibold">Cette action est irréversible et sera consignée dans le journal d'audit Mémoire H.</span>
+          </p>
+          <DialogFooter className="mt-4 gap-2">
+            <Button variant="outline" onClick={() => setDeleteConfirmMember(null)}>Annuler</Button>
+            <Button variant="destructive" onClick={handleDeleteMember}>Supprimer définitivement</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

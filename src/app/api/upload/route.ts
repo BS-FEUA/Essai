@@ -6,7 +6,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
+const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
 const DOCUMENT_TYPES = ['CARTE_ETUDIANT', 'FICHE_PRE_INSCRIPTION', 'BULLETIN', 'CERTIFICAT', 'AUTRE'] as const;
 
 export async function POST(req: NextRequest) {
@@ -20,7 +20,9 @@ export async function POST(req: NextRequest) {
     if (!ALLOWED_MIME_TYPES.has(file.type)) return NextResponse.json({ error: 'Type de fichier non autorisé' }, { status: 400 });
     if (file.size === 0 || file.size > MAX_UPLOAD_BYTES) return NextResponse.json({ error: 'Le fichier doit faire au plus 10 Mo' }, { status: 400 });
 
-    const title = ((formData.get('title') as string) || file.name || 'Sans titre').trim().slice(0, 150);
+    const title = ((formData.get('title') as string) || '').trim().slice(0, 150);
+    const description = ((formData.get('description') as string) || '').trim().slice(0, 1000);
+    if (!title || !description) return NextResponse.json({ error: 'Titre et description requis' }, { status: 400 });
     const requestedType = (formData.get('type') as string) || 'AUTRE';
     if (!DOCUMENT_TYPES.includes(requestedType as (typeof DOCUMENT_TYPES)[number])) {
       return NextResponse.json({ error: 'Type de document invalide' }, { status: 400 });
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
       data: {
         title, type, fileName: file.name, fileSize: file.size,
         mimeType: file.type, fileUrl: `/uploads/${fileName}`,
-        memberId: session.id, anneeScolaire,
+        memberId: session.id, anneeScolaire, description,
       },
     });
 

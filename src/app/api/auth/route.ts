@@ -51,13 +51,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: errorMsg }, { status: 400 });
       }
 
-      const member = await login(parsed.data.email, parsed.data.password);
-      if (!member) return NextResponse.json({ error: 'Email ou mot de passe incorrect' }, { status: 401 });
+      try {
+        const member = await login(parsed.data.email, parsed.data.password);
+        if (!member) return NextResponse.json({ error: 'Email ou mot de passe incorrect' }, { status: 401 });
 
-      const cookie = createSessionCookie(member.id);
-      const res = NextResponse.json({ success: true, member, token: cookie.value });
-      res.cookies.set(cookie.name, cookie.value, cookie);
-      return res;
+        const cookie = createSessionCookie(member.id);
+        const res = NextResponse.json({ success: true, member, token: cookie.value });
+        res.cookies.set(cookie.name, cookie.value, cookie);
+        return res;
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 403 });
+      }
     }
 
     if (action === 'register') {
@@ -100,7 +104,7 @@ export async function POST(req: NextRequest) {
             niveau: parsed.data.niveau || 'Licence 1',
             dateOfBirth: validDob,
             accessLevel: 'MIN',
-            status: 'ACTIVE',
+            status: 'PENDING_VALIDATION',
             country: 'Benin',
           },
         });
@@ -124,17 +128,12 @@ export async function POST(req: NextRequest) {
           photoUrl: member.photoUrl,
         };
 
-        const cookie = createSessionCookie(member.id);
-        const res = NextResponse.json({
+        return NextResponse.json({
           success: true,
           id: member.id,
           member: sessionMember,
-          token: cookie.value,
-          message: 'Inscription réussie et compte activé.'
+          message: 'Inscription réussie. Votre compte est en attente de validation par l\'administration.'
         }, { status: 201 });
-
-        res.cookies.set(cookie.name, cookie.value, cookie);
-        return res;
       } catch (regError: any) {
         console.error('Registration error details:', regError);
         return NextResponse.json({ error: `Erreur lors de la création du compte: ${regError.message}` }, { status: 500 });
@@ -150,6 +149,26 @@ export async function POST(req: NextRequest) {
       const cookie = deleteSessionCookie();
       res.cookies.set(cookie.name, cookie.value, cookie);
       return res;
+    }
+
+    if (action === 'requestRecovery') {
+      const { email: recEmail } = body;
+      if (!recEmail) return NextResponse.json({ error: 'Email requis' }, { status: 400 });
+      // Always return 200 to prevent email enumeration
+      const memberForRec = await db.member.findUnique({ where: { email: recEmail } });
+      if (memberForRec) {
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        await db.member.update({
+          where: { id: memberForRec.id },
+          data: {
+            recoveryCode: code,
+            recoveryExpiry: new Date(Date.now() + 8 * 60 * 1000), // 8 minutes
+          },
+        });
+        // In production: send `code` via email/SMS
+        console.log(`[DEV] Recovery code for ${recEmail}: ${code}`);
+      }
+      return NextResponse.json({ success: true, message: 'Si cet email existe, un code a été envoyé.' });
     }
 
     if (action === 'recovery') {

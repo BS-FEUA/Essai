@@ -99,3 +99,25 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    if (session.accessLevel !== 'CEO') return NextResponse.json({ error: 'Action réservée au CEO' }, { status: 403 });
+
+    const { searchParams } = new URL(req.url);
+    const orderId = searchParams.get('id');
+    if (!orderId) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
+
+    const order = await db.uniformOrder.findUnique({ where: { id: orderId } });
+    if (!order) return NextResponse.json({ error: 'Commande non trouvée' }, { status: 404 });
+
+    await db.uniformOrder.delete({ where: { id: orderId } });
+    await db.auditLog.create({ data: { action: 'UNIFORM_ORDER', actorId: session.id, entityType: 'UniformOrder', entityId: orderId, details: `Suppression CEO de la commande ${orderId}` } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Uniforms DELETE error:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}

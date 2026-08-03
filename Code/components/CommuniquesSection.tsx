@@ -17,6 +17,7 @@ interface CommuniquesSectionProps {
   searchQuery: string;
   onOpenNewCommunique: () => void;
   onViewCommunique: (item: Communique) => void;
+  onDeleteCommunique?: (id: string) => void;
 }
 
 export const CommuniquesSection: React.FC<CommuniquesSectionProps> = ({
@@ -25,6 +26,7 @@ export const CommuniquesSection: React.FC<CommuniquesSectionProps> = ({
   searchQuery,
   onOpenNewCommunique,
   onViewCommunique,
+  onDeleteCommunique,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("Tous");
 
@@ -74,6 +76,20 @@ export const CommuniquesSection: React.FC<CommuniquesSectionProps> = ({
           )}
         </div>
       </div>
+
+      {isAdminMode && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-amber-900">Gestion des publications</p>
+          <div className="mt-3 space-y-2">
+            {filteredCommuniques.map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 text-sm shadow-sm">
+                <span className="min-w-0 truncate font-semibold text-slate-800">{item.title}</span>
+                <button onClick={() => onDeleteCommunique?.(item.id)} className="shrink-0 rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-bold text-rose-700 hover:bg-rose-50">Supprimer</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Categories Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">

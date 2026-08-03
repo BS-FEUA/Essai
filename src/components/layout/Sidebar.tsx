@@ -22,6 +22,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Bell,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -39,6 +40,7 @@ const menuItems: MenuItem[] = [
   { label: 'Caisses', icon: <Wallet className="h-4 w-4" />, view: 'cash', path: '/cash', requiredLevel: 'MASTER' },
   { label: 'Messagerie', icon: <MessageSquare className="h-4 w-4" />, view: 'messages', path: '/messages' },
   { label: 'Uniformes', icon: <Shirt className="h-4 w-4" />, view: 'uniforms', path: '/uniforms' },
+  { label: 'Notifications', icon: <Bell className="h-4 w-4" />, view: 'dashboard', path: '/notifications' },
   { label: 'Administration', icon: <Shield className="h-4 w-4" />, view: 'admin', path: '/admin', requiredLevel: 'MAST_IN' },
 ];
 

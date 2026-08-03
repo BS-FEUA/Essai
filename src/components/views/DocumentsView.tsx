@@ -6,6 +6,7 @@ import { useAppStore, apiFetch } from '@/lib/store';
 import { docTypeColors } from './view-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -32,7 +33,7 @@ export function DocumentsView() {
   const [loading, setLoading] = useState(true);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadForm, setUploadForm] = useState({ title: '', type: 'AUTRE', anneeScolaire: '2025-2026' });
+  const [uploadForm, setUploadForm] = useState({ title: '', description: '', type: 'AUTRE', anneeScolaire: '2025-2026' });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -54,17 +55,19 @@ export function DocumentsView() {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFile) return;
+    if (!selectedFile || !uploadForm.title.trim() || !uploadForm.description.trim()) return;
+    if (selectedFile.size > 10 * 1024 * 1024) { alert('Le document ne doit pas dépasser 10 Mo.'); return; }
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('title', uploadForm.title || selectedFile.name);
+      formData.append('description', uploadForm.description);
       formData.append('type', uploadForm.type);
       formData.append('anneeScolaire', uploadForm.anneeScolaire);
       await fetch('/api/upload', { method: 'POST', body: formData, credentials: 'same-origin' });
       setUploadOpen(false);
-      setUploadForm({ title: '', type: 'AUTRE', anneeScolaire: '2025-2026' });
+      setUploadForm({ title: '', description: '', type: 'AUTRE', anneeScolaire: '2025-2026' });
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       loadDocs();
@@ -98,9 +101,11 @@ export function DocumentsView() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Fichier *</Label>
-                <Input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} required />
+                <Input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} required />
+                <p className="text-xs text-muted-foreground">PDF, DOC/DOCX, JPG, PNG ou WebP — 10 Mo maximum.</p>
               </div>
-              <div className="space-y-2"><Label>Titre</Label><Input value={uploadForm.title} onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })} placeholder={selectedFile?.name || 'Titre du document'} /></div>
+              <div className="space-y-2"><Label>Titre *</Label><Input required value={uploadForm.title} onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })} placeholder={selectedFile?.name || 'Titre du document'} /></div>
+              <div className="space-y-2"><Label>Description et usage *</Label><Textarea required value={uploadForm.description} onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })} rows={3} placeholder="Précisez la nature et l’usage du document." /></div>
               <div className="space-y-2">
                 <Label>Type de document</Label>
                 <Select value={uploadForm.type} onValueChange={(v) => setUploadForm({ ...uploadForm, type: v })}>

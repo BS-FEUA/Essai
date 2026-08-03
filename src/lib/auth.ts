@@ -105,6 +105,17 @@ export async function login(email: string, password: string): Promise<SessionMem
   // Check lockout
   if (member.lockedUntil && member.lockedUntil > new Date()) return null;
 
+  // Check if account is active
+  if (member.status === 'PENDING_VALIDATION') {
+    throw new Error('Votre compte est en attente de validation par l\'administration.');
+  }
+  if (member.status === 'ARCHIVED') {
+    throw new Error('Ce compte a été archivé.');
+  }
+  if (member.status !== 'ACTIVE') {
+    throw new Error('Ce compte n\'est pas actif.');
+  }
+
   const valid = await compare(password, member.passwordHash);
   if (!valid) {
     // Increment login attempts

@@ -28,6 +28,11 @@ interface NavbarProps {
   setSearchQuery: (q: string) => void;
   onOpenNewClaim: () => void;
   onOpenInscription?: () => void;
+  userEmail?: string | null;
+  canAccessOffice?: boolean;
+  onRequestOfficeAccess?: () => void;
+  onOpenLogin?: () => void;
+  onSignOut?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -39,6 +44,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   setSearchQuery,
   onOpenNewClaim,
   onOpenInscription,
+  userEmail,
+  canAccessOffice = false,
+  onRequestOfficeAccess,
+  onOpenLogin,
+  onSignOut,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -53,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-900 text-white shadow-md border-b border-slate-800">
+    <header className="sticky top-0 z-40 glass-dark text-white shadow-md">
       {/* Top emergency announcement bar */}
       <div className="bg-feua py-1.5 px-4 text-xs font-medium text-slate-100 flex items-center justify-between">
         <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
@@ -134,7 +144,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             <button
-              onClick={() => setIsAdminMode(!isAdminMode)}
+              onClick={() => canAccessOffice ? setIsAdminMode(!isAdminMode) : onRequestOfficeAccess?.()}
               className={`text-xs px-3 py-2 rounded-lg border font-medium transition flex items-center gap-1.5 ${
                 isAdminMode
                   ? "bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30"
@@ -150,16 +160,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               ) : (
                 <>
                   <Lock className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Espace Bureau</span>
+                  <span>{canAccessOffice ? "Espace Bureau" : userEmail ? "Accès Bureau requis" : "Connexion Bureau"}</span>
                 </>
               )}
             </button>
+            <button onClick={onOpenLogin} className="text-xs font-semibold text-slate-200 transition hover:text-white">
+              {userEmail ? "Changer de compte" : "Se connecter"}
+            </button>
+            {userEmail && <button onClick={onSignOut} title={userEmail} className="text-xs font-semibold text-slate-300 transition hover:text-white">Déconnexion</button>}
           </div>
 
           {/* Mobile menu trigger */}
           <div className="flex md:hidden items-center gap-2">
             <button
-              onClick={() => setIsAdminMode(!isAdminMode)}
+              onClick={() => canAccessOffice ? setIsAdminMode(!isAdminMode) : onRequestOfficeAccess?.()}
               className={`p-2 rounded-lg text-xs border ${
                 isAdminMode
                   ? "bg-amber-500/20 text-amber-300 border-amber-500/50"
@@ -179,7 +193,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Navigation tabs row */}
-      <div className="bg-slate-950/60 border-t border-slate-800/80 px-4 sm:px-6 lg:px-8 overflow-x-auto scrollbar-none">
+      <div className="bg-slate-950/30 border-t border-white/10 px-4 sm:px-6 lg:px-8 overflow-x-auto scrollbar-none">
         <div className="max-w-7xl mx-auto flex items-center gap-1 py-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -202,11 +216,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <Icon className={`w-4 h-4 ${isActive ? "text-amber-300" : "text-slate-400"}`} />
                 <span>{item.label}</span>
-                {item.id === "inscription" && (
-                  <span className="ml-1 bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] px-1.5 py-0.2 rounded font-extrabold uppercase">
-                    Fenêtre
-                  </span>
-                )}
               </button>
             );
           })}
@@ -251,11 +260,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <Icon className={`w-4 h-4 ${isActive ? "text-amber-300" : "text-slate-400"}`} />
                     <span>{item.label}</span>
                   </div>
-                  {item.id === "inscription" && (
-                    <span className="bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase">
-                      Fenêtre
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -274,13 +278,27 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
             <button
               onClick={() => {
-                setIsAdminMode(!isAdminMode);
+                if (canAccessOffice) setIsAdminMode(!isAdminMode); else onRequestOfficeAccess?.();
                 setMobileMenuOpen(false);
               }}
               className="w-full bg-slate-800 text-slate-200 border border-slate-700 text-xs py-2.5 rounded-lg flex items-center justify-center gap-1.5"
             >
-              {isAdminMode ? "Quitter Mode Admin" : "Espace Bureau BS"}
+              {isAdminMode ? "Quitter Mode Admin" : canAccessOffice ? "Espace Bureau BS" : userEmail ? "Accès Bureau requis" : "Connexion Bureau"}
             </button>
+            <button
+              onClick={() => { onOpenLogin?.(); setMobileMenuOpen(false); }}
+              className="col-span-2 w-full py-2 text-xs font-semibold text-slate-300 hover:text-white"
+            >
+              {userEmail ? "Changer de compte" : "Se connecter"}
+            </button>
+            {userEmail && (
+              <button
+                onClick={() => { onSignOut?.(); setMobileMenuOpen(false); }}
+                className="col-span-2 w-full py-1 text-xs font-semibold text-rose-300 hover:text-rose-200"
+              >
+                Déconnexion
+              </button>
+            )}
           </div>
         </div>
       )}

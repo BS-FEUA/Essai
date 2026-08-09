@@ -50,8 +50,8 @@
   --feua-gold: #D4A017;
   --feua-gold-light: #FFF8E1;
   --feua-dark: #1A1A2E;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.97 0.018 235);
+  --foreground: oklch(0.21 0.035 250);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -126,8 +126,8 @@
     min-height: 100vh;
     overflow-x: hidden;
     position: relative;
-    background: linear-gradient(135deg, #041d18 0%, #08131d 50%, #031510 100%);
-    color: #f8fafc;
+    background: linear-gradient(135deg, #e0f2fe 0%, #f8fbff 48%, #dbeafe 100%);
+    color: #0f2742;
   }
 
   body::before {
@@ -137,7 +137,7 @@
     left: 20%;
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(27, 122, 61, 0.25) 0%, rgba(27, 122, 61, 0) 70%);
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.24) 0%, rgba(14, 165, 233, 0) 70%);
     pointer-events: none;
     z-index: 0;
     filter: blur(60px);
@@ -150,14 +150,14 @@
     right: 15%;
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba(212, 160, 23, 0.2) 0%, rgba(212, 160, 23, 0) 70%);
+    background: radial-gradient(circle, rgba(96, 165, 250, 0.24) 0%, rgba(96, 165, 250, 0) 70%);
     pointer-events: none;
     z-index: 0;
     filter: blur(60px);
   }
 
   .dark body {
-    background: linear-gradient(135deg, #022c22 0%, #060d16 50%, #041812 100%);
+    background: linear-gradient(135deg, #dbeafe 0%, #f8fbff 48%, #c7e5ff 100%);
   }
 
   /* Hide Next.js devtools badge in the lower-left corner */
@@ -174,19 +174,19 @@
 @layer components {
   .glass-surface,
   .liquid-glass {
-    background: rgba(15, 23, 42, 0.65);
+    background: rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(16, 185, 129, 0.25);
-    box-shadow: 0 12px 35px rgba(2, 8, 23, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(96, 165, 250, 0.3);
+    box-shadow: 0 12px 35px rgba(30, 64, 175, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.75);
   }
 
   .liquid-glass-gold {
-    background: rgba(15, 23, 42, 0.65);
+    background: rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(212, 160, 23, 0.35);
-    box-shadow: 0 12px 35px rgba(2, 8, 23, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    box-shadow: 0 12px 35px rgba(30, 64, 175, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.75);
   }
 
   .liquid-glass-input {

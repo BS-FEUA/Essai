@@ -658,7 +658,7 @@ export function AdminView() {
                           <p className="text-[10px] text-slate-500">{m.institution}</p>
                         </TableCell>
                         <TableCell className="text-right space-x-1">
-                          {m.status === 'PENDING_VALIDATION' && (
+                          {m.status === 'PENDING_VALIDATION' && isCEO && (
                             <Button
                               size="sm"
                               className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] h-7 px-2 rounded-lg"

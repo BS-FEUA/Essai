@@ -113,26 +113,10 @@ export async function POST(req: NextRequest) {
           data: { action: 'CREATE', actorId: member.id, entityType: 'Member', entityId: member.id, details: 'Inscription membre' }
         });
 
-        const sessionMember = {
-          id: member.id,
-          matricule: member.matricule,
-          firstName: member.firstName,
-          lastName: member.lastName,
-          email: member.email,
-          phone: member.phone,
-          accessLevel: member.accessLevel,
-          status: member.status,
-          institution: member.institution,
-          filiere: member.filiere,
-          niveau: member.niveau,
-          photoUrl: member.photoUrl,
-        };
-
         return NextResponse.json({
           success: true,
           id: member.id,
-          member: sessionMember,
-          message: 'Inscription réussie. Votre compte est en attente de validation par l\'administration.'
+          message: 'Inscription réussie. Votre compte est en attente de validation par le super administrateur.'
         }, { status: 201 });
       } catch (regError: any) {
         console.error('Registration error details:', regError);

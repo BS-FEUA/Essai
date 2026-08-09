@@ -242,22 +242,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   register: async (data) => {
     set({ loading: true });
     try {
-      const res = await apiFetch<{ success: boolean; member?: SessionMember; token?: string; message?: string }>('/api/auth', {
+      const res = await apiFetch<{ success: boolean; message?: string }>('/api/auth', {
         method: 'POST',
         body: JSON.stringify({ action: 'register', ...data }),
       });
-      if (res?.member) {
-        if (res.token && typeof window !== 'undefined') {
-          localStorage.setItem('bs-session', res.token);
-          localStorage.setItem('bs-member', JSON.stringify(res.member));
-        }
-        set({ member: res.member, isAuthenticated: true, loading: false });
-      } else {
-        set({ loading: false });
-      }
+      // Registration is a request for approval, never an authenticated session.
+      set({ member: null, isAuthenticated: false, loading: false });
       toast({
         title: 'Inscription réussie !',
-        description: res?.message || 'Votre compte a été créé avec succès.',
+        description: res?.message || 'Votre compte attend la validation du super administrateur.',
       });
       return true;
     } catch {

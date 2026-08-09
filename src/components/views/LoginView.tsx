@@ -62,7 +62,7 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
       if (ok) {
         router.push('/dashboard');
       } else {
-        setLoginError('Email ou mot de passe incorrect. Essayez les boutons de démonstration ci-dessous.');
+        setLoginError('Connexion impossible : vérifiez vos identifiants ou attendez la validation de votre compte par le super administrateur.');
       }
     } catch {
       setLoginError('Erreur de connexion. Veuillez réessayer.');

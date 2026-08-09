@@ -67,6 +67,10 @@ export async function PUT(req: NextRequest) {
       }
 
       const target = await db.member.findUnique({ where: { id: memberId } });
+      // Validation of a new registration is exclusively a CEO operation.
+      if (target?.status === 'PENDING_VALIDATION' && status === 'ACTIVE' && session.accessLevel !== 'CEO') {
+        return NextResponse.json({ error: 'La validation d’un compte est réservée au super administrateur.' }, { status: 403 });
+      }
       if (!target) return NextResponse.json({ error: 'Membre non trouvé' }, { status: 404 });
 
       // Can't change role of someone with equal or higher access
@@ -77,8 +81,10 @@ export async function PUT(req: NextRequest) {
       const updatePayload: any = { ...updateData };
       if (accessLevel) updatePayload.accessLevel = accessLevel;
       if (status) updatePayload.status = status;
-      if (status === 'ACTIVE' || accessLevel) updatePayload.validatedBy = session.id;
-      if (status === 'ACTIVE' || accessLevel) updatePayload.validatedAt = new Date();
+      if (target.status === 'PENDING_VALIDATION' && status === 'ACTIVE') {
+        updatePayload.validatedBy = session.id;
+        updatePayload.validatedAt = new Date();
+      }
 
       const updated = await db.member.update({ where: { id: memberId }, data: updatePayload });
 
@@ -138,4 +144,3 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
-

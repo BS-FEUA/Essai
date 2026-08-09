@@ -94,7 +94,8 @@ export async function getSession(): Promise<SessionMember | null> {
     },
   });
 
-  if (!member || member.status === 'ARCHIVED' || member.status === 'IGNORANT') return null;
+  // A session stops working immediately until the account is active.
+  if (!member || member.status !== 'ACTIVE') return null;
   return member;
 }
 
@@ -107,7 +108,7 @@ export async function login(email: string, password: string): Promise<SessionMem
 
   // Check if account is active
   if (member.status === 'PENDING_VALIDATION') {
-    throw new Error('Votre compte est en attente de validation par l\'administration.');
+    throw new Error('Votre compte est en attente de validation par le super administrateur.');
   }
   if (member.status === 'ARCHIVED') {
     throw new Error('Ce compte a été archivé.');

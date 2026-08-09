@@ -111,9 +111,14 @@ export function AdminView() {
 
   // Tab switch loading
   useEffect(() => {
-    if (tab === 'announcements') loadAnnouncements();
-    if (tab === 'members') loadMembers();
-    if (tab === 'uniforms') loadOrders();
+    let mounted = true;
+    Promise.resolve().then(() => {
+      if (!mounted) return;
+      if (tab === 'announcements') loadAnnouncements();
+      if (tab === 'members') loadMembers();
+      if (tab === 'uniforms') loadOrders();
+    });
+    return () => { mounted = false; };
   }, [tab, loadAnnouncements, loadMembers, loadOrders]);
 
   // Audit log loading

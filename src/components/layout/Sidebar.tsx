@@ -40,7 +40,7 @@ const menuItems: MenuItem[] = [
   { label: 'Caisses', icon: <Wallet className="h-4 w-4" />, view: 'cash', path: '/cash', requiredLevel: 'MASTER' },
   { label: 'Messagerie', icon: <MessageSquare className="h-4 w-4" />, view: 'messages', path: '/messages' },
   { label: 'Uniformes', icon: <Shirt className="h-4 w-4" />, view: 'uniforms', path: '/uniforms' },
-  { label: 'Notifications', icon: <Bell className="h-4 w-4" />, view: 'dashboard', path: '/notifications' },
+  { label: 'Notifications', icon: <Bell className="h-4 w-4" />, view: 'notifications', path: '/notifications' },
   { label: 'Administration', icon: <Shield className="h-4 w-4" />, view: 'admin', path: '/admin', requiredLevel: 'MAST_IN' },
 ];
 
@@ -96,7 +96,7 @@ export function Sidebar() {
           {filteredMenuItems.map((item, idx) => {
             const isActive = pathname === item.path || currentView === item.view;
             return (
-              <div key={item.view}>
+              <div key={item.path}>
                 {idx === 5 && <Separator className="my-2 bg-white/10" />}
                 <Button
                   variant="ghost"
@@ -119,7 +119,7 @@ export function Sidebar() {
             const isActive = pathname === item.path || currentView === item.view;
             return (
               <Button
-                key={item.view}
+                key={item.path}
                 variant="ghost"
                 className={`w-full justify-start gap-3 transition-colors ${
                   isActive

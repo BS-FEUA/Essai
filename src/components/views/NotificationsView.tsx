@@ -37,7 +37,11 @@ export function NotificationsView() {
     } catch { /* ignore */ } finally { setLoading(false); }
   }, [setNotifications]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    let mounted = true;
+    Promise.resolve().then(() => { if (mounted) load(); });
+    return () => { mounted = false; };
+  }, [load]);
 
   const handleMarkRead = async (id: string) => {
     try {

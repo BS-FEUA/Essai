@@ -29,6 +29,7 @@ export type ViewName =
   | 'cash'
   | 'messages'
   | 'uniforms'
+  | 'notifications'
   | 'admin'
   | 'landa';
 

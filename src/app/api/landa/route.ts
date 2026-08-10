@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/db';
 import { z } from 'zod';
-import { randomUUID } from 'crypto';
 
 const landaOrderSchema = z.object({
   name: z.string().min(2, 'Nom requis'),
@@ -24,29 +23,46 @@ export async function POST(req: NextRequest) {
     }
 
     const { name, phone, email, size, quantity, institution, notes } = parsed.data;
-    const id = randomUUID();
     const totalAmount = quantity * UNIT_PRICE;
     const notesJson = JSON.stringify({ name, phone, email: email || undefined, institution, customerNotes: notes });
 
-    // Use raw SQL to bypass Prisma client caching issue with optional memberId
-    await db.$executeRawUnsafe(
-      `INSERT INTO "UniformOrder" (id, taille, quantity, status, totalAmount, notes, "createdAt", "updatedAt") VALUES (?, ?, ?, 'EN_ATTENTE', ?, ?, datetime('now'), datetime('now'))`,
-      id, size, quantity, totalAmount, notesJson
-    );
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from('uniform_orders')
+      .insert({
+        taille: size,
+        quantity,
+        status: 'EN_ATTENTE',
+        total_amount: totalAmount,
+        notes: notesJson,
+        // member_id is intentionally left NULL for public "Landa" orders
+      })
+      .select()
+      .single();
 
-    const auditId = randomUUID();
-    const details = `Commande Landa: ${name} (${phone}), ${quantity}x ${size}`;
+    if (orderError) throw orderError;
+
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || null;
     const ua = req.headers.get('user-agent') || null;
+    const details = `Commande Landa: ${name} (${phone}), ${quantity}x ${size}`;
 
-    await db.$executeRawUnsafe(
-      `INSERT INTO "AuditLog" (id, action, entityType, entityId, details, ipAddress, userAgent) VALUES (?, 'UNIFORM_ORDER', 'UniformOrder', ?, ?, ?, ?)`,
-      auditId, id, details, ip, ua
-    );
+    await supabaseAdmin.from('audit_logs').insert({
+      action: 'UNIFORM_ORDER',
+      entity_type: 'UniformOrder',
+      entity_id: order.id,
+      details: JSON.stringify({ message: details }),
+      ip_address: ip,
+      user_agent: ua,
+    });
 
     return NextResponse.json({
       success: true,
-      order: { id, taille: size, quantity, totalAmount, status: 'EN_ATTENTE' },
+      order: {
+        id: order.id,
+        taille: size,
+        quantity,
+        totalAmount,
+        status: 'EN_ATTENTE',
+      },
     }, { status: 201 });
   } catch (error) {
     console.error('Landa POST error:', JSON.stringify(error, null, 2));
@@ -56,11 +72,16 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    const orders = await db.$queryRawUnsafe<Record<string, any>[]>(
-      `SELECT * FROM "UniformOrder" WHERE "memberId" IS NULL ORDER BY "createdAt" DESC`
-    );
+    // Public Landa orders have NULL member_id
+    const { data: ordersRaw, error } = await supabaseAdmin
+      .from('uniform_orders')
+      .select('*')
+      .is('member_id', null)
+      .order('created_at', { ascending: false });
 
-    const enriched = orders.map((o) => {
+    if (error) throw error;
+
+    const enriched = (ordersRaw || []).map((o) => {
       let info: Record<string, string> = {};
       try {
         info = o.notes ? JSON.parse(o.notes) : {};
@@ -69,6 +90,12 @@ export async function GET() {
       }
       return {
         ...o,
+        memberId: o.member_id,
+        totalAmount: o.total_amount,
+        paymentMethod: o.payment_method,
+        paymentRef: o.payment_ref,
+        createdAt: o.created_at,
+        updatedAt: o.updated_at,
         publicName: info.name || '—',
         publicPhone: info.phone || '—',
         publicEmail: info.email || '',

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/db';
 import { getSession, canAccess, ACCESS_HIERARCHY } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -15,37 +15,50 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status') || '';
     const institution = searchParams.get('institution') || '';
 
-    const where: any = {};
+    let query = supabaseAdmin
+      .from('members')
+      .select('id, matricule, first_name, last_name, email, phone, access_level, status, institution, filiere, niveau, photo_url, fiche_soumise, carte_etudiant, last_login_at, created_at', { count: 'exact' });
+
     if (search) {
-      where.OR = [
-        { firstName: { contains: search } }, { lastName: { contains: search } },
-        { matricule: { contains: search } }, { email: { contains: search } },
-      ];
+      query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,matricule.ilike.%${search}%,email.ilike.%${search}%`);
     }
-    if (accessLevel) where.accessLevel = accessLevel;
-    if (status) where.status = status;
-    if (institution) where.institution = institution;
+    if (accessLevel) query = query.eq('access_level', accessLevel);
+    if (status) query = query.eq('status', status);
+    if (institution) query = query.eq('institution', institution);
 
     // AMC and IGN can only see themselves
     if (['AMC', 'IGN'].includes(session.accessLevel)) {
-      where.id = session.id;
+      query = query.eq('id', session.id);
     }
 
-    const [members, total] = await Promise.all([
-      db.member.findMany({
-        where, skip: (page - 1) * limit, take: limit,
-        orderBy: { createdAt: 'desc' },
-        select: {
-          id: true, matricule: true, firstName: true, lastName: true, email: true,
-          phone: true, accessLevel: true, status: true, institution: true,
-          filiere: true, niveau: true, photoUrl: true, ficheSoumise: true,
-          carteEtudiant: true, lastLoginAt: true, createdAt: true,
-        },
-      }),
-      db.member.count({ where }),
-    ]);
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+    query = query.order('created_at', { ascending: false }).range(from, to);
 
-    return NextResponse.json({ members, total, page, limit, pages: Math.ceil(total / limit) });
+    const { data: membersRaw, count, error } = await query;
+
+    if (error) throw error;
+    
+    // Map snake_case to camelCase
+    const members = (membersRaw || []).map(m => ({
+      ...m,
+      firstName: m.first_name,
+      lastName: m.last_name,
+      accessLevel: m.access_level,
+      photoUrl: m.photo_url,
+      ficheSoumise: m.fiche_soumise,
+      carteEtudiant: m.carte_etudiant,
+      lastLoginAt: m.last_login_at,
+      createdAt: m.created_at
+    }));
+
+    return NextResponse.json({ 
+      members, 
+      total: count || 0, 
+      page, 
+      limit, 
+      pages: Math.ceil((count || 0) / limit) 
+    });
   } catch (error) {
     console.error('Members GET error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
@@ -66,7 +79,8 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
       }
 
-      const target = await db.member.findUnique({ where: { id: memberId } });
+      const { data: target } = await supabaseAdmin.from('members').select('*').eq('id', memberId).single();
+      
       // Validation of a new registration is exclusively a CEO operation.
       if (target?.status === 'PENDING_VALIDATION' && status === 'ACTIVE' && session.accessLevel !== 'CEO') {
         return NextResponse.json({ error: 'La validation d’un compte est réservée au super administrateur.' }, { status: 403 });
@@ -74,33 +88,53 @@ export async function PUT(req: NextRequest) {
       if (!target) return NextResponse.json({ error: 'Membre non trouvé' }, { status: 404 });
 
       // Can't change role of someone with equal or higher access
-      if (accessLevel && (ACCESS_HIERARCHY[target.accessLevel] || 0) >= (ACCESS_HIERARCHY[session.accessLevel] || 0)) {
+      if (accessLevel && (ACCESS_HIERARCHY[target.access_level] || 0) >= (ACCESS_HIERARCHY[session.accessLevel] || 0)) {
         return NextResponse.json({ error: 'Impossible de modifier ce niveau d\'accès' }, { status: 403 });
       }
 
-      const updatePayload: any = { ...updateData };
-      if (accessLevel) updatePayload.accessLevel = accessLevel;
+      const updatePayload: any = {};
+      if (updateData.firstName) updatePayload.first_name = updateData.firstName;
+      if (updateData.lastName) updatePayload.last_name = updateData.lastName;
+      if (updateData.phone !== undefined) updatePayload.phone = updateData.phone;
+      if (updateData.institution) updatePayload.institution = updateData.institution;
+      if (updateData.filiere) updatePayload.filiere = updateData.filiere;
+      if (updateData.niveau) updatePayload.niveau = updateData.niveau;
+      
+      if (accessLevel) updatePayload.access_level = accessLevel;
       if (status) updatePayload.status = status;
+      
       if (target.status === 'PENDING_VALIDATION' && status === 'ACTIVE') {
-        updatePayload.validatedBy = session.id;
-        updatePayload.validatedAt = new Date();
+        updatePayload.validated_by = session.id;
+        updatePayload.validated_at = new Date().toISOString();
       }
 
-      const updated = await db.member.update({ where: { id: memberId }, data: updatePayload });
+      const { data: updated, error } = await supabaseAdmin.from('members').update(updatePayload).eq('id', memberId).select().single();
+      if (error) throw error;
 
-      await db.auditLog.create({
-        data: { action: accessLevel ? 'ROLE_CHANGE' : 'STATUS_CHANGE', actorId: session.id, entityType: 'Member', entityId: memberId, details: `Mise à jour: ${JSON.stringify({ accessLevel, status })}` }
+      await supabaseAdmin.from('audit_logs').insert({
+        action: accessLevel ? 'ROLE_CHANGE' : 'STATUS_CHANGE', 
+        actor_id: session.id, 
+        entity_type: 'Member', 
+        entity_id: memberId, 
+        details: JSON.stringify({ accessLevel, status })
       });
 
       return NextResponse.json({ success: true, member: updated });
     }
 
     // Updating own profile
-    const { firstName, lastName, phone, address, city, filiere, niveau, institution } = updateData;
-    const updated = await db.member.update({
-      where: { id: session.id },
-      data: { firstName, lastName, phone, address, city, filiere, niveau, institution },
-    });
+    const updatePayload: any = {};
+    if (updateData.firstName) updatePayload.first_name = updateData.firstName;
+    if (updateData.lastName) updatePayload.last_name = updateData.lastName;
+    if (updateData.phone !== undefined) updatePayload.phone = updateData.phone;
+    if (updateData.address !== undefined) updatePayload.address = updateData.address;
+    if (updateData.city !== undefined) updatePayload.city = updateData.city;
+    if (updateData.institution) updatePayload.institution = updateData.institution;
+    if (updateData.filiere) updatePayload.filiere = updateData.filiere;
+    if (updateData.niveau) updatePayload.niveau = updateData.niveau;
+
+    const { data: updated, error } = await supabaseAdmin.from('members').update(updatePayload).eq('id', session.id).select().single();
+    if (error) throw error;
 
     return NextResponse.json({ success: true, member: updated });
   } catch (error) {
@@ -123,19 +157,22 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Impossible de supprimer votre propre compte CEO' }, { status: 400 });
     }
 
-    const target = await db.member.findUnique({ where: { id: memberId } });
+    const { data: target } = await supabaseAdmin.from('members').select('*').eq('id', memberId).single();
     if (!target) return NextResponse.json({ error: 'Membre non trouvé' }, { status: 404 });
 
-    await db.member.delete({ where: { id: memberId } });
+    // Also delete from Supabase Auth
+    await supabaseAdmin.auth.admin.deleteUser(memberId);
+    
+    // Deleting from auth.users cascades to members table via RLS foreign key
+    // But we manually delete to be sure
+    await supabaseAdmin.from('members').delete().eq('id', memberId);
 
-    await db.auditLog.create({
-      data: {
-        action: 'DELETE',
-        actorId: session.id,
-        entityType: 'Member',
-        entityId: memberId,
-        details: `Suppression du membre ${target.firstName} ${target.lastName} (${target.email}, ${target.matricule})`,
-      },
+    await supabaseAdmin.from('audit_logs').insert({
+      action: 'DELETE',
+      actor_id: session.id,
+      entity_type: 'Member',
+      entity_id: memberId,
+      details: JSON.stringify({ message: `Suppression du membre ${target.first_name} ${target.last_name}` })
     });
 
     return NextResponse.json({ success: true, message: 'Membre supprimé avec succès' });

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 export async function GET() {
@@ -7,16 +7,33 @@ export async function GET() {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
-    const [notifications, unreadCount] = await Promise.all([
-      db.notification.findMany({
-        where: { memberId: session.id },
-        orderBy: { createdAt: 'desc' },
-        take: 30,
-      }),
-      db.notification.count({ where: { memberId: session.id, status: 'UNREAD' } }),
+    const [
+      { data: notificationsRaw, error: notifError },
+      { count: unreadCount, error: countError },
+    ] = await Promise.all([
+      supabaseAdmin
+        .from('notifications')
+        .select('*')
+        .eq('member_id', session.id)
+        .order('created_at', { ascending: false })
+        .limit(30),
+      supabaseAdmin
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('member_id', session.id)
+        .eq('status', 'UNREAD'),
     ]);
 
-    return NextResponse.json({ notifications, unreadCount });
+    if (notifError) throw notifError;
+    if (countError) throw countError;
+
+    const notifications = (notificationsRaw || []).map(n => ({
+      ...n,
+      memberId: n.member_id,
+      createdAt: n.created_at,
+    }));
+
+    return NextResponse.json({ notifications, unreadCount: unreadCount || 0 });
   } catch (error) {
     console.error('Notifications GET error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
@@ -32,9 +49,19 @@ export async function PUT(req: NextRequest) {
     const { id, markAll } = body;
 
     if (markAll) {
-      await db.notification.updateMany({ where: { memberId: session.id, status: 'UNREAD' }, data: { status: 'READ' } });
+      const { error } = await supabaseAdmin
+        .from('notifications')
+        .update({ status: 'READ' })
+        .eq('member_id', session.id)
+        .eq('status', 'UNREAD');
+      if (error) throw error;
     } else if (id) {
-      await db.notification.update({ where: { id, memberId: session.id }, data: { status: 'READ' } });
+      const { error } = await supabaseAdmin
+        .from('notifications')
+        .update({ status: 'READ' })
+        .eq('id', id)
+        .eq('member_id', session.id);
+      if (error) throw error;
     }
 
     return NextResponse.json({ success: true });

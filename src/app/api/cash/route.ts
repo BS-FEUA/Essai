@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/db';
 import { getSession, canAccess } from '@/lib/auth';
 import { z } from 'zod';
 
@@ -30,21 +30,50 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    const where: any = {};
-    if (registerId) where.registerId = registerId;
-    if (type) where.type = type;
-    if (status) where.status = status;
+    let query = supabaseAdmin
+      .from('cash_transactions')
+      .select(`
+        *,
+        register:cash_registers(*),
+        member:members!cash_transactions_member_id_fkey(id, first_name, last_name, matricule),
+        validator:members!cash_transactions_validated_by_fkey(id, first_name, last_name)
+      `, { count: 'exact' });
 
-    const [transactions, total] = await Promise.all([
-      db.cashTransaction.findMany({
-        where, skip: (page - 1) * limit, take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: { register: true, member: { select: { id: true, firstName: true, lastName: true, matricule: true } }, validator: { select: { id: true, firstName: true, lastName: true } } },
-      }),
-      db.cashTransaction.count({ where }),
-    ]);
+    if (registerId) query = query.eq('register_id', registerId);
+    if (type) query = query.eq('type', type);
+    if (status) query = query.eq('status', status);
 
-    return NextResponse.json({ transactions, total, page, limit, pages: Math.ceil(total / limit) });
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+    query = query.order('created_at', { ascending: false }).range(from, to);
+
+    const { data: transactionsRaw, count, error } = await query;
+
+    if (error) throw error;
+
+    const transactions = (transactionsRaw || []).map(t => ({
+      ...t,
+      registerId: t.register_id,
+      memberId: t.member_id,
+      paymentMethod: t.payment_method,
+      validatedBy: t.validated_by,
+      validatedAt: t.validated_at,
+      createdAt: t.created_at,
+      updatedAt: t.updated_at,
+      member: t.member ? {
+        id: Array.isArray(t.member) ? t.member[0].id : t.member.id,
+        firstName: Array.isArray(t.member) ? t.member[0].first_name : t.member.first_name,
+        lastName: Array.isArray(t.member) ? t.member[0].last_name : t.member.last_name,
+        matricule: Array.isArray(t.member) ? t.member[0].matricule : t.member.matricule,
+      } : null,
+      validator: t.validator ? {
+        id: Array.isArray(t.validator) ? t.validator[0].id : t.validator.id,
+        firstName: Array.isArray(t.validator) ? t.validator[0].first_name : t.validator.first_name,
+        lastName: Array.isArray(t.validator) ? t.validator[0].last_name : t.validator.last_name,
+      } : null,
+    }));
+
+    return NextResponse.json({ transactions, total: count || 0, page, limit, pages: Math.ceil((count || 0) / limit) });
   } catch (error) {
     console.error('Cash GET error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
@@ -68,26 +97,37 @@ export async function POST(req: NextRequest) {
     if (targetMemberId !== session.id && !canAccess(session.accessLevel, 'MASTER')) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
-    const tx = await db.cashTransaction.create({
-      data: {
-        registerId, type, amount,
-        description: description || `${type} - ${targetMemberId}`,
-        paymentMethod: paymentMethod || 'ESPECES',
-        memberId: targetMemberId,
-        status: type === 'DEPOSIT' ? 'COMPLETED' : 'PENDING',
-      },
+    
+    const { data: tx, error } = await supabaseAdmin.from('cash_transactions').insert({
+      register_id: registerId, 
+      type, 
+      amount,
+      description: description || `${type} - ${targetMemberId}`,
+      payment_method: paymentMethod || 'ESPECES',
+      member_id: targetMemberId,
+      status: type === 'DEPOSIT' ? 'COMPLETED' : 'PENDING',
+    }).select().single();
+    
+    if (error) throw error;
+
+    // Trigger update_cash_balance in PostgreSQL handles the register balance update automatically
+
+    await supabaseAdmin.from('audit_logs').insert({
+      action: 'PAYMENT', actor_id: session.id, entity_type: 'CashTransaction', entity_id: tx.id, details: JSON.stringify({ message: `${type} ${amount} FCFA` })
     });
 
-    // Update register balance for completed deposits
-    if (type === 'DEPOSIT') {
-      await db.cashRegister.update({ where: { id: registerId }, data: { balance: { increment: amount } } });
-    }
+    const mappedTx = {
+      ...tx,
+      registerId: tx.register_id,
+      memberId: tx.member_id,
+      paymentMethod: tx.payment_method,
+      validatedBy: tx.validated_by,
+      validatedAt: tx.validated_at,
+      createdAt: tx.created_at,
+      updatedAt: tx.updated_at,
+    };
 
-    await db.auditLog.create({
-      data: { action: 'PAYMENT', actorId: session.id, entityType: 'CashTransaction', entityId: tx.id, details: `${type} ${amount} FCFA` },
-    });
-
-    return NextResponse.json({ success: true, transaction: tx }, { status: 201 });
+    return NextResponse.json({ success: true, transaction: mappedTx }, { status: 201 });
   } catch (error) {
     console.error('Cash POST error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
@@ -106,18 +146,29 @@ export async function PUT(req: NextRequest) {
 
     if (!transactionId) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
 
-    const tx = await db.cashTransaction.findUnique({ where: { id: transactionId } });
+    const { data: tx } = await supabaseAdmin.from('cash_transactions').select('*').eq('id', transactionId).single();
     if (!tx) return NextResponse.json({ error: 'Transaction non trouvée' }, { status: 404 });
 
-    const updatedTx = await db.cashTransaction.update({
-      where: { id: transactionId },
-      data: { status, validatedBy: session.id, validatedAt: new Date() },
-    });
+    const { data: updatedTxRaw, error } = await supabaseAdmin.from('cash_transactions').update({
+      status, 
+      validated_by: session.id, 
+      validated_at: new Date().toISOString()
+    }).eq('id', transactionId).select().single();
 
-    // Update register balance for completed withdrawals
-    if (status === 'COMPLETED' && tx.status !== 'COMPLETED' && tx.type === 'WITHDRAWAL') {
-      await db.cashRegister.update({ where: { id: tx.registerId }, data: { balance: { decrement: tx.amount } } });
-    }
+    if (error) throw error;
+
+    // Trigger update_cash_balance in PostgreSQL handles the register balance update automatically
+
+    const updatedTx = {
+      ...updatedTxRaw,
+      registerId: updatedTxRaw.register_id,
+      memberId: updatedTxRaw.member_id,
+      paymentMethod: updatedTxRaw.payment_method,
+      validatedBy: updatedTxRaw.validated_by,
+      validatedAt: updatedTxRaw.validated_at,
+      createdAt: updatedTxRaw.created_at,
+      updatedAt: updatedTxRaw.updated_at,
+    };
 
     return NextResponse.json({ success: true, transaction: updatedTx });
   } catch (error) {

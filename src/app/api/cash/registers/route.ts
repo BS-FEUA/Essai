@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/db';
 import { getSession, canAccess } from '@/lib/auth';
 
 export async function GET() {
@@ -8,13 +8,27 @@ export async function GET() {
     if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     if (!canAccess(session.accessLevel, 'MASTER')) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
-    const registers = await db.cashRegister.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        _count: { select: { transactions: true } },
-        creator: { select: { firstName: true, lastName: true } },
-      },
-    });
+    const { data: registersRaw, error } = await supabaseAdmin
+      .from('cash_registers')
+      .select(`
+        *,
+        creator:members!cash_registers_created_by_fkey(first_name, last_name)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const registers = (registersRaw || []).map(r => ({
+      ...r,
+      createdBy: r.created_by,
+      isActive: r.is_active,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+      creator: r.creator ? {
+        firstName: Array.isArray(r.creator) ? r.creator[0].first_name : r.creator.first_name,
+        lastName: Array.isArray(r.creator) ? r.creator[0].last_name : r.creator.last_name,
+      } : null,
+    }));
 
     return NextResponse.json({ registers });
   } catch (error) {

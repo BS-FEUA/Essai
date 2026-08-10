@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/db';
 import { getSession, canAccess } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -13,53 +13,84 @@ export async function GET(req: NextRequest) {
 
     // Overview stats
     if (section === 'overview') {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
       const [
-        totalMembers,
-        activeMembers,
-        pendingMembers,
-        totalBalance,
-        totalTransactions,
-        totalOrders,
-        pendingOrders,
-        recentLogins,
+        { count: totalMembers },
+        { count: activeMembers },
+        { count: pendingMembers },
+        { data: registersData },
+        { count: totalTransactions },
+        { count: totalOrders },
+        { count: pendingOrders },
+        { count: recentLogins },
+        { data: membersByLevelRaw },
+        { data: membersByInstitutionRaw },
+        { data: membersByFiliereRaw },
+        { data: ficheStatsRaw },
       ] = await Promise.all([
-        db.member.count(),
-        db.member.count({ where: { status: 'ACTIVE' } }),
-        db.member.count({ where: { status: 'PENDING_VALIDATION' } }),
-        db.cashRegister.aggregate({ _sum: { balance: true } }),
-        db.cashTransaction.count({ where: { status: 'COMPLETED' } }),
-        db.uniformOrder.count(),
-        db.uniformOrder.count({ where: { status: 'EN_ATTENTE' } }),
-        db.member.count({ where: { lastLoginAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
+        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }),
+        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).eq('status', 'ACTIVE'),
+        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).eq('status', 'PENDING_VALIDATION'),
+        supabaseAdmin.from('cash_registers').select('balance'),
+        supabaseAdmin.from('cash_transactions').select('*', { count: 'exact', head: true }).eq('status', 'COMPLETED'),
+        supabaseAdmin.from('uniform_orders').select('*', { count: 'exact', head: true }),
+        supabaseAdmin.from('uniform_orders').select('*', { count: 'exact', head: true }).eq('status', 'EN_ATTENTE'),
+        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).gte('last_login_at', sevenDaysAgo),
+        supabaseAdmin.from('members').select('access_level'),
+        supabaseAdmin.from('members').select('institution').not('institution', 'is', null),
+        supabaseAdmin.from('members').select('filiere').not('filiere', 'is', null),
+        supabaseAdmin.from('members').select('fiche_soumise'),
       ]);
 
-      const membersByLevel = await db.member.groupBy({
-        by: ['accessLevel'],
-        _count: true,
-      });
+      const totalBalance = (registersData || []).reduce((sum: number, r: any) => sum + (r.balance || 0), 0);
 
-      const membersByInstitution = await db.member.groupBy({
-        by: ['institution'],
-        where: { institution: { not: null } },
-        _count: true,
-      });
+      // Group by access_level
+      const membersByLevel = Object.entries(
+        (membersByLevelRaw || []).reduce((acc: Record<string, number>, m: any) => {
+          acc[m.access_level] = (acc[m.access_level] || 0) + 1;
+          return acc;
+        }, {})
+      ).map(([accessLevel, count]) => ({ accessLevel, _count: count }));
 
-      const membersByFiliere = await db.member.groupBy({
-        by: ['filiere'],
-        where: { filiere: { not: null } },
-        _count: true,
-      });
+      // Group by institution
+      const membersByInstitution = Object.entries(
+        (membersByInstitutionRaw || []).reduce((acc: Record<string, number>, m: any) => {
+          if (m.institution) acc[m.institution] = (acc[m.institution] || 0) + 1;
+          return acc;
+        }, {})
+      ).map(([institution, count]) => ({ institution, _count: count }));
 
-      const ficheStats = await db.member.groupBy({
-        by: ['ficheSoumise'],
-        _count: true,
-      });
+      // Group by filiere
+      const membersByFiliere = Object.entries(
+        (membersByFiliereRaw || []).reduce((acc: Record<string, number>, m: any) => {
+          if (m.filiere) acc[m.filiere] = (acc[m.filiere] || 0) + 1;
+          return acc;
+        }, {})
+      ).map(([filiere, count]) => ({ filiere, _count: count }));
+
+      // Group by fiche_soumise
+      const ficheStats = Object.entries(
+        (ficheStatsRaw || []).reduce((acc: Record<string, number>, m: any) => {
+          const key = String(m.fiche_soumise);
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {})
+      ).map(([ficheSoumise, count]) => ({ ficheSoumise: ficheSoumise === 'true', _count: count }));
 
       return NextResponse.json({
-        totalMembers, activeMembers, pendingMembers,
-        totalBalance: totalBalance._sum.balance || 0,
-        totalTransactions, totalOrders, pendingOrders, recentLogins,
-        membersByLevel, membersByInstitution, membersByFiliere, ficheStats,
+        totalMembers: totalMembers || 0,
+        activeMembers: activeMembers || 0,
+        pendingMembers: pendingMembers || 0,
+        totalBalance,
+        totalTransactions: totalTransactions || 0,
+        totalOrders: totalOrders || 0,
+        pendingOrders: pendingOrders || 0,
+        recentLogins: recentLogins || 0,
+        membersByLevel,
+        membersByInstitution,
+        membersByFiliere,
+        ficheStats,
       });
     }
 
@@ -70,20 +101,42 @@ export async function GET(req: NextRequest) {
       const action = searchParams.get('action') || '';
       const actorId = searchParams.get('actorId') || '';
 
-      const where: any = {};
-      if (action) where.action = action;
-      if (actorId) where.actorId = actorId;
+      let query = supabaseAdmin
+        .from('audit_logs')
+        .select(`
+          *,
+          actor:members!audit_logs_actor_id_fkey(id, first_name, last_name, matricule, access_level)
+        `, { count: 'exact' });
 
-      const [logs, total] = await Promise.all([
-        db.auditLog.findMany({
-          where, skip: (page - 1) * limit, take: limit,
-          orderBy: { createdAt: 'desc' },
-          include: { actor: { select: { id: true, firstName: true, lastName: true, matricule: true, accessLevel: true } } },
-        }),
-        db.auditLog.count({ where }),
-      ]);
+      if (action) query = query.eq('action', action);
+      if (actorId) query = query.eq('actor_id', actorId);
 
-      return NextResponse.json({ logs, total, page, limit, pages: Math.ceil(total / limit) });
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      query = query.order('created_at', { ascending: false }).range(from, to);
+
+      const { data: logsRaw, count, error } = await query;
+
+      if (error) throw error;
+
+      const logs = (logsRaw || []).map(l => ({
+        ...l,
+        actorId: l.actor_id,
+        entityType: l.entity_type,
+        entityId: l.entity_id,
+        ipAddress: l.ip_address,
+        userAgent: l.user_agent,
+        createdAt: l.created_at,
+        actor: l.actor ? {
+          id: Array.isArray(l.actor) ? l.actor[0].id : l.actor.id,
+          firstName: Array.isArray(l.actor) ? l.actor[0].first_name : l.actor.first_name,
+          lastName: Array.isArray(l.actor) ? l.actor[0].last_name : l.actor.last_name,
+          matricule: Array.isArray(l.actor) ? l.actor[0].matricule : l.actor.matricule,
+          accessLevel: Array.isArray(l.actor) ? l.actor[0].access_level : l.actor.access_level,
+        } : null,
+      }));
+
+      return NextResponse.json({ logs, total: count || 0, page, limit, pages: Math.ceil((count || 0) / limit) });
     }
 
     return NextResponse.json({ error: 'Section non reconnue' }, { status: 400 });

@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/db';
 import { randomUUID } from 'crypto';
-import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
+const ALLOWED_MIME_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
 const DOCUMENT_TYPES = ['CARTE_ETUDIANT', 'FICHE_PRE_INSCRIPTION', 'BULLETIN', 'CERTIFICAT', 'AUTRE'] as const;
 
 export async function POST(req: NextRequest) {
@@ -23,6 +29,7 @@ export async function POST(req: NextRequest) {
     const title = ((formData.get('title') as string) || '').trim().slice(0, 150);
     const description = ((formData.get('description') as string) || '').trim().slice(0, 1000);
     if (!title || !description) return NextResponse.json({ error: 'Titre et description requis' }, { status: 400 });
+
     const requestedType = (formData.get('type') as string) || 'AUTRE';
     if (!DOCUMENT_TYPES.includes(requestedType as (typeof DOCUMENT_TYPES)[number])) {
       return NextResponse.json({ error: 'Type de document invalide' }, { status: 400 });
@@ -30,27 +37,65 @@ export async function POST(req: NextRequest) {
     const type = requestedType as (typeof DOCUMENT_TYPES)[number];
     const anneeScolaire = (formData.get('anneeScolaire') as string) || '2025-2026';
 
-    const bytes = new Uint8Array(await file.arrayBuffer());
+    const bytes = await file.arrayBuffer();
     const ext = path.extname(file.name).toLowerCase() || '.pdf';
     const fileName = `${randomUUID()}${ext}`;
+    const storagePath = `${session.id}/${fileName}`;
 
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    await mkdir(uploadDir, { recursive: true });
-    const filePath = path.join(uploadDir, fileName);
-    await writeFile(filePath, bytes);
+    // Upload to Supabase Storage (bucket: documents)
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from('documents')
+      .upload(storagePath, bytes, {
+        contentType: file.type,
+        upsert: false,
+      });
 
-    const doc = await db.document.create({
-      data: {
-        title, type, fileName: file.name, fileSize: file.size,
-        mimeType: file.type, fileUrl: `/uploads/${fileName}`,
-        memberId: session.id, anneeScolaire, description,
-      },
+    if (uploadError) {
+      console.error('Supabase Storage upload error:', uploadError);
+      return NextResponse.json({ error: 'Erreur lors de l\'upload du fichier' }, { status: 500 });
+    }
+
+    // Generate a signed URL valid for 7 days
+    const { data: signedUrlData } = await supabaseAdmin.storage
+      .from('documents')
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 7);
+
+    const fileUrl = signedUrlData?.signedUrl || storagePath;
+
+    const { data: doc, error: docError } = await supabaseAdmin.from('documents').insert({
+      title,
+      type,
+      file_name: file.name,
+      file_size: file.size,
+      mime_type: file.type,
+      file_url: fileUrl,
+      member_id: session.id,
+      annee_scolaire: anneeScolaire,
+      description,
+    }).select().single();
+
+    if (docError) throw docError;
+
+    await supabaseAdmin.from('audit_logs').insert({
+      action: 'DOCUMENT_UPLOAD',
+      actor_id: session.id,
+      entity_type: 'Document',
+      entity_id: doc.id,
+      details: JSON.stringify({ message: `Upload: ${title}` }),
     });
 
-    // Audit log
-    await db.auditLog.create({ data: { action: 'DOCUMENT_UPLOAD', actorId: session.id, entityType: 'Document', entityId: doc.id, details: `Upload: ${title}` } });
+    const mappedDoc = {
+      ...doc,
+      fileName: doc.file_name,
+      fileSize: doc.file_size,
+      mimeType: doc.mime_type,
+      fileUrl: doc.file_url,
+      memberId: doc.member_id,
+      anneeScolaire: doc.annee_scolaire,
+      createdAt: doc.created_at,
+    };
 
-    return NextResponse.json({ success: true, document: doc }, { status: 201 });
+    return NextResponse.json({ success: true, document: mappedDoc }, { status: 201 });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'Erreur upload' }, { status: 500 });

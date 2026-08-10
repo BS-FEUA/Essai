@@ -65,17 +65,12 @@ export function canAccess(userLevel: string, requiredLevel: string): boolean {
   return (ACCESS_HIERARCHY[userLevel] || 0) >= (ACCESS_HIERARCHY[requiredLevel] || 0);
 }
 
-// Silent fetch for session checks (no toast on 401)
+// Silent fetch for session checks — Supabase SSR handles JWT cookies automatically
 export async function silentFetch<T = any>(url: string, options?: RequestInit): Promise<T | null> {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('bs-session') : null;
-    const reqHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) {
-      reqHeaders['x-bs-session'] = token;
-    }
     const res = await fetch(url, {
       credentials: 'same-origin',
-      headers: { ...reqHeaders, ...options?.headers },
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
       ...options,
     });
     const data = await res.json();
@@ -90,14 +85,9 @@ export async function apiFetch<T = any>(
   options?: RequestInit
 ): Promise<T> {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('bs-session') : null;
-    const reqHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) {
-      reqHeaders['x-bs-session'] = token;
-    }
     const res = await fetch(url, {
       credentials: 'same-origin',
-      headers: { ...reqHeaders, ...options?.headers },
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
       ...options,
     });
     const data = await res.json();
@@ -164,39 +154,22 @@ export const useAppStore = create<AppState>((set, get) => ({
   setNotifications: (notifications, unreadCount) => set({ notifications, unreadCount }),
   setAnnouncements: (announcements) => set({ announcements }),
 
-  // Check session
+  // Check session — Supabase SSR handles JWT cookies automatically
   checkSession: async () => {
     const current = get();
     if (!current.isAuthenticated) {
       set({ loading: true });
-    }
-    // Pre-populate from localStorage on first render to prevent flickering in iframes
-    if (typeof window !== 'undefined') {
-      const savedMember = localStorage.getItem('bs-member');
-      if (savedMember) {
-        try {
-          const parsed = JSON.parse(savedMember);
-          set({ member: parsed, isAuthenticated: true, loading: false });
-        } catch { /* ignore */ }
-      }
     }
 
     try {
       const data = await silentFetch<{ member: SessionMember }>('/api/auth');
       if (data?.member) {
         set({ member: data.member, isAuthenticated: true, loading: false });
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('bs-member', JSON.stringify(data.member));
-        }
         silentFetch<{ notifications: Notification[]; unreadCount: number }>('/api/notifications')
           .then(d => d && set({ notifications: d.notifications, unreadCount: d.unreadCount }));
         silentFetch<{ announcements: Announcement[] }>('/api/announcements')
           .then(d => d && set({ announcements: d.announcements }));
       } else {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('bs-session');
-          localStorage.removeItem('bs-member');
-        }
         if (!current.isAuthenticated) {
           set({ loading: false, member: null, isAuthenticated: false });
         } else {
@@ -210,18 +183,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  // Login
+  // Login — Supabase sets JWT cookie automatically via @supabase/ssr
   login: async (email, password) => {
     set({ loading: true });
     try {
-      const data = await apiFetch<{ success: boolean; member: SessionMember; token?: string }>('/api/auth', {
+      const data = await apiFetch<{ success: boolean; member: SessionMember }>('/api/auth', {
         method: 'POST',
         body: JSON.stringify({ action: 'login', email, password }),
       });
-      if (data.token && typeof window !== 'undefined') {
-        localStorage.setItem('bs-session', data.token);
-        localStorage.setItem('bs-member', JSON.stringify(data.member));
-      }
       set({
         member: data.member,
         isAuthenticated: true,
@@ -260,12 +229,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  // Logout
+  // Logout — Supabase clears JWT cookie automatically
   logout: async () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('bs-session');
-      localStorage.removeItem('bs-member');
-    }
     try {
       await apiFetch('/api/auth', {
         method: 'POST',

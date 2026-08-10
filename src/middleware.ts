@@ -1,3 +1,4 @@
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -13,34 +14,57 @@ const PROTECTED_ROUTES = [
 
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password'];
 
-export default function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sessionCookie = request.cookies.get('bs-session');
-  const isAuthenticated = Boolean(sessionCookie?.value);
+  let supabaseResponse = NextResponse.next({
+    request,
+  });
 
-  // Protected routes check
-  // We let client-side DashboardLayout handle authentication redirects to support localStorage fallbacks in cross-site preview iframes
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          request.cookies.set({ name, value, ...options });
+          supabaseResponse = NextResponse.next({
+            request: { headers: request.headers },
+          });
+          supabaseResponse.cookies.set({ name, value, ...options });
+        },
+        remove(name: string, options: any) {
+          request.cookies.set({ name, value: '', ...options });
+          supabaseResponse = NextResponse.next({
+            request: { headers: request.headers },
+          });
+          supabaseResponse.cookies.set({ name, value: '', ...options });
+        },
+      },
+    }
+  );
 
-  // If already authenticated and accessing login/register, redirect to /dashboard
+  const { data: { user } } = await supabase.auth.getUser();
+  const isAuthenticated = Boolean(user);
+
+  const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname === route);
+
+  if (isProtectedRoute && !isAuthenticated) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
   if (isAuthRoute && isAuthenticated) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  return NextResponse.next();
+  return supabaseResponse;
 }
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/members/:path*',
-    '/documents/:path*',
-    '/cash/:path*',
-    '/messages/:path*',
-    '/uniforms/:path*',
-    '/admin/:path*',
-    '/login',
-    '/register',
-    '/forgot-password',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

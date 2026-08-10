@@ -1,14 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/db';
 import { getSession, canAccess } from '@/lib/auth';
 
 export async function GET() {
   try {
-    const announcements = await db.announcement.findMany({
-      where: { isActive: true },
-      orderBy: [{ isUrgent: 'desc' }, { createdAt: 'desc' }],
-      take: 20,
-    });
+    const { data: announcementsRaw, error } = await supabaseAdmin
+      .from('announcements')
+      .select('*')
+      .eq('is_active', true)
+      .order('is_urgent', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    const announcements = (announcementsRaw || []).map(a => ({
+      ...a,
+      isUrgent: a.is_urgent,
+      isActive: a.is_active,
+      createdBy: a.created_by,
+      createdAt: a.created_at,
+      updatedAt: a.updated_at,
+    }));
+
     return NextResponse.json({ announcements });
   } catch (error) {
     console.error('Announcements GET error:', error);
@@ -27,9 +41,13 @@ export async function POST(req: NextRequest) {
 
     if (!title || !content) return NextResponse.json({ error: 'Titre et contenu requis' }, { status: 400 });
 
-    const announcement = await db.announcement.create({
-      data: { title, content, isUrgent: isUrgent || false, createdBy: session.id },
-    });
+    const { data: announcement, error } = await supabaseAdmin
+      .from('announcements')
+      .insert({ title, content, is_urgent: isUrgent || false, created_by: session.id })
+      .select()
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true, announcement }, { status: 201 });
   } catch (error) {
@@ -51,19 +69,21 @@ export async function PUT(req: NextRequest) {
     const updateData: any = {};
     if (typeof title === 'string') updateData.title = title;
     if (typeof content === 'string') updateData.content = content;
-    if (typeof isUrgent === 'boolean') updateData.isUrgent = isUrgent;
-    if (typeof isActive === 'boolean') updateData.isActive = isActive;
+    if (typeof isUrgent === 'boolean') updateData.is_urgent = isUrgent;
+    if (typeof isActive === 'boolean') updateData.is_active = isActive;
 
-    const updated = await db.announcement.update({ where: { id }, data: updateData });
+    const { data: updated, error } = await supabaseAdmin
+      .from('announcements')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
 
-    await db.auditLog.create({
-      data: {
-        action: 'UPDATE',
-        actorId: session.id,
-        entityType: 'Announcement',
-        entityId: id,
-        details: `Mise à jour annonce: ${updated.title}`,
-      },
+    if (error) throw error;
+
+    await supabaseAdmin.from('audit_logs').insert({
+      action: 'UPDATE', actor_id: session.id, entity_type: 'Announcement', entity_id: id,
+      details: JSON.stringify({ message: `Mise à jour annonce: ${updated.title}` }),
     });
 
     return NextResponse.json({ success: true, announcement: updated });
@@ -83,19 +103,15 @@ export async function DELETE(req: NextRequest) {
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
 
-    const ann = await db.announcement.findUnique({ where: { id } });
+    const { data: ann } = await supabaseAdmin.from('announcements').select('*').eq('id', id).single();
     if (!ann) return NextResponse.json({ error: 'Annonce introuvable' }, { status: 404 });
 
-    await db.announcement.delete({ where: { id } });
+    const { error } = await supabaseAdmin.from('announcements').delete().eq('id', id);
+    if (error) throw error;
 
-    await db.auditLog.create({
-      data: {
-        action: 'DELETE',
-        actorId: session.id,
-        entityType: 'Announcement',
-        entityId: id,
-        details: `Suppression annonce: ${ann.title}`,
-      },
+    await supabaseAdmin.from('audit_logs').insert({
+      action: 'DELETE', actor_id: session.id, entity_type: 'Announcement', entity_id: id,
+      details: JSON.stringify({ message: `Suppression annonce: ${ann.title}` }),
     });
 
     return NextResponse.json({ success: true, message: 'Annonce supprimée avec succès' });
@@ -104,4 +120,3 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
-

@@ -1,7 +1,4 @@
-import { db } from '@/lib/db';
-import { compare } from 'bcryptjs';
-import { cookies, headers } from 'next/headers';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createServerClient, supabaseAdmin } from '@/lib/db';
 
 export interface SessionMember {
   id: string;
@@ -52,115 +49,35 @@ export function canSendMessage(senderLevel: string, receiverLevel: string): bool
   return true;
 }
 
-const SESSION_COOKIE = 'bs-session';
-const SESSION_SECRET = process.env.SESSION_SECRET || (process.env.NODE_ENV === 'development' ? 'bs-lokossa-development-secret' : '');
-
-function signSession(memberId: string): string {
-  if (!SESSION_SECRET) throw new Error('SESSION_SECRET must be configured in production');
-  const signature = createHmac('sha256', SESSION_SECRET).update(memberId).digest('base64url');
-  return `${memberId}.${signature}`;
-}
-
-function readSignedSession(value: string): string | null {
-  const separator = value.lastIndexOf('.');
-  if (separator < 1 || !SESSION_SECRET) return null;
-  const memberId = value.slice(0, separator);
-  const providedSignature = value.slice(separator + 1);
-  const expectedSignature = createHmac('sha256', SESSION_SECRET).update(memberId).digest('base64url');
-  const provided = Buffer.from(providedSignature);
-  const expected = Buffer.from(expectedSignature);
-  return provided.length === expected.length && timingSafeEqual(provided, expected) ? memberId : null;
-}
-
 export async function getSession(): Promise<SessionMember | null> {
-  const cookieStore = await cookies();
-  let sessionId = cookieStore.get(SESSION_COOKIE)?.value;
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!sessionId) {
-    const headersList = await headers();
-    sessionId = headersList.get('x-bs-session') || undefined;
-  }
+  if (!user) return null;
 
-  if (!sessionId) return null;
-  const memberId = readSignedSession(sessionId);
-  if (!memberId) return null;
+  const { data: member, error } = await supabaseAdmin
+    .from('members')
+    .select(`
+      id, matricule, first_name, last_name, email, phone, access_level,
+      status, institution, filiere, niveau, photo_url
+    `)
+    .eq('id', user.id)
+    .single();
 
-  const member = await db.member.findUnique({
-    where: { id: memberId },
-    select: {
-      id: true, matricule: true, firstName: true, lastName: true,
-      email: true, phone: true, accessLevel: true, status: true,
-      institution: true, filiere: true, niveau: true, photoUrl: true,
-    },
-  });
-
-  // A session stops working immediately until the account is active.
-  if (!member || member.status !== 'ACTIVE') return null;
-  return member;
-}
-
-export async function login(email: string, password: string): Promise<SessionMember | null> {
-  const member = await db.member.findUnique({ where: { email } });
-  if (!member) return null;
-
-  // Check lockout
-  if (member.lockedUntil && member.lockedUntil > new Date()) return null;
-
-  // Check if account is active
-  if (member.status === 'PENDING_VALIDATION') {
-    throw new Error('Votre compte est en attente de validation par le super administrateur.');
-  }
-  if (member.status === 'ARCHIVED') {
-    throw new Error('Ce compte a été archivé.');
-  }
-  if (member.status !== 'ACTIVE') {
-    throw new Error('Ce compte n\'est pas actif.');
-  }
-
-  const valid = await compare(password, member.passwordHash);
-  if (!valid) {
-    // Increment login attempts
-    await db.member.update({
-      where: { id: member.id },
-      data: {
-        loginAttempts: { increment: 1 },
-        ...(member.loginAttempts >= 4 ? { lockedUntil: new Date(Date.now() + 15 * 60 * 1000) } : {}),
-      },
-    });
-    return null;
-  }
-
-  // Reset login attempts and update last login
-  await db.member.update({
-    where: { id: member.id },
-    data: { loginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() },
-  });
-
-  // Create audit log
-  await db.auditLog.create({
-    data: { action: 'LOGIN', actorId: member.id, entityType: 'Member', entityId: member.id, details: 'Connexion réussie' },
-  });
+  if (error || !member || member.status !== 'ACTIVE') return null;
 
   return {
-    id: member.id, matricule: member.matricule, firstName: member.firstName, lastName: member.lastName,
-    email: member.email, phone: member.phone, accessLevel: member.accessLevel,
-    status: member.status, institution: member.institution, filiere: member.filiere,
-    niveau: member.niveau, photoUrl: member.photoUrl,
+    id: member.id,
+    matricule: member.matricule,
+    firstName: member.first_name,
+    lastName: member.last_name,
+    email: member.email,
+    phone: member.phone,
+    accessLevel: member.access_level,
+    status: member.status,
+    institution: member.institution,
+    filiere: member.filiere,
+    niveau: member.niveau,
+    photoUrl: member.photo_url,
   };
-}
-
-export function createSessionCookie(memberId: string) {
-  return {
-    name: SESSION_COOKIE,
-    value: signSession(memberId),
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none' as const,
-    path: '/',
-    maxAge: 60 * 60 * 24,
-  };
-}
-
-export function deleteSessionCookie() {
-  return { name: SESSION_COOKIE, value: '', httpOnly: true, secure: true, sameSite: 'none' as const, path: '/', maxAge: 0 };
 }

@@ -33,9 +33,7 @@ export default function RootLayout({
         <meta name="description" content="Bureau Syndical de Lokossa - Fédération des Étudiants Universitaires Associés au Bénin" />
         <link rel="apple-touch-icon" href="/feua-logo.png" />
       </head>
-      <body
-        className="antialiased bg-background text-foreground min-h-screen overflow-x-hidden"
-      >
+      <body className="site-liquid-glass antialiased bg-background text-foreground min-h-screen overflow-x-hidden">
         {children}
         <Toaster />
       </body>

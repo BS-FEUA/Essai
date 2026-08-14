@@ -106,6 +106,7 @@ export function Sidebar() {
                       : 'hover:bg-white/5 text-white/70 hover:text-white transition-colors'
                   }`}
                   onClick={() => handleNav(item)}
+                  onMouseEnter={() => router.prefetch(item.path)}
                   size={collapsed ? 'icon' : 'default'}
                 >
                   {item.icon}
@@ -127,6 +128,7 @@ export function Sidebar() {
                     : 'hover:bg-white/5 text-white/70 hover:text-white transition-colors'
                 }`}
                 onClick={() => handleNav(item)}
+                onMouseEnter={() => router.prefetch(item.path)}
                 size={collapsed ? 'icon' : 'default'}
               >
                 {item.icon}

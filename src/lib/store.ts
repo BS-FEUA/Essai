@@ -1,6 +1,22 @@
 import { create } from 'zustand';
 import { toast } from '@/hooks/use-toast';
 
+type CachedResponse = { data: unknown; expiresAt: number };
+
+// Cache read-only responses only for the active browser session. Returning to a
+// page is then immediate, while mutations still invalidate every cached result.
+const responseCache = new Map<string, CachedResponse>();
+const inFlightReads = new Map<string, Promise<unknown>>();
+const READ_CACHE_TTL = 15_000;
+let cacheGeneration = 0;
+let lastSessionCheckAt = 0;
+let sessionCheckInFlight: Promise<void> | null = null;
+
+export function clearApiCache() {
+  cacheGeneration += 1;
+  responseCache.clear();
+}
+
 // Types
 export interface SessionMember {
   id: string;
@@ -96,6 +112,7 @@ export async function apiFetch<T = any>(
       toast({ title: 'Erreur', description: msg, variant: 'destructive' });
       throw new Error(msg);
     }
+    if (options?.method && options.method !== 'GET') clearApiCache();
     return data as T;
   } catch (error: any) {
     if (error.message !== 'Erreur serveur' && error.message !== 'Non authentifié') {
@@ -103,6 +120,27 @@ export async function apiFetch<T = any>(
     }
     throw error;
   }
+}
+
+export async function cachedApiFetch<T = any>(url: string, ttl = READ_CACHE_TTL): Promise<T> {
+  const cached = responseCache.get(url);
+  if (cached && cached.expiresAt > Date.now()) return cached.data as T;
+
+  const pending = inFlightReads.get(url);
+  if (pending) return pending as Promise<T>;
+
+  const requestGeneration = cacheGeneration;
+  const request = apiFetch<T>(url)
+    .then((data) => {
+      if (requestGeneration === cacheGeneration) {
+        responseCache.set(url, { data, expiresAt: Date.now() + ttl });
+      }
+      return data;
+    })
+    .finally(() => inFlightReads.delete(url));
+
+  inFlightReads.set(url, request);
+  return request;
 }
 
 // Store interface
@@ -157,30 +195,41 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Check session — Supabase SSR handles JWT cookies automatically
   checkSession: async () => {
     const current = get();
+    if (current.isAuthenticated && Date.now() - lastSessionCheckAt < 60_000) {
+      set({ loading: false });
+      return;
+    }
+    if (sessionCheckInFlight) return sessionCheckInFlight;
     if (!current.isAuthenticated) {
       set({ loading: true });
     }
 
-    try {
-      const data = await silentFetch<{ member: SessionMember }>('/api/auth');
-      if (data?.member) {
-        set({ member: data.member, isAuthenticated: true, loading: false });
-        silentFetch<{ notifications: Notification[]; unreadCount: number }>('/api/notifications')
-          .then(d => d && set({ notifications: d.notifications, unreadCount: d.unreadCount }));
-        silentFetch<{ announcements: Announcement[] }>('/api/announcements')
-          .then(d => d && set({ announcements: d.announcements }));
-      } else {
-        if (!current.isAuthenticated) {
-          set({ loading: false, member: null, isAuthenticated: false });
+    sessionCheckInFlight = (async () => {
+      try {
+        const data = await silentFetch<{ member: SessionMember }>('/api/auth');
+        if (data?.member) {
+          set({ member: data.member, isAuthenticated: true, loading: false });
+          lastSessionCheckAt = Date.now();
+          silentFetch<{ notifications: Notification[]; unreadCount: number }>('/api/notifications')
+            .then(d => d && set({ notifications: d.notifications, unreadCount: d.unreadCount }));
+          silentFetch<{ announcements: Announcement[] }>('/api/announcements')
+            .then(d => d && set({ announcements: d.announcements }));
         } else {
-          set({ loading: false });
+          if (!current.isAuthenticated) {
+            set({ loading: false, member: null, isAuthenticated: false });
+          } else {
+            set({ loading: false });
+          }
+          const d = await silentFetch<{ announcements: Announcement[] }>('/api/announcements');
+          if (d) set({ announcements: d.announcements });
         }
-        const d = await silentFetch<{ announcements: Announcement[] }>('/api/announcements');
-        if (d) set({ announcements: d.announcements });
+      } catch {
+        set({ loading: false });
+      } finally {
+        sessionCheckInFlight = null;
       }
-    } catch {
-      set({ loading: false });
-    }
+    })();
+    return sessionCheckInFlight;
   },
 
   // Login — Supabase sets JWT cookie automatically via @supabase/ssr
@@ -196,6 +245,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         isAuthenticated: true,
         loading: false,
       });
+      lastSessionCheckAt = Date.now();
       toast({ title: 'Bienvenue !', description: `Connexion réussie, ${data.member.firstName}` });
 
       // Load notifications
@@ -245,6 +295,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       unreadCount: 0,
       selectedMemberId: null,
     });
+    lastSessionCheckAt = 0;
+    clearApiCache();
     toast({ title: 'Déconnexion', description: 'À bientôt !' });
   },
 }));

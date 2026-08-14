@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/db';
 import { z } from 'zod';
+import { canAccess, getSession } from '@/lib/auth';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 const landaOrderSchema = z.object({
   name: z.string().min(2, 'Nom requis'),
@@ -16,6 +18,9 @@ const UNIT_PRICE = 15000;
 
 export async function POST(req: NextRequest) {
   try {
+    if (!checkRateLimit(`landa:${getClientIp(req.headers)}`, 10, 60 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Trop de demandes. Réessayez plus tard.' }, { status: 429 });
+    }
     const body = await req.json();
     const parsed = landaOrderSchema.safeParse(body);
     if (!parsed.success) {
@@ -72,6 +77,9 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    if (!canAccess(session.accessLevel, 'MASTER')) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     // Public Landa orders have NULL member_id
     const { data: ordersRaw, error } = await supabaseAdmin
       .from('uniform_orders')

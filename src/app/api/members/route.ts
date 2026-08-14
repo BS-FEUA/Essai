@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/db';
 import { getSession, canAccess, ACCESS_HIERARCHY } from '@/lib/auth';
+import { z } from 'zod';
+import { getPagination } from '@/lib/pagination';
+
+const accessLevelSchema = z.enum(['CEO', 'MAST_IN', 'MAST', 'MASTER', 'MIX', 'MIN', 'AMC', 'IGN']);
+const memberStatusSchema = z.enum(['ACTIVE', 'SUSPENDED', 'ARCHIVED', 'PENDING_VALIDATION', 'IGNORANT']);
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,8 +13,7 @@ export async function GET(req: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const { page, limit, from, to } = getPagination(searchParams, 20);
     const search = searchParams.get('search') || '';
     const accessLevel = searchParams.get('accessLevel') || '';
     const status = searchParams.get('status') || '';
@@ -31,8 +35,6 @@ export async function GET(req: NextRequest) {
       query = query.eq('id', session.id);
     }
 
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
     query = query.order('created_at', { ascending: false }).range(from, to);
 
     const { data: membersRaw, count, error } = await query;
@@ -87,8 +89,19 @@ export async function PUT(req: NextRequest) {
       }
       if (!target) return NextResponse.json({ error: 'Membre non trouvé' }, { status: 404 });
 
-      // Can't change role of someone with equal or higher access
-      if (accessLevel && (ACCESS_HIERARCHY[target.access_level] || 0) >= (ACCESS_HIERARCHY[session.accessLevel] || 0)) {
+      const actorRank = ACCESS_HIERARCHY[session.accessLevel] ?? -1;
+      const targetRank = ACCESS_HIERARCHY[target.access_level] ?? -1;
+      if (targetRank >= actorRank) {
+        return NextResponse.json({ error: 'Impossible de modifier un membre de niveau égal ou supérieur' }, { status: 403 });
+      }
+      if (accessLevel && !accessLevelSchema.safeParse(accessLevel).success) {
+        return NextResponse.json({ error: 'Niveau d\'accès invalide' }, { status: 400 });
+      }
+      if (status && !memberStatusSchema.safeParse(status).success) {
+        return NextResponse.json({ error: 'Statut invalide' }, { status: 400 });
+      }
+      // A manager cannot edit a peer/superior or grant a role at or above their own.
+      if (accessLevel && (ACCESS_HIERARCHY[accessLevel] ?? -1) >= actorRank) {
         return NextResponse.json({ error: 'Impossible de modifier ce niveau d\'accès' }, { status: 403 });
       }
 

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/lib/store';
+import { INITIAL_BUREAU_MEMBERS, ROLE_INFOS } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import {
   Heart, Star, Megaphone, AlertTriangle, Shirt, CheckCircle2, LogIn, Loader2, ArrowLeft,
+  GraduationCap, CalendarDays, Building2,
 } from 'lucide-react';
 
 const pageVariants = {
@@ -25,11 +27,34 @@ const pageVariants = {
 };
 
 export function LandaView() {
-  const { member, announcements } = useAppStore();
+  const { member } = useAppStore();
   const router = useRouter();
   const [form, setForm] = useState({ name: '', phone: '', email: '', taille: 'M', quantity: '1', institution: '', notes: '' });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    fetch('/api/announcements')
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Unable to load publications.');
+        return response.json();
+      })
+      .then((data) => {
+        if (active) setAnnouncements(data.announcements || []);
+      })
+      .catch(() => {
+        // The public page remains useful even if publications are unavailable.
+      })
+      .finally(() => {
+        if (active) setAnnouncementsLoading(false);
+      });
+
+    return () => { active = false; };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,8 +130,83 @@ export function LandaView() {
         </Card>
       </div>
 
-      {/* Announcements */}
-      {announcements.length > 0 && (
+      <section className="space-y-5" aria-labelledby="bureau-title">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--feua-gold)]">Organisation</p>
+            <h2 id="bureau-title" className="mt-1 text-2xl font-bold text-foreground">Le Bureau Syndical BS-Lokossa</h2>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Le bureau coordonne les activités syndicales, porte la voix des étudiants et facilite le dialogue avec les établissements de Lokossa.</p>
+          </div>
+          <div className="inline-flex items-center gap-2 text-xs font-medium text-[var(--feua-green)]"><Building2 className="h-4 w-4" /> IUT et ENSET Lokossa</div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {INITIAL_BUREAU_MEMBERS.map((bureauMember) => {
+            const role = ROLE_INFOS[bureauMember.role];
+            return (
+              <Card key={bureauMember.id} className="overflow-hidden border-emerald-700/15 bg-white/75">
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-3">
+                    <img src={bureauMember.photoUrl} alt="" className="h-14 w-14 rounded-xl object-cover ring-2 ring-emerald-600/20" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-[var(--feua-green)]">{role.title}</p>
+                      <h3 className="mt-0.5 font-bold text-foreground">{bureauMember.name}</h3>
+                      <p className="mt-1 text-xs text-muted-foreground">{bureauMember.niveau}</p>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{role.description}</p>
+                  <div className="mt-4 flex items-start gap-2 border-t border-emerald-900/10 pt-3 text-xs text-muted-foreground">
+                    <GraduationCap className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--feua-gold)]" />
+                    <span>{bureauMember.filiere}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      <section aria-labelledby="publications-title">
+        <Card className="border-[var(--feua-gold)]/35">
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle id="publications-title" className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-[var(--feua-gold)]" />Publications du Bureau</CardTitle>
+                <CardDescription className="mt-1">Communiqués et informations officielles destinés à la communauté universitaire.</CardDescription>
+              </div>
+              <CalendarDays className="h-5 w-5 shrink-0 text-[var(--feua-green)]" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {announcementsLoading ? (
+              <p className="text-sm text-muted-foreground">Chargement des publications...</p>
+            ) : announcements.length === 0 ? (
+              <p className="rounded-lg bg-muted/60 p-4 text-sm text-muted-foreground">Aucune publication n&apos;est disponible pour le moment. Revenez prochainement pour les informations du bureau.</p>
+            ) : (
+              <div className="space-y-3">
+                {announcements.slice(0, 6).map((announcement) => (
+                  <article key={announcement.id} className={`rounded-xl border p-4 ${announcement.isUrgent ? 'border-red-300 bg-red-50/70' : 'border-emerald-900/10 bg-muted/40'}`}>
+                    <div className="flex items-start gap-2">
+                      {announcement.isUrgent ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" /> : <Megaphone className="mt-0.5 h-4 w-4 shrink-0 text-[var(--feua-green)]" />}
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <h3 className="font-semibold text-foreground">{announcement.title}</h3>
+                          {announcement.isUrgent && <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Urgent</span>}
+                        </div>
+                        <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{announcement.content}</p>
+                        {announcement.createdAt && <p className="mt-3 text-[11px] font-medium text-muted-foreground">Publié le {new Date(announcement.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>}
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Retained only during the initial public publications request. */}
+      {announcementsLoading && announcements.length > 0 && (
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-[var(--feua-gold)]" />Annonces</CardTitle></CardHeader>
           <CardContent>

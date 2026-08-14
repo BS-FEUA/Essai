@@ -17,6 +17,11 @@ const pageVariants = {
   exit: { opacity: 0, y: -10, transition: { duration: 0.2 } },
 };
 
+const DEMO_ACCOUNTS = {
+  ceo: { email: 'ceo@bslokossa.bj', password: 'demo1234' },
+  master: { email: 'master@bslokossa.bj', password: 'demo1234' },
+} as const;
+
 export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 'register' }) {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(defaultTab);
   const [email, setEmail] = useState('');
@@ -120,7 +125,7 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-[#021c17] via-[#06141a] to-[#01140e] text-slate-100">
+    <div className="login-page min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-transparent text-slate-100">
       {/* Top Floating Navigation Header */}
       <div className="fixed top-4 left-4 right-4 z-50 flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
@@ -164,14 +169,14 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
             <div className="flex flex-col gap-2 w-full">
               <button
                 type="button"
-                onClick={() => handleQuickFillAndLogin('ceo@feua.bj', 'ceo2026')}
+                onClick={() => handleQuickFillAndLogin(DEMO_ACCOUNTS.ceo.email, DEMO_ACCOUNTS.ceo.password)}
                 className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/10 hover:from-amber-500/30 hover:to-amber-600/20 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center justify-center gap-2 shadow-md"
               >
                 <ShieldCheck className="h-4 w-4 text-amber-400" /> Espace Bureau Exécutif (CEO)
               </button>
               <button
                 type="button"
-                onClick={() => handleQuickFillAndLogin('master@feua.bj', 'master2026')}
+                onClick={() => handleQuickFillAndLogin(DEMO_ACCOUNTS.master.email, DEMO_ACCOUNTS.master.password)}
                 className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-500/20 to-emerald-600/10 hover:from-emerald-500/30 hover:to-emerald-600/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition flex items-center justify-center gap-2 shadow-md"
               >
                 <UserCheck className="h-4 w-4 text-emerald-400" /> Espace Membre (Master)
@@ -315,26 +320,26 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                 </div>
 
                 {/* Demo accounts hint card */}
-                <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-amber-500/30 shadow-lg space-y-2">
+                <div className="login-demo-card p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-amber-500/30 shadow-lg space-y-2">
                   <p className="font-extrabold text-xs text-amber-300 text-center uppercase tracking-wider flex items-center justify-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-amber-400" /> Connexion Démo Immédiate
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <button
                       type="button"
-                      onClick={() => handleQuickFillAndLogin('ceo@feua.bj', 'ceo2026')}
+                      onClick={() => handleQuickFillAndLogin(DEMO_ACCOUNTS.ceo.email, DEMO_ACCOUNTS.ceo.password)}
                       className="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-amber-500/30 text-left transition flex flex-col group"
                     >
                       <span className="font-bold text-amber-300 group-hover:text-amber-200">Compte Bureau (CEO)</span>
-                      <span className="text-[10px] text-slate-400 truncate">ceo@feua.bj</span>
+                      <span className="text-[10px] text-slate-400 truncate">ceo@bslokossa.bj</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleQuickFillAndLogin('master@feua.bj', 'master2026')}
+                      onClick={() => handleQuickFillAndLogin(DEMO_ACCOUNTS.master.email, DEMO_ACCOUNTS.master.password)}
                       className="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-emerald-500/30 text-left transition flex flex-col group"
                     >
                       <span className="font-bold text-emerald-400 group-hover:text-emerald-300">Compte Membre</span>
-                      <span className="text-[10px] text-slate-400 truncate">master@feua.bj</span>
+                      <span className="text-[10px] text-slate-400 truncate">master@bslokossa.bj</span>
                     </button>
                   </div>
                 </div>

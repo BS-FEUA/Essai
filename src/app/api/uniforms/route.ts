@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/db';
 import { getSession, canAccess } from '@/lib/auth';
+import { z } from 'zod';
+import { getPagination } from '@/lib/pagination';
+
+const orderSchema = z.object({
+  taille: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL']),
+  quantity: z.number().int().min(1).max(10),
+  notes: z.string().trim().max(1000).optional(),
+  paymentMethod: z.string().trim().max(50).optional(),
+  paymentRef: z.string().trim().max(100).optional(),
+  cycle: z.number().int().positive().max(99).optional(),
+});
+const orderStatusSchema = z.enum(['VAL1', 'VAL2', 'LIVRE', 'ANNULE']);
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,8 +21,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') || '';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const { page, limit, from, to } = getPagination(searchParams, 20);
 
     let query = supabaseAdmin
       .from('uniform_orders')
@@ -28,8 +39,6 @@ export async function GET(req: NextRequest) {
       query = query.eq('member_id', session.id);
     }
 
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
     query = query.order('created_at', { ascending: false }).range(from, to);
 
     const { data: ordersRaw, count, error } = await query;
@@ -80,9 +89,9 @@ export async function POST(req: NextRequest) {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
-    const body = await req.json();
-    const { taille, quantity, notes } = body;
-    const cycle = body.cycle || 1;
+    const parsed = orderSchema.safeParse(await req.json());
+    if (!parsed.success) return NextResponse.json({ error: 'Commande invalide' }, { status: 400 });
+    const { taille, quantity, notes, paymentMethod, paymentRef, cycle = 1 } = parsed.data;
     const unitPrice = 15000;
 
     const { data: order, error } = await supabaseAdmin.from('uniform_orders').insert({
@@ -92,8 +101,8 @@ export async function POST(req: NextRequest) {
       quantity: quantity || 1,
       total_amount: (quantity || 1) * unitPrice, 
       notes,
-      payment_method: body.paymentMethod, 
-      payment_ref: body.paymentRef,
+      payment_method: paymentMethod,
+      payment_ref: paymentRef,
     }).select().single();
 
     if (error) throw error;
@@ -114,10 +123,22 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const { orderId, status: newStatus } = body;
 
-    if (!orderId) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
+    if (!z.string().uuid().safeParse(orderId).success || !orderStatusSchema.safeParse(newStatus).success) return NextResponse.json({ error: 'Validation invalide' }, { status: 400 });
 
     const { data: order } = await supabaseAdmin.from('uniform_orders').select('*').eq('id', orderId).single();
     if (!order) return NextResponse.json({ error: 'Commande non trouvée' }, { status: 404 });
+
+    const expectedNextStatus: Record<string, string[]> = {
+      EN_ATTENTE: ['VAL1', 'ANNULE'],
+      VAL1: ['VAL2', 'ANNULE'],
+      VAL2: ['LIVRE', 'ANNULE'],
+    };
+    if (!expectedNextStatus[order.status]?.includes(newStatus)) {
+      return NextResponse.json({ error: 'Transition de statut invalide' }, { status: 409 });
+    }
+    if (newStatus === 'VAL2' && order.validated1_by === session.id) {
+      return NextResponse.json({ error: 'Le second validateur doit être différent du premier' }, { status: 403 });
+    }
 
     const updateData: any = { status: newStatus };
 

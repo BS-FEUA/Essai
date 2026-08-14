@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { useAppStore, canAccess, ACCESS_LABELS, apiFetch } from '@/lib/store';
+import { useAppStore, canAccess, ACCESS_LABELS, apiFetch, cachedApiFetch } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -65,7 +65,7 @@ export function AdminView() {
   // Load Overview
   const loadOverview = useCallback(async () => {
     try {
-      const o = await apiFetch<any>('/api/admin?section=overview');
+      const o = await cachedApiFetch<any>('/api/admin?section=overview');
       setOverview(o);
     } catch { /* ignore */ }
   }, []);
@@ -73,7 +73,7 @@ export function AdminView() {
   // Load Announcements
   const loadAnnouncements = useCallback(async () => {
     try {
-      const data = await apiFetch<{ announcements: any[] }>('/api/announcements');
+      const data = await cachedApiFetch<{ announcements: any[] }>('/api/announcements');
       setAnnouncements(data.announcements || []);
     } catch { /* ignore */ }
   }, []);
@@ -85,7 +85,7 @@ export function AdminView() {
       const params = new URLSearchParams({ page: '1', limit: '50' });
       if (memberSearch) params.set('search', memberSearch);
       if (memberStatusFilter) params.set('status', memberStatusFilter);
-      const data = await apiFetch<{ members: any[] }>(`/api/members?${params}`);
+      const data = await cachedApiFetch<{ members: any[] }>(`/api/members?${params}`);
       setMembers(data.members || []);
     } catch { /* ignore */ } finally { setMemberLoading(false); }
   }, [memberSearch, memberStatusFilter]);
@@ -94,7 +94,7 @@ export function AdminView() {
   const loadOrders = useCallback(async () => {
     setOrdersLoading(true);
     try {
-      const data = await apiFetch<{ orders: any[] }>('/api/uniforms?limit=50');
+      const data = await cachedApiFetch<{ orders: any[] }>('/api/uniforms?limit=50');
       setOrders(data.orders || []);
     } catch { /* ignore */ } finally { setOrdersLoading(false); }
   }, []);

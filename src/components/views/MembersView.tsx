@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { useAppStore, canAccess, ACCESS_LABELS, apiFetch } from '@/lib/store';
+import { useAppStore, canAccess, ACCESS_LABELS, apiFetch, cachedApiFetch } from '@/lib/store';
 import { statusBadge, statusBadgeSoft } from './view-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,7 +49,7 @@ export function MembersView() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(page), limit: '10', search, accessLevel: filterLevel, status: filterStatus });
-      const data = await apiFetch<any>(`/api/members?${params}`);
+      const data = await cachedApiFetch<any>(`/api/members?${params}`);
       setMembers(data.members);
       setTotal(data.total);
     } catch { /* ignore */ } finally { setLoading(false); }

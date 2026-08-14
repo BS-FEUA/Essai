@@ -156,20 +156,34 @@ async function seedMembers() {
       },
     });
 
+    let userId: string;
     if (authError) {
-      if (authError.message.includes('already been registered')) {
-        console.log(`⚠️  ${m.email} déjà existant — skip`);
-        // Try to get the user by email
-        const { data: existing } = await supabase.auth.admin.listUsers();
-        const existingUser = existing?.users?.find(u => u.email === m.email);
-        if (existingUser) createdIds[m.email] = existingUser.id;
+      if (!authError.message.includes('already been registered')) {
+        console.error(`❌ Erreur Auth pour ${m.email}:`, authError.message);
         continue;
       }
-      console.error(`❌ Erreur Auth pour ${m.email}:`, authError.message);
-      continue;
+
+      const { data: existing } = await supabase.auth.admin.listUsers();
+      const existingUser = existing?.users?.find(u => u.email === m.email);
+      if (!existingUser) {
+        console.error(`❌ Utilisateur existant introuvable pour ${m.email}`);
+        continue;
+      }
+      const { error: updateAuthError } = await supabase.auth.admin.updateUserById(existingUser.id, {
+        password: m.password,
+        email_confirm: true,
+        user_metadata: { firstName: m.firstName, lastName: m.lastName, matricule: m.matricule },
+      });
+      if (updateAuthError) {
+        console.error(`❌ Erreur mise à jour Auth pour ${m.email}:`, updateAuthError.message);
+        continue;
+      }
+      userId = existingUser.id;
+      console.log(`⚠️  ${m.email} déjà existant — mot de passe et profil mis à jour`);
+    } else {
+      userId = authData.user.id;
     }
 
-    const userId = authData.user.id;
     createdIds[m.email] = userId;
 
     // 2. Upsert member profile
@@ -208,6 +222,15 @@ async function seedCashRegisters(ceoId: string) {
   ];
 
   for (const r of registers) {
+    const { data: existingRegister } = await supabase
+      .from('cash_registers')
+      .select('id')
+      .eq('name', r.name)
+      .maybeSingle();
+    if (existingRegister) {
+      console.log(`⚠️  Caisse déjà existante: ${r.name}`);
+      continue;
+    }
     const { error } = await supabase.from('cash_registers').insert({
       ...r,
       created_by: ceoId,
@@ -246,6 +269,15 @@ async function seedAnnouncements(ceoId: string) {
   ];
 
   for (const a of announcements) {
+    const { data: existingAnnouncement } = await supabase
+      .from('announcements')
+      .select('id')
+      .eq('title', a.title)
+      .maybeSingle();
+    if (existingAnnouncement) {
+      console.log(`⚠️  Annonce déjà existante: ${a.title.slice(0, 50)}...`);
+      continue;
+    }
     const { error } = await supabase.from('announcements').insert({ ...a, created_by: ceoId });
     if (error) {
       console.error(`❌ Erreur annonce:`, error.message);

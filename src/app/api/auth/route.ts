@@ -23,6 +23,7 @@ const registerSchema = z.object({
 });
 const recoverySchema = z.object({ email: z.string().email() });
 const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Mot de passe actuel requis'),
   newPassword: z.string().min(6, 'Le nouveau mot de passe doit contenir au moins 6 caractères'),
   confirmPassword: z.string().min(1, 'Confirmation requise'),
 }).refine((d) => d.newPassword === d.confirmPassword, { message: 'Les mots de passe ne correspondent pas', path: ['confirmPassword'] });
@@ -88,7 +89,25 @@ export async function POST(req: NextRequest) {
         action: 'LOGIN', actor_id: member.id, entity_type: 'Member', entity_id: member.id, details: '{"message": "Connexion réussie"}'
       });
 
-      return NextResponse.json({ success: true, member });
+      // Keep the login response aligned with the client session shape. Without
+      // this mapping the initial store receives `access_level` instead of
+      // `accessLevel`, so role-protected navigation only appears after reload.
+      const sessionMember = {
+        id: member.id,
+        matricule: member.matricule,
+        firstName: member.first_name,
+        lastName: member.last_name,
+        email: member.email,
+        phone: member.phone,
+        accessLevel: member.access_level,
+        status: member.status,
+        institution: member.institution,
+        filiere: member.filiere,
+        niveau: member.niveau,
+        photoUrl: member.photo_url,
+      };
+
+      return NextResponse.json({ success: true, member: sessionMember });
     }
 
     if (action === 'register') {
@@ -188,6 +207,14 @@ export async function POST(req: NextRequest) {
       if (!parsed.success) {
         return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
       }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) return NextResponse.json({ error: 'Session invalide' }, { status: 401 });
+      const { error: currentPasswordError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: parsed.data.currentPassword,
+      });
+      if (currentPasswordError) return NextResponse.json({ error: 'Mot de passe actuel incorrect' }, { status: 400 });
 
       const { error } = await supabase.auth.updateUser({
         password: parsed.data.newPassword

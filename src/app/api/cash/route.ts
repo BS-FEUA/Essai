@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/db';
 import { getSession, canAccess } from '@/lib/auth';
 import { z } from 'zod';
+import { getPagination } from '@/lib/pagination';
 
 const createTransactionSchema = z.object({
   registerId: z.string().min(1).max(64),
@@ -27,8 +28,7 @@ export async function GET(req: NextRequest) {
     const registerId = searchParams.get('registerId') || '';
     const type = searchParams.get('type') || '';
     const status = searchParams.get('status') || '';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const { page, limit, from, to } = getPagination(searchParams, 20);
 
     let query = supabaseAdmin
       .from('cash_transactions')
@@ -43,8 +43,6 @@ export async function GET(req: NextRequest) {
     if (type) query = query.eq('type', type);
     if (status) query = query.eq('status', status);
 
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
     query = query.order('created_at', { ascending: false }).range(from, to);
 
     const { data: transactionsRaw, count, error } = await query;

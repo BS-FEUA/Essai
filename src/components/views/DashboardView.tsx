@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { useAppStore, canAccess, ACCESS_LABELS, apiFetch, silentFetch } from '@/lib/store';
+import { useAppStore, canAccess, ACCESS_LABELS, apiFetch, cachedApiFetch, silentFetch } from '@/lib/store';
 import { relativeTime, roleBadgeColor, statusBadge } from './view-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,8 +89,8 @@ export function DashboardView() {
     const load = async () => {
       try {
         const [s, a, act] = await Promise.all([
-          apiFetch<any>('/api/stats'),
-          apiFetch<{ announcements: any[] }>('/api/announcements'),
+          cachedApiFetch<any>('/api/stats'),
+          cachedApiFetch<{ announcements: any[] }>('/api/announcements'),
           // silentFetch: no error toast for non-admin users (403 is expected)
           silentFetch<{ logs: any[]; total: number }>('/api/admin?section=audit&page=1&limit=10').then(d => d ?? { logs: [], total: 0 }),
         ]);

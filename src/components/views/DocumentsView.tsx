@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useAppStore, apiFetch } from '@/lib/store';
+import { useAppStore, apiFetch, cachedApiFetch } from '@/lib/store';
 import { docTypeColors } from './view-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,7 +40,7 @@ export function DocumentsView() {
   const loadDocs = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiFetch<any>(`/api/documents?page=${page}&limit=12`);
+      const data = await cachedApiFetch<any>(`/api/documents?page=${page}&limit=12`);
       setDocuments(data.documents);
       setTotal(data.total);
     } catch { /* ignore */ } finally { setLoading(false); }

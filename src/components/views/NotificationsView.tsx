@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { useAppStore, apiFetch } from '@/lib/store';
+import { useAppStore, apiFetch, cachedApiFetch } from '@/lib/store';
 import { relativeTime } from './view-utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,7 +31,7 @@ export function NotificationsView() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiFetch<{ notifications: any[]; unreadCount: number }>('/api/notifications');
+      const data = await cachedApiFetch<{ notifications: any[]; unreadCount: number }>('/api/notifications');
       setLocalNotifications(data.notifications || []);
       setNotifications(data.notifications || [], data.unreadCount || 0);
     } catch { /* ignore */ } finally { setLoading(false); }

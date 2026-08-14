@@ -41,6 +41,8 @@
     "examples",
     "prisma",
     "Code",
-    "github effect"
+    "github effect",
+    "playwright-report",
+    "test-results"
   ]
 }

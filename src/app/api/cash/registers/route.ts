@@ -14,6 +14,7 @@ export async function GET() {
         *,
         creator:members!cash_registers_created_by_fkey(first_name, last_name)
       `)
+      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) throw error;

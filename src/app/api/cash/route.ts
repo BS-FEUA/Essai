@@ -91,6 +91,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 });
     }
 
+    const { data: register } = await supabaseAdmin
+      .from('cash_registers')
+      .select('id')
+      .eq('id', registerId)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (!register) {
+      return NextResponse.json({ error: 'Aucune caisse officielle active n’est configurée.' }, { status: 409 });
+    }
+
     const targetMemberId = memberId || session.id;
     if (targetMemberId !== session.id && !canAccess(session.accessLevel, 'MASTER')) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });

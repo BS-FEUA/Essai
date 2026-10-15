@@ -429,7 +429,7 @@ export function AdminView() {
               <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl hover:border-[var(--feua-green)]/60 dark:hover:border-emerald-400 transition-all">
                 <CardContent className="p-4">
                   <p className="text-xs text-muted-foreground dark:text-slate-400">Solde caisses</p>
-                  <p className="text-2xl sm:text-3xl font-black text-[var(--feua-gold)] dark:text-amber-400">{(overview.totalBalance || 0).toLocaleString()} <span className="text-xs text-muted-foreground dark:text-slate-400 font-normal">FCFA</span></p>
+                  <p className="text-2xl sm:text-3xl font-black text-[var(--feua-gold)] dark:text-amber-400">{overview.totalBalance == null ? '—' : overview.totalBalance.toLocaleString()} {overview.totalBalance != null && <span className="text-xs text-muted-foreground dark:text-slate-400 font-normal">FCFA</span>}</p>
                 </CardContent>
               </Card>
               <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl hover:border-[var(--feua-green)]/60 dark:hover:border-emerald-400 transition-all">

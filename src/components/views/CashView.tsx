@@ -96,7 +96,7 @@ export function CashView() {
     <motion.div {...pageVariants} className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2"><Wallet className="h-6 w-6 text-[var(--feua-gold)]" />Caisses</h1>
-        <Button className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90 text-white" onClick={() => setTxOpen(true)}>
+        <Button className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90 text-white" onClick={() => setTxOpen(true)} disabled={registers.length === 0}>
           <Plus className="mr-2 h-4 w-4" />Transaction
         </Button>
       </div>
@@ -106,8 +106,8 @@ export function CashView() {
         <CardContent className="p-6 sm:p-8 text-center">
           <DollarSign className="h-10 w-10 mx-auto mb-2 opacity-60" />
           <p className="text-sm sm:text-base opacity-80">Solde total</p>
-          <p className="text-3xl sm:text-4xl font-bold mt-1">{totalBalance.toLocaleString()} FCFA</p>
-          <p className="text-xs opacity-60 mt-2">Solde toutes caisses confondues</p>
+          <p className="text-3xl sm:text-4xl font-bold mt-1">{registers.length ? `${totalBalance.toLocaleString()} FCFA` : '—'}</p>
+          <p className="text-xs opacity-60 mt-2">{registers.length ? 'Solde des caisses configurées' : 'Aucune caisse officielle configurée'}</p>
         </CardContent>
       </Card>
 
@@ -115,7 +115,9 @@ export function CashView() {
       <div>
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sous-caisses</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {registers.map((reg) => (
+          {registers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucune caisse officielle n&apos;est enregistrée.</p>
+          ) : registers.map((reg) => (
             <Card key={reg.id} className="hover:shadow-md transition-shadow border-l-4 border-l-[var(--feua-green)]">
               <CardContent className="p-4">
                 <p className="text-sm font-medium text-muted-foreground">{reg.name || 'Caisse principale'}</p>

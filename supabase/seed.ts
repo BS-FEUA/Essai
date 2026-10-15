@@ -1,6 +1,6 @@
 /**
- * Script de seed pour peupler Supabase avec des données de démonstration.
- * Exécuter avec : npx tsx supabase/seed.ts
+ * Script de seed réservé aux environnements de développement.
+ * Exécuter avec : SEED_DEMO_DATA=true npx tsx supabase/seed.ts
  */
 
 import 'dotenv/config';
@@ -11,6 +11,11 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 if (!supabaseUrl || !serviceKey) {
   console.error('❌ Variables manquantes : NEXT_PUBLIC_SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY requises dans .env');
+  process.exit(1);
+}
+
+if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production' || process.env.SEED_DEMO_DATA !== 'true') {
+  console.error('❌ Seed démo bloqué. Définissez SEED_DEMO_DATA=true uniquement dans un environnement de développement.');
   process.exit(1);
 }
 
@@ -226,6 +231,7 @@ async function seedCashRegisters(ceoId: string) {
       .from('cash_registers')
       .select('id')
       .eq('name', r.name)
+      .limit(1)
       .maybeSingle();
     if (existingRegister) {
       console.log(`⚠️  Caisse déjà existante: ${r.name}`);
@@ -273,6 +279,7 @@ async function seedAnnouncements(ceoId: string) {
       .from('announcements')
       .select('id')
       .eq('title', a.title)
+      .limit(1)
       .maybeSingle();
     if (existingAnnouncement) {
       console.log(`⚠️  Annonce déjà existante: ${a.title.slice(0, 50)}...`);

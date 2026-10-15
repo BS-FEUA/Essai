@@ -15,7 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  Heart, Star, Megaphone, AlertTriangle, Shirt, CheckCircle2, LogIn, Loader2, ArrowLeft,
+  Megaphone, AlertTriangle, Shirt, CheckCircle2, LogIn, Loader2, ArrowLeft,
   CalendarDays,
 } from 'lucide-react';
 
@@ -91,42 +91,8 @@ export function LandaView() {
         <img src="/feua-logo.png" alt="FEUA" className="h-20 w-20 mx-auto object-contain" />
         <h1 className="text-3xl font-bold text-[var(--feua-green)]">Espace Landa</h1>
         <p className="text-muted-foreground max-w-xl mx-auto">
-          Bienvenue sur l&apos;espace public de la FEUA. Découvrez notre organisation et commandez vos uniformes même sans être membre.
+          Publications officielles du Bureau et demandes de commande d&apos;uniforme.
         </p>
-      </div>
-
-      {/* About FEUA */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="animate-fade-in-up">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Heart className="h-5 w-5 text-red-500" />À propos de FEUA</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-3">
-            <p>La <strong className="text-foreground">Fédération des Étudiants Universitaires Associés (FEUA)</strong> est une organisation étudiante basée à Lokossa, au Bénin.</p>
-            <p>Notre mission est d&apos;unir les étudiants pour défendre leurs droits, favoriser la solidarité et créer un environnement propice à la réussite académique.</p>
-            <p>Le <strong className="text-foreground">Bureau Syndical (BS) de Lokossa</strong> est l&apos;organe local de la FEUA, gérant les activités syndicales et communautaires dans la région.</p>
-          </CardContent>
-        </Card>
-        <Card className="animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Star className="h-5 w-5 text-[var(--feua-gold)]" />Nos valeurs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {[
-                { title: 'Solidarité', desc: 'Ensemble, nous sommes plus forts.' },
-                { title: 'Excellence', desc: 'Visons le succès académique et professionnel.' },
-                { title: 'Intégrité', desc: 'Agissons avec honnêteté et transparence.' },
-                { title: 'Engagement', desc: 'Nous nous investissons pour notre communauté.' },
-              ].map((v) => (
-                <li key={v.title} className="flex gap-3">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[var(--feua-green)] mt-2 flex-shrink-0 shadow-[0_0_6px_rgba(27,122,61,0.5)]" />
-                  <div><p className="font-medium text-sm">{v.title}</p><p className="text-xs text-muted-foreground">{v.desc}</p></div>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
       </div>
 
       <section aria-labelledby="publications-title">
@@ -167,26 +133,6 @@ export function LandaView() {
           </CardContent>
         </Card>
       </section>
-
-      {/* Retained only during the initial public publications request. */}
-      {announcementsLoading && announcements.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-[var(--feua-gold)]" />Annonces</CardTitle></CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {announcements.slice(0, 3).map((a) => (
-                <div key={a.id} className="p-3 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2 mb-1">
-                    {a.isUrgent && <AlertTriangle className="h-4 w-4 text-red-500" />}
-                    <span className="font-medium text-sm">{a.title}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{a.content}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Order uniform for non-members */}
       <Card className="border-[var(--feua-green)]">

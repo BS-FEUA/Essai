@@ -26,16 +26,9 @@ Le dossier `Code/` est une ancienne version prototype conservée uniquement pour
    ```
    L'application sera accessible sur **http://localhost:3000**.
 
-### Comptes de Démonstration (Accès 1-Clic)
+### Accès
 
-| Rôle | Email | Mot de Passe |
-| --- | --- | --- |
-| Super Admin (CEO) | `ceo@feua.bj` | `ceo2026` |
-| Mast In | `mastin@feua.bj` | `mastin2026` |
-| Mast | `mast@feua.bj` | `mast2026` |
-| Master | `master@feua.bj` | `master2026` |
-| Mix | `mix@feua.bj` | `mix2026` |
-| Min | `min@feua.bj` | `min2026` |
+Les anciens comptes et identifiants de démonstration ne sont plus valides. Utiliser les comptes officiellement autorisés ; ne jamais publier de mot de passe dans ce guide.
 
 ---
 

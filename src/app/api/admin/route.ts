@@ -29,18 +29,18 @@ export async function GET(req: NextRequest) {
         { data: membersByFiliereRaw },
         { data: ficheStatsRaw },
       ] = await Promise.all([
-        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }),
-        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).eq('status', 'ACTIVE'),
-        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).eq('status', 'PENDING_VALIDATION'),
+        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).not('email', 'like', 'deleted+%@example.invalid'),
+        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).not('email', 'like', 'deleted+%@example.invalid').eq('status', 'ACTIVE'),
+        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).not('email', 'like', 'deleted+%@example.invalid').eq('status', 'PENDING_VALIDATION'),
         supabaseAdmin.from('cash_registers').select('balance'),
         supabaseAdmin.from('cash_transactions').select('*', { count: 'exact', head: true }).eq('status', 'COMPLETED'),
         supabaseAdmin.from('uniform_orders').select('*', { count: 'exact', head: true }),
         supabaseAdmin.from('uniform_orders').select('*', { count: 'exact', head: true }).eq('status', 'EN_ATTENTE'),
         supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).gte('last_login_at', sevenDaysAgo),
-        supabaseAdmin.from('members').select('access_level'),
-        supabaseAdmin.from('members').select('institution').not('institution', 'is', null),
-        supabaseAdmin.from('members').select('filiere').not('filiere', 'is', null),
-        supabaseAdmin.from('members').select('fiche_soumise'),
+        supabaseAdmin.from('members').select('access_level').not('email', 'like', 'deleted+%@example.invalid'),
+        supabaseAdmin.from('members').select('institution').not('email', 'like', 'deleted+%@example.invalid').not('institution', 'is', null),
+        supabaseAdmin.from('members').select('filiere').not('email', 'like', 'deleted+%@example.invalid').not('filiere', 'is', null),
+        supabaseAdmin.from('members').select('fiche_soumise').not('email', 'like', 'deleted+%@example.invalid'),
       ]);
 
       const totalBalance = (registersData || []).reduce((sum: number, r: any) => sum + (r.balance || 0), 0);

@@ -279,20 +279,20 @@ export function AdminView() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="bg-slate-900/80 p-1.5 rounded-2xl border border-emerald-500/30 shadow-inner flex flex-wrap gap-1">
-          <TabsTrigger value="overview" className="rounded-xl text-xs font-bold data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+        <TabsList className="grid h-auto w-full grid-cols-2 items-stretch justify-stretch gap-1 rounded-2xl border border-emerald-500/30 bg-slate-900/80 p-1.5 shadow-inner sm:grid-cols-3 lg:inline-grid lg:w-fit lg:grid-cols-5">
+          <TabsTrigger value="overview" className="h-auto min-h-10 min-w-0 whitespace-normal rounded-xl px-2 py-2 text-[10px] font-bold leading-tight data-[state=active]:bg-emerald-600 data-[state=active]:text-white sm:text-xs">
             <BarChart3 className="h-4 w-4 mr-1.5" /> Vue d&apos;ensemble
           </TabsTrigger>
-          <TabsTrigger value="announcements" className="rounded-xl text-xs font-bold data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+          <TabsTrigger value="announcements" className="h-auto min-h-10 min-w-0 whitespace-normal rounded-xl px-2 py-2 text-[10px] font-bold leading-tight data-[state=active]:bg-emerald-600 data-[state=active]:text-white sm:text-xs">
             <Megaphone className="h-4 w-4 mr-1.5" /> Annonces
           </TabsTrigger>
-          <TabsTrigger value="members" className="rounded-xl text-xs font-bold data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+          <TabsTrigger value="members" className="h-auto min-h-10 min-w-0 whitespace-normal rounded-xl px-2 py-2 text-[10px] font-bold leading-tight data-[state=active]:bg-emerald-600 data-[state=active]:text-white sm:text-xs">
             <Users className="h-4 w-4 mr-1.5" /> Membres & Inscriptions
           </TabsTrigger>
-          <TabsTrigger value="uniforms" className="rounded-xl text-xs font-bold data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+          <TabsTrigger value="uniforms" className="h-auto min-h-10 min-w-0 whitespace-normal rounded-xl px-2 py-2 text-[10px] font-bold leading-tight data-[state=active]:bg-emerald-600 data-[state=active]:text-white sm:text-xs">
             <ShoppingBag className="h-4 w-4 mr-1.5" /> Uniformes
           </TabsTrigger>
-          <TabsTrigger value="audit" className="rounded-xl text-xs font-bold data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+          <TabsTrigger value="audit" className="h-auto min-h-10 min-w-0 whitespace-normal rounded-xl px-2 py-2 text-[10px] font-bold leading-tight data-[state=active]:bg-emerald-600 data-[state=active]:text-white sm:text-xs">
             <Clock className="h-4 w-4 mr-1.5" /> Mémoire H (Audit)
           </TabsTrigger>
         </TabsList>
@@ -527,7 +527,7 @@ export function AdminView() {
 
           <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl">
             <CardContent className="p-0">
-              <Table>
+              <Table className="min-w-[680px]">
                 <TableHeader className="bg-muted/50 dark:bg-slate-950/60">
                   <TableRow className="dark:border-slate-800">
                     <TableHead className="dark:text-slate-300">Titre</TableHead>
@@ -627,7 +627,7 @@ export function AdminView() {
 
           <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl">
             <CardContent className="p-0">
-              <Table>
+              <Table className="min-w-[760px]">
                 <TableHeader className="bg-muted/50 dark:bg-slate-950/60">
                   <TableRow className="dark:border-slate-800">
                     <TableHead className="dark:text-slate-300">Membre</TableHead>
@@ -738,7 +738,7 @@ export function AdminView() {
           <h2 className="text-sm font-bold text-[var(--feua-gold)] dark:text-amber-300 uppercase tracking-wider">Gestion des Commandes d&apos;Uniformes</h2>
           <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl">
             <CardContent className="p-0">
-              <Table>
+              <Table className="min-w-[700px]">
                 <TableHeader className="bg-muted/50 dark:bg-slate-950/60">
                   <TableRow className="dark:border-slate-800">
                     <TableHead className="dark:text-slate-300">Membre</TableHead>
@@ -832,10 +832,10 @@ export function AdminView() {
       {/* TAB 5: AUDIT LOGS */}
       {tab === 'audit' && (
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-sm font-bold text-muted-foreground dark:text-slate-300 uppercase tracking-wider">Mémoire H (Registre d&apos;Audit Immuable)</h2>
             <Select value={filterAction || 'all'} onValueChange={(v) => { setFilterAction(v === 'all' ? '' : v); setLogPage(1); }}>
-              <SelectTrigger className="w-56 text-xs rounded-xl">
+              <SelectTrigger className="w-full rounded-xl text-xs sm:w-56">
                 <SelectValue placeholder="Toutes les actions" />
               </SelectTrigger>
               <SelectContent className="text-xs">
@@ -852,7 +852,7 @@ export function AdminView() {
 
           <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl">
             <CardContent className="p-0">
-              <Table>
+              <Table className="min-w-[760px]">
                 <TableHeader className="bg-muted/50 dark:bg-slate-950/60">
                   <TableRow className="dark:border-slate-800">
                     <TableHead className="dark:text-slate-300">Date &amp; Heure</TableHead>
@@ -901,7 +901,7 @@ export function AdminView() {
                   )}
                 </TableBody>
               </Table>
-              <div className="flex items-center justify-between p-4 border-t dark:border-slate-800">
+              <div className="flex flex-col gap-3 border-t p-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-muted-foreground dark:text-slate-400">{logTotal} entrée(s) trouvée(s)</p>
                 <div className="flex gap-1">
                   <Button variant="outline" size="sm" disabled={logPage <= 1} onClick={() => setLogPage(logPage - 1)}>

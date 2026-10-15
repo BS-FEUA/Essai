@@ -14,27 +14,35 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const { page, limit, from, to } = getPagination(searchParams, 20);
-    const search = searchParams.get('search') || '';
+    const search = (searchParams.get('search') || '').trim().slice(0, 80).replace(/[(),%]/g, '');
     const accessLevel = searchParams.get('accessLevel') || '';
     const status = searchParams.get('status') || '';
     const institution = searchParams.get('institution') || '';
+    const canViewMemberDetails = canAccess(session.accessLevel, 'MASTER');
 
-    let query = supabaseAdmin
+    let query: any = supabaseAdmin
       .from('members')
-      .select('id, matricule, first_name, last_name, email, phone, access_level, status, institution, filiere, niveau, photo_url, fiche_soumise, carte_etudiant, last_login_at, created_at', { count: 'exact' })
-      .not('email', 'like', 'deleted+%@example.invalid')
-      .neq('status', 'IGNORANT');
+      .select(
+        canViewMemberDetails
+          ? 'id, matricule, first_name, last_name, email, phone, access_level, status, institution, filiere, niveau, photo_url, fiche_soumise, carte_etudiant, last_login_at, created_at'
+          : 'id, first_name, last_name, access_level, photo_url',
+        { count: 'exact' },
+      );
 
-    if (search) {
+    if (canViewMemberDetails) {
+      query = query.not('email', 'like', 'deleted+%@example.invalid').neq('status', 'IGNORANT');
+    } else {
+      // The messaging recipient picker only needs an active member directory.
+      query = query.eq('status', 'ACTIVE');
+    }
+
+    if (canViewMemberDetails && search) {
       query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,matricule.ilike.%${search}%,email.ilike.%${search}%`);
     }
-    if (accessLevel) query = query.eq('access_level', accessLevel);
-    if (status) query = query.eq('status', status);
-    if (institution) query = query.eq('institution', institution);
-
-    // AMC and IGN can only see themselves
-    if (['AMC', 'IGN'].includes(session.accessLevel)) {
-      query = query.eq('id', session.id);
+    if (canViewMemberDetails) {
+      if (accessLevel) query = query.eq('access_level', accessLevel);
+      if (status) query = query.eq('status', status);
+      if (institution) query = query.eq('institution', institution);
     }
 
     query = query.order('created_at', { ascending: false }).range(from, to);

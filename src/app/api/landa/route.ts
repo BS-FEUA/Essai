@@ -18,7 +18,7 @@ const UNIT_PRICE = 15000;
 
 export async function POST(req: NextRequest) {
   try {
-    if (!checkRateLimit(`landa:${getClientIp(req.headers)}`, 10, 60 * 60 * 1000)) {
+    if (!await checkRateLimit(`landa:${getClientIp(req.headers)}`, 10, 60 * 60 * 1000)) {
       return NextResponse.json({ error: 'Trop de demandes. Réessayez plus tard.' }, { status: 429 });
     }
     const body = await req.json();

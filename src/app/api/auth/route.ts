@@ -34,12 +34,12 @@ export async function POST(req: NextRequest) {
     const action = body.action;
 
     const limits: Record<string, { limit: number; windowMs: number }> = {
-      login: { limit: 100, windowMs: 15 * 60 * 1000 },
-      register: { limit: 100, windowMs: 60 * 60 * 1000 },
-      recovery: { limit: 100, windowMs: 60 * 60 * 1000 },
+      login: { limit: 40, windowMs: 15 * 60 * 1000 },
+      register: { limit: 20, windowMs: 60 * 60 * 1000 },
+      requestRecovery: { limit: 10, windowMs: 60 * 60 * 1000 },
     };
     const policy = limits[action];
-    if (policy && !checkRateLimit(`auth:${action}:${getClientIp(req.headers)}`, policy.limit, policy.windowMs)) {
+    if (policy && !await checkRateLimit(`auth:${action}:ip:${getClientIp(req.headers)}`, policy.limit, policy.windowMs)) {
       return NextResponse.json({ error: 'Trop de tentatives. Réessayez dans un moment.' }, { status: 429 });
     }
 
@@ -49,6 +49,10 @@ export async function POST(req: NextRequest) {
       const parsed = loginSchema.safeParse(body);
       if (!parsed.success) {
         return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
+      }
+
+      if (!await checkRateLimit(`auth:login:email:${parsed.data.email.trim().toLowerCase()}`, 10, 15 * 60 * 1000)) {
+        return NextResponse.json({ error: 'Trop de tentatives. Réessayez dans un moment.' }, { status: 429 });
       }
 
       // Login using Supabase Auth
@@ -194,6 +198,15 @@ export async function POST(req: NextRequest) {
     if (action === 'requestRecovery') {
       const parsed = recoverySchema.safeParse(body);
       if (!parsed.success) return NextResponse.json({ error: 'Email requis' }, { status: 400 });
+
+      const emailAllowed = await checkRateLimit(
+        `auth:recovery:email:${parsed.data.email.trim().toLowerCase()}`,
+        5,
+        60 * 60 * 1000,
+      );
+      if (!emailAllowed) {
+        return NextResponse.json({ success: true, message: 'Si cet email existe, un lien a été envoyé.' });
+      }
       
       await supabase.auth.resetPasswordForEmail(parsed.data.email);
       return NextResponse.json({ success: true, message: 'Si cet email existe, un lien a été envoyé.' });

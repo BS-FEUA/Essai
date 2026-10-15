@@ -82,6 +82,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    if (!canAccess(session.accessLevel, 'MASTER')) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
     const parsed = createTransactionSchema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: 'Transaction invalide' }, { status: 400 });

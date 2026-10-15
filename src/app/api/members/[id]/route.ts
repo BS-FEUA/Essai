@@ -8,7 +8,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     const { id } = await params;
 
-    if (['AMC', 'IGN'].includes(session.accessLevel) && session.id !== id) {
+    if (session.id !== id && !canAccess(session.accessLevel, 'MASTER')) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 

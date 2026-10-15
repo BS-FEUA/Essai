@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { isFirebasePushConfigured, enableWebPush, disableWebPush } from '@/lib/firebase-client';
 import { Bell, BellOff, Check, CheckCheck, Info, AlertTriangle, Gift, Megaphone, Trash2 } from 'lucide-react';
 
 const pageVariants = {
@@ -27,6 +28,31 @@ export function NotificationsView() {
   const { notifications: appNotifications, setNotifications, unreadCount } = useAppStore();
   const [notifications, setLocalNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushError, setPushError] = useState('');
+
+  useEffect(() => {
+    setPushEnabled(isFirebasePushConfigured && typeof Notification !== 'undefined' && Notification.permission === 'granted');
+  }, []);
+
+  const handlePushToggle = async () => {
+    setPushBusy(true);
+    setPushError('');
+    try {
+      if (pushEnabled) {
+        await disableWebPush();
+        setPushEnabled(false);
+      } else {
+        await enableWebPush();
+        setPushEnabled(true);
+      }
+    } catch (error) {
+      setPushError(error instanceof Error ? error.message : 'La configuration des notifications a échoué.');
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -91,6 +117,24 @@ export function NotificationsView() {
           </Button>
         )}
       </div>
+
+      <Card>
+        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-semibold">Notifications sur cet appareil</p>
+            <p className="text-sm text-muted-foreground">
+              {isFirebasePushConfigured
+                ? 'Recevez une alerte navigateur pour les nouveaux messages.'
+                : 'Firebase doit être configuré par l’administrateur avant activation.'}
+            </p>
+            {pushError && <p role="alert" className="mt-1 text-sm text-destructive">{pushError}</p>}
+          </div>
+          <Button onClick={handlePushToggle} disabled={!isFirebasePushConfigured || pushBusy} variant={pushEnabled ? 'outline' : 'default'}>
+            {pushEnabled ? <BellOff className="mr-2 h-4 w-4" /> : <Bell className="mr-2 h-4 w-4" />}
+            {pushBusy ? 'Configuration…' : pushEnabled ? 'Désactiver' : 'Activer'}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="p-0">

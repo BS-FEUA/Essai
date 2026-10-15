@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/db';
 import { getSession, canSendMessage } from '@/lib/auth';
+import { sendWebPushToMembers } from '@/lib/firebase-admin';
 
 export async function GET(req: NextRequest) {
   try {
@@ -191,6 +192,13 @@ export async function POST(req: NextRequest) {
         }))
       );
       if (notificationError) console.error('Message notification insert error:', notificationError);
+      else {
+        await sendWebPushToMembers(notificationRecipients, {
+          title: notificationLabel,
+          body: message.content.slice(0, 180),
+          link: '/notifications',
+        });
+      }
     }
 
     await supabaseAdmin.from('audit_logs').insert({

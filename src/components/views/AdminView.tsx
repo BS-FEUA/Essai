@@ -33,6 +33,25 @@ const pageVariants = {
   exit: { opacity: 0, y: -20, transition: { duration: 0.2 } },
 };
 
+function formatAuditDetails(details: unknown): string {
+  if (details == null) return '—';
+  if (typeof details === 'string') {
+    try {
+      const parsed: unknown = JSON.parse(details);
+      if (parsed && typeof parsed === 'object' && 'message' in parsed && typeof parsed.message === 'string') {
+        return parsed.message;
+      }
+      return JSON.stringify(parsed);
+    } catch {
+      return details;
+    }
+  }
+  if (typeof details === 'object' && 'message' in details && typeof details.message === 'string') {
+    return details.message;
+  }
+  return JSON.stringify(details);
+}
+
 export function AdminView() {
   const { member } = useAppStore();
   const [tab, setTab] = useState('overview');
@@ -875,7 +894,7 @@ export function AdminView() {
                           {log.entityType}
                         </TableCell>
                         <TableCell className="dark:text-slate-300 max-w-xs truncate">
-                          {log.details}
+                          {formatAuditDetails(log.details)}
                         </TableCell>
                       </TableRow>
                     ))

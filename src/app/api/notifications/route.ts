@@ -31,6 +31,8 @@ export async function GET() {
       ...n,
       memberId: n.member_id,
       createdAt: n.created_at,
+      message: n.content,
+      type: 'INFO',
     }));
 
     return NextResponse.json({ notifications, unreadCount: unreadCount || 0 });

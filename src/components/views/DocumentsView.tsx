@@ -33,6 +33,7 @@ export function DocumentsView() {
   const [loading, setLoading] = useState(true);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const [uploadForm, setUploadForm] = useState({ title: '', description: '', type: 'AUTRE', anneeScolaire: '2025-2026' });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +58,7 @@ export function DocumentsView() {
     e.preventDefault();
     if (!selectedFile || !uploadForm.title.trim() || !uploadForm.description.trim()) return;
     if (selectedFile.size > 10 * 1024 * 1024) { alert('Le document ne doit pas dépasser 10 Mo.'); return; }
+    setUploadError('');
     setUploading(true);
     try {
       const formData = new FormData();
@@ -65,13 +67,17 @@ export function DocumentsView() {
       formData.append('description', uploadForm.description);
       formData.append('type', uploadForm.type);
       formData.append('anneeScolaire', uploadForm.anneeScolaire);
-      await fetch('/api/upload', { method: 'POST', body: formData, credentials: 'same-origin' });
+      const response = await fetch('/api/upload', { method: 'POST', body: formData, credentials: 'same-origin' });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Impossible de téléverser le document.');
       setUploadOpen(false);
       setUploadForm({ title: '', description: '', type: 'AUTRE', anneeScolaire: '2025-2026' });
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       loadDocs();
-    } catch { /* ignore */ } finally { setUploading(false); }
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Impossible de téléverser le document.');
+    } finally { setUploading(false); }
   };
 
   const handleDelete = async (id: string) => {
@@ -99,6 +105,7 @@ export function DocumentsView() {
           <DialogHeader><DialogTitle>Ajouter un document</DialogTitle><DialogDescription>Sélectionnez un fichier et renseignez les informations.</DialogDescription></DialogHeader>
           <form onSubmit={handleUpload}>
             <div className="space-y-4">
+              {uploadError && <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{uploadError}</p>}
               <div className="space-y-2">
                 <Label>Fichier *</Label>
                 <Input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} required />
@@ -136,7 +143,7 @@ export function DocumentsView() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Upload card */}
-          <Card className="border-2 border-dashed border-[var(--feua-green)] bg-[var(--feua-green-light)]/30 cursor-pointer hover:bg-[var(--feua-green-light)]/50 transition-all flex items-center justify-center min-h-[140px]" onClick={() => setUploadOpen(true)}>
+          <Card className="border-2 border-dashed border-[var(--feua-green)] bg-[var(--feua-green-light)]/30 dark:bg-emerald-900/20 cursor-pointer hover:bg-[var(--feua-green-light)]/50 dark:hover:bg-emerald-900/30 transition-all flex items-center justify-center min-h-[140px]" onClick={() => setUploadOpen(true)}>
             <CardContent className="p-6 flex flex-col items-center gap-3">
               <div className="p-4 rounded-full bg-[var(--feua-gold)]/10"><Upload className="h-8 w-8 text-[var(--feua-gold)]" /></div>
               <span className="font-medium text-sm text-[var(--feua-gold)]">Ajouter un document</span>
@@ -156,7 +163,7 @@ export function DocumentsView() {
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-2 rounded-lg bg-[var(--feua-green-light)] text-lg flex-shrink-0">{docTypeIcon[doc.type] || '📄'}</div>
+                      <div className="p-2 rounded-lg bg-[var(--feua-green-light)] dark:bg-emerald-900/30 text-lg flex-shrink-0">{docTypeIcon[doc.type] || '📄'}</div>
                       <div className="min-w-0">
                         <p className="font-medium text-sm truncate">{doc.title}</p>
                         <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${docTypeColors[doc.type] || ''}`}>{doc.type.replace(/_/g, ' ')}</span>

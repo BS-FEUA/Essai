@@ -21,7 +21,8 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('members')
-      .select('id, matricule, first_name, last_name, email, phone, access_level, status, institution, filiere, niveau, photo_url, fiche_soumise, carte_etudiant, last_login_at, created_at', { count: 'exact' });
+      .select('id, matricule, first_name, last_name, email, phone, access_level, status, institution, filiere, niveau, photo_url, fiche_soumise, carte_etudiant, last_login_at, created_at', { count: 'exact' })
+      .not('email', 'like', 'deleted+%@example.invalid');
 
     if (search) {
       query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,matricule.ilike.%${search}%,email.ilike.%${search}%`);
@@ -81,7 +82,8 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
       }
 
-      const { data: target } = await supabaseAdmin.from('members').select('*').eq('id', memberId).single();
+      const { data: target, error: targetError } = await supabaseAdmin.from('members').select('*').eq('id', memberId).single();
+      if (targetError && targetError.code !== 'PGRST116') throw targetError;
       
       // Validation of a new registration is exclusively a CEO operation.
       if (target?.status === 'PENDING_VALIDATION' && status === 'ACTIVE' && session.accessLevel !== 'CEO') {
@@ -89,9 +91,13 @@ export async function PUT(req: NextRequest) {
       }
       if (!target) return NextResponse.json({ error: 'Membre non trouvé' }, { status: 404 });
 
+      if (memberId === session.id) {
+        return NextResponse.json({ error: 'Vous ne pouvez pas modifier votre propre statut ou niveau d’accès.' }, { status: 400 });
+      }
+
       const actorRank = ACCESS_HIERARCHY[session.accessLevel] ?? -1;
       const targetRank = ACCESS_HIERARCHY[target.access_level] ?? -1;
-      if (targetRank >= actorRank) {
+      if (session.accessLevel !== 'CEO' && targetRank >= actorRank) {
         return NextResponse.json({ error: 'Impossible de modifier un membre de niveau égal ou supérieur' }, { status: 403 });
       }
       if (accessLevel && !accessLevelSchema.safeParse(accessLevel).success) {
@@ -121,16 +127,21 @@ export async function PUT(req: NextRequest) {
         updatePayload.validated_at = new Date().toISOString();
       }
 
+      if (Object.keys(updatePayload).length === 0) {
+        return NextResponse.json({ error: 'Aucune modification fournie' }, { status: 400 });
+      }
+
       const { data: updated, error } = await supabaseAdmin.from('members').update(updatePayload).eq('id', memberId).select().single();
       if (error) throw error;
 
-      await supabaseAdmin.from('audit_logs').insert({
+      const { error: auditError } = await supabaseAdmin.from('audit_logs').insert({
         action: accessLevel ? 'ROLE_CHANGE' : 'STATUS_CHANGE', 
         actor_id: session.id, 
         entity_type: 'Member', 
         entity_id: memberId, 
         details: JSON.stringify({ accessLevel, status })
       });
+      if (auditError) console.error('Member status audit error:', auditError);
 
       return NextResponse.json({ success: true, member: updated });
     }
@@ -170,25 +181,56 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Impossible de supprimer votre propre compte CEO' }, { status: 400 });
     }
 
-    const { data: target } = await supabaseAdmin.from('members').select('*').eq('id', memberId).single();
+    const { data: target, error: targetError } = await supabaseAdmin.from('members').select('*').eq('id', memberId).single();
+    if (targetError && targetError.code !== 'PGRST116') throw targetError;
     if (!target) return NextResponse.json({ error: 'Membre non trouvé' }, { status: 404 });
 
-    // Also delete from Supabase Auth
-    await supabaseAdmin.auth.admin.deleteUser(memberId);
-    
-    // Deleting from auth.users cascades to members table via RLS foreign key
-    // But we manually delete to be sure
-    await supabaseAdmin.from('members').delete().eq('id', memberId);
+    // Audit logs are immutable and keep a foreign key to their actor. Preserve
+    // the member row as an anonymized tombstone and disable its Auth account.
+    // This removes access and personal profile data without rewriting history
+    // or breaking financial, message, and audit references.
+    const anonymizedEmail = `deleted+${memberId}@example.invalid`;
+    const { error: anonymizeError } = await supabaseAdmin.from('members').update({
+      first_name: 'Compte',
+      last_name: 'supprimé',
+      email: anonymizedEmail,
+      matricule: `DELETED-${memberId}`,
+      phone: null,
+      institution: null,
+      filiere: null,
+      niveau: null,
+      date_of_birth: null,
+      photo_url: null,
+      address: null,
+      city: null,
+      status: 'IGNORANT',
+      notes: null,
+    }).eq('id', memberId);
+    if (anonymizeError) throw anonymizeError;
 
-    await supabaseAdmin.from('audit_logs').insert({
+    const { error: authUpdateError } = await supabaseAdmin.auth.admin.updateUserById(memberId, {
+      email: anonymizedEmail,
+      email_confirm: true,
+      ban_duration: '876000h',
+      user_metadata: {},
+    });
+    if (authUpdateError) {
+      console.error('Member Auth deactivation error:', authUpdateError);
+      return NextResponse.json({
+        error: 'Le profil a été anonymisé et son accès à l’application est bloqué, mais la désactivation du compte de connexion a échoué. Contactez un administrateur technique.',
+      }, { status: 500 });
+    }
+
+    const { error: auditError } = await supabaseAdmin.from('audit_logs').insert({
       action: 'DELETE',
       actor_id: session.id,
       entity_type: 'Member',
       entity_id: memberId,
       details: JSON.stringify({ message: `Suppression du membre ${target.first_name} ${target.last_name}` })
     });
+    if (auditError) console.error('Member deletion audit error:', auditError);
 
-    return NextResponse.json({ success: true, message: 'Membre supprimé avec succès' });
+    return NextResponse.json({ success: true, message: 'Compte désactivé et données personnelles anonymisées. Les références historiques sont conservées.' });
   } catch (error) {
     console.error('Members DELETE error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

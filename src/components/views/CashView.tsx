@@ -220,7 +220,7 @@ export function CashView() {
                       </div>
                     </TableCell></TableRow>
                   ) : transactions.map((tx, idx) => (
-                    <TableRow key={tx.id} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                    <TableRow key={tx.id} className={idx % 2 === 0 ? 'bg-background dark:bg-transparent' : 'bg-muted/20 dark:bg-muted/10'}>
                       <TableCell className="font-medium text-sm">{tx.description}</TableCell>
                       <TableCell><Badge variant={tx.type === 'DEPOSIT' ? 'default' : 'destructive'}>{tx.type === 'DEPOSIT' ? 'Dépôt' : tx.type === 'WITHDRAWAL' ? 'Retrait' : 'Paiement'}</Badge></TableCell>
                       <TableCell className="font-mono text-right">{tx.amount.toLocaleString()} FCFA</TableCell>

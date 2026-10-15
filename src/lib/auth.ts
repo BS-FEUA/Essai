@@ -1,4 +1,6 @@
 import { createServerClient, supabaseAdmin } from '@/lib/db';
+import { canSendMessage } from '@/lib/message-rules';
+export { canSendMessage } from '@/lib/message-rules';
 
 export interface SessionMember {
   id: string;
@@ -40,13 +42,6 @@ export const ACCESS_LABELS: Record<string, string> = {
 
 export function canAccess(userLevel: string, requiredLevel: string): boolean {
   return (ACCESS_HIERARCHY[userLevel] || 0) >= (ACCESS_HIERARCHY[requiredLevel] || 0);
-}
-
-export function canSendMessage(senderLevel: string, receiverLevel: string): boolean {
-  // Min cannot message Min, Mix cannot message Mix
-  if (senderLevel === 'MIN' && receiverLevel === 'MIN') return false;
-  if (senderLevel === 'MIX' && receiverLevel === 'MIX') return false;
-  return true;
 }
 
 export async function getSession(): Promise<SessionMember | null> {

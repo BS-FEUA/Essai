@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore, ACCESS_LABELS, silentFetch, type Notification } from '@/lib/store';
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -28,6 +29,32 @@ export function Header() {
   const { member, unreadCount, logout, notifications, setNotifications } = useAppStore();
   const router = useRouter();
   const [notifOpen, setNotifOpen] = useState(false);
+
+  useEffect(() => {
+    if (!member?.id) return;
+
+    const supabase = getSupabaseBrowserClient();
+    const channel = supabase
+      .channel(`notifications:${member.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'notifications', filter: `member_id=eq.${member.id}`,
+      }, ({ new: row }) => {
+        const state = useAppStore.getState();
+        if (state.notifications.some((notification) => notification.id === row.id)) return;
+        const notification: Notification = {
+          id: row.id,
+          title: row.title,
+          message: row.content,
+          type: 'INFO',
+          status: row.status,
+          createdAt: row.created_at,
+        };
+        state.setNotifications([notification, ...state.notifications], state.unreadCount + 1);
+      })
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, [member?.id]);
 
   if (!member) return null;
 

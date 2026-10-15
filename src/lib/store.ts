@@ -168,7 +168,7 @@ interface AppState {
   setAnnouncements: (announcements: Announcement[]) => void;
 
   checkSession: () => Promise<void>;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (data: Record<string, any>) => Promise<boolean>;
   logout: () => Promise<void>;
 }
@@ -251,10 +251,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Load notifications
       silentFetch<{ notifications: Notification[]; unreadCount: number }>('/api/notifications')
         .then(d => d && set({ notifications: d.notifications, unreadCount: d.unreadCount }));
-      return true;
-    } catch {
+      return { success: true };
+    } catch (error) {
       set({ loading: false });
-      return false;
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Erreur de connexion. Veuillez réessayer.',
+      };
     }
   },
 

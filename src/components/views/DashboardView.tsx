@@ -106,16 +106,16 @@ export function DashboardView() {
   const initials = `${member?.firstName?.[0] || ''}${member?.lastName?.[0] || ''}`.toUpperCase();
 
   const quickActions = [
-    { label: 'Documents', icon: <FileText className="h-5 w-5" />, path: '/documents', color: 'text-emerald-600 bg-emerald-50' },
-    { label: 'Messagerie', icon: <MessageSquare className="h-5 w-5" />, path: '/messages', color: 'text-[var(--feua-gold)] bg-[var(--feua-gold-light)]' },
-    { label: 'Uniformes', icon: <Shirt className="h-5 w-5" />, path: '/uniforms', color: 'text-emerald-700 bg-emerald-50' },
+    { label: 'Documents', icon: <FileText className="h-5 w-5" />, path: '/documents', color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400' },
+    { label: 'Messagerie', icon: <MessageSquare className="h-5 w-5" />, path: '/messages', color: 'text-[var(--feua-gold)] bg-[var(--feua-gold-light)] dark:bg-amber-900/30 dark:text-amber-400' },
+    { label: 'Uniformes', icon: <Shirt className="h-5 w-5" />, path: '/uniforms', color: 'text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400' },
   ];
   if (canAccess(userLevel, 'MASTER')) {
-    quickActions.push({ label: 'Membres', icon: <Users className="h-5 w-5" />, path: '/members', color: 'text-[var(--feua-green)] bg-[var(--feua-green-light)]' });
-    quickActions.push({ label: 'Caisses', icon: <Wallet className="h-5 w-5" />, path: '/cash', color: 'text-[var(--feua-gold)] bg-[var(--feua-gold-light)]' });
+    quickActions.push({ label: 'Membres', icon: <Users className="h-5 w-5" />, path: '/members', color: 'text-[var(--feua-green)] bg-[var(--feua-green-light)] dark:bg-emerald-900/30 dark:text-emerald-400' });
+    quickActions.push({ label: 'Caisses', icon: <Wallet className="h-5 w-5" />, path: '/cash', color: 'text-[var(--feua-gold)] bg-[var(--feua-gold-light)] dark:bg-amber-900/30 dark:text-amber-400' });
   }
   if (canAccess(userLevel, 'MAST_IN')) {
-    quickActions.push({ label: 'Admin', icon: <Shield className="h-5 w-5" />, path: '/admin', color: 'text-amber-700 bg-amber-50' });
+    quickActions.push({ label: 'Admin', icon: <Shield className="h-5 w-5" />, path: '/admin', color: 'text-amber-700 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400' });
   }
 
   return (
@@ -253,7 +253,7 @@ export function DashboardView() {
             ) : (
               <div className="space-y-3">
                 {announcements.slice(0, 3).map((a) => (
-                  <div key={a.id} className={`p-3 rounded-lg bg-muted/50 space-y-1 hover:bg-muted transition-colors cursor-pointer ${a.isUrgent ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-[var(--feua-green)]'}`}>
+                  <div key={a.id} className={`p-3 rounded-lg bg-muted/50 dark:bg-muted/20 space-y-1 hover:bg-muted dark:hover:bg-muted/40 transition-colors cursor-pointer ${a.isUrgent ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-[var(--feua-green)]'}`}>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         {a.isUrgent && <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />}
@@ -299,7 +299,7 @@ export function DashboardView() {
                     };
                     const mapped = actionMap[log.action] || { icon: <Activity className="h-4 w-4" />, label: log.action, color: 'text-muted-foreground' };
                     return (
-                      <div key={log.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors cursor-default">
+                      <div key={log.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 dark:bg-muted/20 hover:bg-muted/80 dark:hover:bg-muted/40 transition-colors cursor-default">
                         <div className={mapped.color}>{mapped.icon}</div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium">{actorName ? `${actorName} — ` : ''}{mapped.label}</p>

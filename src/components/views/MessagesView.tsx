@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useAppStore, ACCESS_LABELS, apiFetch } from '@/lib/store';
+import { useAppStore, ACCESS_LABELS, apiFetch, silentFetch } from '@/lib/store';
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { relativeTime } from './view-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +27,7 @@ const pageVariants = {
 };
 
 export function MessagesView() {
-  const { member } = useAppStore();
+  const { member, setNotifications } = useAppStore();
   const [scope, setScope] = useState<'PLENIARY' | 'PRIVATE'>('PLENIARY');
   const [messages, setMessages] = useState<any[]>([]);
   const [content, setContent] = useState('');
@@ -44,14 +45,14 @@ export function MessagesView() {
     }
   }, [scope]);
 
-  const loadMessages = useCallback(async () => {
-    setLoading(true);
+  const loadMessages = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true);
     try {
       const params = new URLSearchParams({ scope, limit: '50' });
       if (scope === 'PRIVATE' && recipientId) params.set('recipientId', recipientId);
       const data = await apiFetch<{ messages: any[]; total: number }>(`/api/messages?${params}`);
       setMessages(data.messages);
-    } catch { /* ignore */ } finally { setLoading(false); }
+    } catch { /* ignore */ } finally { if (!quiet) setLoading(false); }
   }, [scope, recipientId]);
 
   useEffect(() => {
@@ -60,6 +61,36 @@ export function MessagesView() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [loadMessages]);
+
+  useEffect(() => {
+    if (!member?.id) return;
+
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    const refresh = () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        void loadMessages(true);
+        void silentFetch<{ notifications: any[]; unreadCount: number }>('/api/notifications')
+          .then((data) => data && setNotifications(data.notifications, data.unreadCount));
+      }, 250);
+    };
+
+    const supabase = getSupabaseBrowserClient();
+    const channel = supabase
+      .channel(`messages:${member.id}:${scope}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'messages', filter: `scope=eq.${scope}`,
+      }, refresh)
+      .subscribe();
+
+    // Keep messages fresh if a Realtime websocket is temporarily unavailable.
+    const fallback = window.setInterval(() => { void loadMessages(true); }, 15_000);
+    return () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      window.clearInterval(fallback);
+      void supabase.removeChannel(channel);
+    };
+  }, [member?.id, scope, loadMessages, setNotifications]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -168,7 +199,7 @@ export function MessagesView() {
               className="flex-1 bg-background"
             />
           </div>
-          <Button type="submit" className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90 text-white">
+          <Button type="submit" disabled={scope === 'PRIVATE' && !recipientId} className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90 text-white">
             <Send className="h-4 w-4" />
           </Button>
         </form>

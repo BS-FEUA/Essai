@@ -219,18 +219,18 @@ export function MemberProfileView() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-red-600 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-600" /> Confirmation de suppression CEO
+              <AlertTriangle className="h-5 w-5 text-red-600" /> Désactivation et anonymisation CEO
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground mt-2">
-            Voulez-vous vraiment supprimer définitivement le membre{' '}
+            Voulez-vous désactiver le compte et anonymiser le profil du membre{' '}
             <strong className="text-foreground">{profileData.firstName} {profileData.lastName}</strong> ({profileData.email}) ?
             <br /><br />
-            <span className="text-xs text-red-500 font-semibold">Cette action est irréversible et sera enregistrée dans le journal d'audit Mémoire H.</span>
+            <span className="text-xs text-red-500 font-semibold">La connexion sera bloquée et les données personnelles supprimées. Les références historiques et le journal d'audit immuable seront conservés.</span>
           </p>
           <DialogFooter className="mt-4 gap-2">
             <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>Annuler</Button>
-            <Button variant="destructive" onClick={handleDeleteMember}>Supprimer définitivement</Button>
+            <Button variant="destructive" onClick={handleDeleteMember}>Désactiver et anonymiser</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

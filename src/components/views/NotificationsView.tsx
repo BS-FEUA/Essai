@@ -24,7 +24,7 @@ const notifIcon: Record<string, { icon: React.ReactNode; color: string }> = {
 };
 
 export function NotificationsView() {
-  const { setNotifications, unreadCount } = useAppStore();
+  const { notifications: appNotifications, setNotifications, unreadCount } = useAppStore();
   const [notifications, setLocalNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,6 +42,10 @@ export function NotificationsView() {
     Promise.resolve().then(() => { if (mounted) load(); });
     return () => { mounted = false; };
   }, [load]);
+
+  useEffect(() => {
+    setLocalNotifications(appNotifications);
+  }, [appNotifications]);
 
   const handleMarkRead = async (id: string) => {
     try {

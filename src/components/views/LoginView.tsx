@@ -63,11 +63,11 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
     }
     setIsSubmittingLogin(true);
     try {
-      const ok = await login(email, password);
-      if (ok) {
+      const result = await login(email, password);
+      if (result.success) {
         router.push('/dashboard');
       } else {
-        setLoginError('Connexion impossible : vérifiez vos identifiants ou attendez la validation de votre compte par le super administrateur.');
+        setLoginError(result.error || 'Connexion impossible : vérifiez vos identifiants ou attendez la validation de votre compte par le super administrateur.');
       }
     } catch {
       setLoginError('Erreur de connexion. Veuillez réessayer.');
@@ -111,11 +111,11 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
     setLoginError('');
     setIsSubmittingLogin(true);
     try {
-      const ok = await login(demoEmail, demoPass);
-      if (ok) {
+      const result = await login(demoEmail, demoPass);
+      if (result.success) {
         router.push('/dashboard');
       } else {
-        setLoginError('Échec de la connexion démo.');
+        setLoginError(result.error || 'Échec de la connexion démo.');
       }
     } catch {
       setLoginError('Erreur de connexion démo.');
@@ -125,27 +125,27 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
   };
 
   return (
-    <div className="login-page min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-transparent text-slate-100">
+    <div className="login-page min-h-screen flex flex-col lg:items-center lg:justify-center pt-24 pb-8 px-4 lg:p-4 relative overflow-y-auto overflow-x-hidden bg-transparent text-foreground">
       {/* Top Floating Navigation Header */}
       <div className="fixed top-4 left-4 right-4 z-50 flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
           <Link href="/">
-            <Button size="sm" className="bg-slate-900/80 hover:bg-slate-800 backdrop-blur-md shadow-lg border border-emerald-500/30 text-xs gap-1.5 text-white">
+            <Button size="sm" className="bg-card dark:bg-slate-900/80 backdrop-blur-md shadow-lg border border-emerald-500/30 text-xs gap-1.5 text-foreground">
               <Home className="h-3.5 w-3.5 text-emerald-400" />
               Accueil
             </Button>
           </Link>
           <Link href="/landa">
-            <Button size="sm" className="bg-slate-900/80 hover:bg-slate-800 backdrop-blur-md shadow-lg border border-amber-500/30 text-xs gap-1.5 text-amber-300">
+            <Button size="sm" className="bg-card dark:bg-slate-900/80 backdrop-blur-md shadow-lg border border-amber-500/30 text-xs gap-1.5 text-amber-600 dark:text-amber-300">
               <Globe className="h-3.5 w-3.5" />
               Espace Landa
             </Button>
           </Link>
         </div>
         <Button
-          variant="ghost"
+          variant="outline"
           size="icon"
-          className="bg-slate-900/80 hover:bg-slate-800 backdrop-blur-md border border-slate-700/50 text-amber-400"
+          className="bg-card dark:bg-slate-900/80 backdrop-blur-md border border-slate-300 dark:border-slate-700/50 text-amber-500 dark:text-amber-400"
           onClick={() => document.documentElement.classList.toggle('dark')}
         >
           <Sun className="h-4 w-4 block dark:hidden text-amber-400" />
@@ -153,18 +153,18 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
         </Button>
       </div>
 
-      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mt-14 lg:mt-0 relative z-10">
+      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-start lg:items-center relative z-10">
         {/* Left Decorative Branding Card (Liquid Glass) */}
-        <div className="hidden lg:flex flex-col items-center justify-center p-10 rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-emerald-500/30 text-white relative overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
+        <div className="hidden lg:flex flex-col items-center justify-center p-10 rounded-3xl bg-card dark:bg-slate-900/60 backdrop-blur-xl border border-emerald-500/30 text-foreground relative overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-amber-400 to-emerald-500" />
-          <div className="w-24 h-24 rounded-2xl bg-slate-950/80 p-3 flex items-center justify-center border border-amber-400/40 shadow-xl mb-6">
+          <div className="w-24 h-24 rounded-2xl bg-white dark:bg-slate-950/80 p-3 flex items-center justify-center border border-amber-400/40 shadow-xl mb-6">
             <img src="/feua-logo.png" alt="FEUA" className="h-full w-full object-contain drop-shadow-[0_0_15px_rgba(212,160,23,0.6)]" />
           </div>
-          <h2 className="text-3xl font-black text-center text-white tracking-tight">FEUA — BS Lokossa</h2>
-          <p className="text-emerald-300 text-center text-sm font-semibold mt-2 max-w-xs">Bureau Syndical des Étudiants (IUT & ENSET)</p>
-          <p className="text-slate-400 text-center text-xs mt-3 max-w-sm">Fédération des Étudiants Universitaires Associés du Bénin</p>
+          <h2 className="text-3xl font-black text-center tracking-tight">FEUA — BS Lokossa</h2>
+          <p className="text-[var(--feua-green)] dark:text-emerald-300 text-center text-sm font-semibold mt-2 max-w-xs">Bureau Syndical des Étudiants (IUT & ENSET)</p>
+          <p className="text-muted-foreground text-center text-xs mt-3 max-w-sm">Fédération des Étudiants Universitaires Associés du Bénin</p>
           
-          <div className="mt-8 pt-6 border-t border-slate-800 w-full text-center space-y-3">
+          <div className="mt-8 pt-6 border-t border-border w-full text-center space-y-3">
             <p className="text-xs text-amber-300 font-bold uppercase tracking-wider">Accès Démo 1-Clic :</p>
             <div className="flex flex-col gap-2 w-full">
               <button
@@ -186,24 +186,25 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
         </div>
 
         {/* Right Form Container (Liquid Glass Card) */}
-        <motion.div {...pageVariants} className="w-full max-w-md mx-auto">
+        <motion.div {...pageVariants} className="w-full max-w-md mx-auto space-y-6">
           {/* Mobile logo */}
-          <div className="lg:hidden flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-2xl bg-slate-900/80 p-2 border border-emerald-500/30 shadow-lg flex items-center justify-center">
+          <div className="lg:hidden flex flex-col items-center justify-center mb-2 mt-4">
+            <div className="w-20 h-20 rounded-3xl bg-white dark:bg-slate-900/80 p-3 border border-emerald-500/30 shadow-lg flex items-center justify-center mb-3">
               <img src="/feua-logo.png" alt="FEUA" className="h-full w-full object-contain" />
             </div>
+            <h2 className="text-2xl font-black text-center tracking-tight text-foreground">FEUA — BS Lokossa</h2>
           </div>
 
           <div className="w-full">
             {/* Animated Liquid Glass Tabs Bar */}
-            <div className="flex w-full mb-5 bg-slate-900/80 p-1.5 rounded-2xl border border-emerald-500/30 shadow-inner backdrop-blur-xl">
+            <div className="flex w-full mb-5 bg-card dark:bg-slate-900/80 p-1.5 rounded-2xl border border-emerald-500/30 shadow-inner backdrop-blur-xl">
               <button
                 type="button"
                 onClick={() => setActiveTab('login')}
                 className={`flex-1 py-2.5 px-4 rounded-xl font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${
                   activeTab === 'login'
-                    ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-950/50 scale-[1.02] border border-emerald-400/40'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    ? 'bg-gradient-to-r from-[var(--feua-green)] to-emerald-700 text-white shadow-lg shadow-emerald-900/30 scale-[1.02] border border-emerald-400/40'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
                 <LogIn className="h-4 w-4" />
@@ -214,8 +215,8 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                 onClick={() => setActiveTab('register')}
                 className={`flex-1 py-2.5 px-4 rounded-xl font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${
                   activeTab === 'register'
-                    ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-950/50 scale-[1.02] border border-emerald-400/40'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    ? 'bg-gradient-to-r from-[var(--feua-green)] to-emerald-700 text-white shadow-lg shadow-emerald-900/30 scale-[1.02] border border-emerald-400/40'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
                 <UserPlus className="h-4 w-4" />
@@ -226,18 +227,18 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
             {/* Login Tab */}
             {activeTab === 'login' && (
               <div className="space-y-4">
-                <div className="relative p-[1px] rounded-2xl bg-gradient-to-b from-emerald-500/40 via-amber-400/20 to-emerald-500/10 shadow-[0_12px_35px_rgba(0,0,0,0.5)]">
-                  <Card className="bg-slate-900/80 backdrop-blur-xl border-0 rounded-2xl text-slate-100 shadow-2xl">
+                <div className="relative p-[1px] rounded-2xl bg-gradient-to-b from-emerald-500/40 via-amber-400/20 to-emerald-500/10 shadow-lg">
+                  <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border-0 rounded-2xl shadow-xl">
                     <CardHeader className="text-center space-y-1 pb-4">
-                      <CardTitle className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-amber-300 to-emerald-300">
+                      <CardTitle className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[var(--feua-green)] to-emerald-600 dark:from-emerald-400 dark:to-emerald-300">
                         Espace Connexion
                       </CardTitle>
-                      <CardDescription className="text-slate-400 text-xs">
+                      <CardDescription className="text-muted-foreground text-xs">
                         Accédez à votre compte FEUA BS-Lokossa
                       </CardDescription>
                     </CardHeader>
 
-                    <form onSubmit={handleLoginSubmit}>
+                    <form onSubmit={handleLoginSubmit} data-testid="login-form">
                       <CardContent className="space-y-4">
                         {loginError && (
                           <div className="p-3 rounded-xl bg-red-950/80 border border-red-500/40 text-red-200 text-xs flex items-start gap-2 animate-fade-in-up">
@@ -247,7 +248,7 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                         )}
 
                         <div className="space-y-1.5">
-                          <Label htmlFor="login-email" className="text-xs font-semibold text-slate-200">
+                          <Label htmlFor="login-email" className="text-xs font-semibold text-foreground">
                             Email
                           </Label>
                           <div className="relative">
@@ -258,7 +259,7 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                               placeholder="votre@email.bj"
                               value={email}
                               onChange={(e) => setEmail(e.target.value)}
-                              className="pl-10 bg-slate-950/70 border-slate-700/80 text-white placeholder-slate-500 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 rounded-xl"
+                              className="pl-10 bg-background dark:bg-slate-950/70 border-border dark:border-slate-700/80 text-foreground placeholder-muted-foreground focus:border-[var(--feua-green)] focus:ring-1 focus:ring-[var(--feua-green)] rounded-xl"
                               required
                             />
                           </div>
@@ -276,7 +277,7 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                               placeholder="••••••••"
                               value={password}
                               onChange={(e) => setPassword(e.target.value)}
-                              className="pl-10 bg-slate-950/70 border-slate-700/80 text-white placeholder-slate-500 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 rounded-xl"
+                              className="pl-10 bg-background dark:bg-slate-950/70 border-border dark:border-slate-700/80 text-foreground placeholder-muted-foreground focus:border-[var(--feua-green)] focus:ring-1 focus:ring-[var(--feua-green)] rounded-xl"
                               required
                             />
                           </div>
@@ -292,6 +293,7 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                       <CardFooter className="flex-col gap-3 pt-2">
                         <Button
                           type="submit"
+                          data-testid="login-submit"
                           className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-extrabold shadow-lg shadow-emerald-950/60 rounded-xl py-5"
                           disabled={isSubmittingLogin}
                         >
@@ -490,6 +492,26 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                 </Card>
               </div>
             )}
+            {/* MOBILE ONLY: Demo accounts */}
+            <div className="lg:hidden mt-8 pt-6 border-t border-border w-full text-center space-y-3">
+              <p className="text-xs text-amber-600 dark:text-amber-300 font-bold uppercase tracking-wider">Accès Démo 1-Clic :</p>
+              <div className="flex flex-col gap-2 w-full">
+                <button
+                  type="button"
+                  onClick={() => handleQuickFillAndLogin(DEMO_ACCOUNTS.ceo.email, DEMO_ACCOUNTS.ceo.password)}
+                  className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/10 hover:from-amber-500/30 hover:to-amber-600/20 text-amber-600 dark:text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center justify-center gap-2 shadow-md"
+                >
+                  <ShieldCheck className="h-4 w-4 text-amber-500 dark:text-amber-400" /> Espace Bureau Exécutif (CEO)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickFillAndLogin(DEMO_ACCOUNTS.master.email, DEMO_ACCOUNTS.master.password)}
+                  className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[var(--feua-green)]/20 to-emerald-600/10 hover:from-[var(--feua-green)]/30 hover:to-emerald-600/20 text-[var(--feua-green)] dark:text-emerald-300 border border-emerald-500/40 text-xs font-bold transition flex items-center justify-center gap-2 shadow-md"
+                >
+                  <UserCheck className="h-4 w-4 text-[var(--feua-green)] dark:text-emerald-400" /> Espace Membre (Master)
+                </button>
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>

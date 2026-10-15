@@ -240,10 +240,10 @@ export function AdminView() {
     <motion.div {...pageVariants} className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-100 flex items-center gap-2">
-            <Shield className="h-7 w-7 text-amber-400" /> Administration & Audit
+          <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
+            <Shield className="h-7 w-7 text-amber-500 dark:text-amber-400" /> Administration & Audit
           </h1>
-          <p className="text-xs text-slate-400 mt-1">Espace de gestion globale du Bureau Syndical BS-Lokossa (FEUA)</p>
+          <p className="text-xs text-muted-foreground mt-1">Espace de gestion globale du Bureau Syndical BS-Lokossa (FEUA)</p>
         </div>
         {canAccess(member?.accessLevel || 'IGN', 'MAST') && (
           <Button
@@ -340,13 +340,13 @@ export function AdminView() {
         <DialogContent className="bg-slate-900 border border-red-500/40 text-white rounded-2xl shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-red-400 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-400" /> Confirmation de suppression CEO
+              <AlertTriangle className="h-5 w-5 text-red-400" /> Désactivation et anonymisation CEO
             </DialogTitle>
             <DialogDescription className="text-slate-300 text-xs mt-2">
-              Êtes-vous sûr de vouloir supprimer définitivement le membre{' '}
+              Voulez-vous désactiver le compte et anonymiser le profil du membre{' '}
               <strong className="text-white">{deleteConfirmMember?.firstName} {deleteConfirmMember?.lastName}</strong> ({deleteConfirmMember?.email}) ?
               <br />
-              <span className="text-red-300 text-[11px]">Cette action est irréversible et sera enregistrée dans le journal d'audit Mémoire H.</span>
+              <span className="text-red-300 text-[11px]">La connexion sera bloquée et les données personnelles supprimées. Les références historiques et le journal d'audit immuable seront conservés.</span>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 gap-2">
@@ -354,7 +354,7 @@ export function AdminView() {
               Annuler
             </Button>
             <Button onClick={handleDeleteMember} className="bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs">
-              Confirmer la suppression
+              Désactiver et anonymiser
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -389,52 +389,52 @@ export function AdminView() {
           <div>
             <h2 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3">Statistiques Globales</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <Card className="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/30 text-white shadow-xl hover:border-emerald-400 transition-all">
+              <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl hover:border-[var(--feua-green)]/60 dark:hover:border-emerald-400 transition-all">
                 <CardContent className="p-4">
-                  <p className="text-xs text-slate-400">Total membres</p>
-                  <p className="text-2xl sm:text-3xl font-black text-emerald-400">{overview.totalMembers}</p>
+                  <p className="text-xs text-muted-foreground dark:text-slate-400">Total membres</p>
+                  <p className="text-2xl sm:text-3xl font-black text-[var(--feua-green)] dark:text-emerald-400">{overview.totalMembers}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/30 text-white shadow-xl hover:border-emerald-400 transition-all">
+              <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl hover:border-[var(--feua-green)]/60 dark:hover:border-emerald-400 transition-all">
                 <CardContent className="p-4">
-                  <p className="text-xs text-slate-400">Membres actifs</p>
-                  <p className="text-2xl sm:text-3xl font-black text-emerald-300">{overview.activeMembers}</p>
+                  <p className="text-xs text-muted-foreground dark:text-slate-400">Membres actifs</p>
+                  <p className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-300">{overview.activeMembers}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-900/80 backdrop-blur-xl border border-amber-500/40 text-white shadow-xl hover:border-amber-400 transition-all">
+              <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-gold)]/40 dark:border-amber-500/40 shadow-xl hover:border-[var(--feua-gold)]/60 dark:hover:border-amber-400 transition-all">
                 <CardContent className="p-4">
-                  <p className="text-xs text-amber-400 font-semibold">En attente de validation</p>
-                  <p className="text-2xl sm:text-3xl font-black text-amber-300">{overview.pendingMembers}</p>
+                  <p className="text-xs text-[var(--feua-gold)] dark:text-amber-400 font-semibold">En attente de validation</p>
+                  <p className="text-2xl sm:text-3xl font-black text-[var(--feua-gold)] dark:text-amber-300">{overview.pendingMembers}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/30 text-white shadow-xl hover:border-emerald-400 transition-all">
+              <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl hover:border-[var(--feua-green)]/60 dark:hover:border-emerald-400 transition-all">
                 <CardContent className="p-4">
-                  <p className="text-xs text-slate-400">Solde caisses</p>
-                  <p className="text-2xl sm:text-3xl font-black text-amber-400">{(overview.totalBalance || 0).toLocaleString()} <span className="text-xs text-slate-400 font-normal">FCFA</span></p>
+                  <p className="text-xs text-muted-foreground dark:text-slate-400">Solde caisses</p>
+                  <p className="text-2xl sm:text-3xl font-black text-[var(--feua-gold)] dark:text-amber-400">{(overview.totalBalance || 0).toLocaleString()} <span className="text-xs text-muted-foreground dark:text-slate-400 font-normal">FCFA</span></p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/30 text-white shadow-xl hover:border-emerald-400 transition-all">
+              <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl hover:border-[var(--feua-green)]/60 dark:hover:border-emerald-400 transition-all">
                 <CardContent className="p-4">
-                  <p className="text-xs text-slate-400">Transactions validées</p>
-                  <p className="text-2xl sm:text-3xl font-black text-emerald-300">{overview.totalTransactions}</p>
+                  <p className="text-xs text-muted-foreground dark:text-slate-400">Transactions validées</p>
+                  <p className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-300">{overview.totalTransactions}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-900/80 backdrop-blur-xl border border-amber-500/30 text-white shadow-xl hover:border-amber-400 transition-all">
+              <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-gold)]/30 dark:border-amber-500/30 shadow-xl hover:border-[var(--feua-gold)]/60 dark:hover:border-amber-400 transition-all">
                 <CardContent className="p-4">
-                  <p className="text-xs text-slate-400">Commandes d'uniformes</p>
-                  <p className="text-2xl sm:text-3xl font-black text-amber-300">{overview.totalOrders}</p>
+                  <p className="text-xs text-muted-foreground dark:text-slate-400">Commandes d'uniformes</p>
+                  <p className="text-2xl sm:text-3xl font-black text-[var(--feua-gold)] dark:text-amber-300">{overview.totalOrders}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-900/80 backdrop-blur-xl border border-amber-500/40 text-white shadow-xl hover:border-amber-400 transition-all">
+              <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-gold)]/40 dark:border-amber-500/40 shadow-xl hover:border-[var(--feua-gold)]/60 dark:hover:border-amber-400 transition-all">
                 <CardContent className="p-4">
-                  <p className="text-xs text-amber-300">Commandes en attente</p>
-                  <p className="text-2xl sm:text-3xl font-black text-amber-400">{overview.pendingOrders}</p>
+                  <p className="text-xs text-[var(--feua-gold)] dark:text-amber-300">Commandes en attente</p>
+                  <p className="text-2xl sm:text-3xl font-black text-[var(--feua-gold)] dark:text-amber-400">{overview.pendingOrders}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/30 text-white shadow-xl hover:border-emerald-400 transition-all">
+              <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl hover:border-[var(--feua-green)]/60 dark:hover:border-emerald-400 transition-all">
                 <CardContent className="p-4">
-                  <p className="text-xs text-slate-400">Connexions (7j)</p>
-                  <p className="text-2xl sm:text-3xl font-black text-emerald-300">{overview.recentLogins}</p>
+                  <p className="text-xs text-muted-foreground dark:text-slate-400">Connexions (7j)</p>
+                  <p className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-300">{overview.recentLogins}</p>
                 </CardContent>
               </Card>
             </div>
@@ -442,9 +442,9 @@ export function AdminView() {
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/30 text-white shadow-xl">
+            <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold text-emerald-300">Répartition par niveau d'accès</CardTitle>
+                <CardTitle className="text-sm font-bold text-[var(--feua-green)] dark:text-emerald-300">Répartition par niveau d&apos;accès</CardTitle>
               </CardHeader>
               <CardContent className="p-4">
                 <div className="h-64">
@@ -461,9 +461,9 @@ export function AdminView() {
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/30 text-white shadow-xl">
+            <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold text-amber-300">Répartition par institution</CardTitle>
+                <CardTitle className="text-sm font-bold text-[var(--feua-gold)] dark:text-amber-300">Répartition par institution</CardTitle>
               </CardHeader>
               <CardContent className="p-4">
                 <div className="h-64">
@@ -496,7 +496,7 @@ export function AdminView() {
       {tab === 'announcements' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-amber-300 uppercase tracking-wider">Gestion des Communiqués & Publications</h2>
+            <h2 className="text-sm font-bold text-[var(--feua-gold)] dark:text-amber-300 uppercase tracking-wider">Gestion des Communiqués & Publications</h2>
             <Button
               size="sm"
               className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs"
@@ -506,37 +506,37 @@ export function AdminView() {
             </Button>
           </div>
 
-          <Card className="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/30 text-white shadow-xl">
+          <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl">
             <CardContent className="p-0">
               <Table>
-                <TableHeader className="bg-slate-950/60">
-                  <TableRow className="border-slate-800">
-                    <TableHead className="text-slate-300">Titre</TableHead>
-                    <TableHead className="text-slate-300">Statut Urgence</TableHead>
-                    <TableHead className="text-slate-300">Visibilité</TableHead>
-                    <TableHead className="text-slate-300">Date</TableHead>
-                    <TableHead className="text-right text-slate-300">Actions</TableHead>
+                <TableHeader className="bg-muted/50 dark:bg-slate-950/60">
+                  <TableRow className="dark:border-slate-800">
+                    <TableHead className="dark:text-slate-300">Titre</TableHead>
+                    <TableHead className="dark:text-slate-300">Statut Urgence</TableHead>
+                    <TableHead className="dark:text-slate-300">Visibilité</TableHead>
+                    <TableHead className="dark:text-slate-300">Date</TableHead>
+                    <TableHead className="text-right dark:text-slate-300">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {announcements.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-slate-400 text-xs">
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground dark:text-slate-400 text-xs">
                         Aucun communiqué publié. Cliquez sur "Nouvelle Annonce" pour en créer une.
                       </TableCell>
                     </TableRow>
                   ) : (
                     announcements.map((ann) => (
-                      <TableRow key={ann.id} className="border-slate-800/60 hover:bg-slate-800/40">
-                        <TableCell className="font-bold text-white max-w-xs truncate">
+                      <TableRow key={ann.id} className="dark:border-slate-800/60 hover:bg-muted/50 dark:hover:bg-slate-800/40">
+                        <TableCell className="font-bold max-w-xs truncate">
                           {ann.title}
-                          <p className="text-[11px] text-slate-400 truncate font-normal">{ann.content}</p>
+                          <p className="text-[11px] text-muted-foreground dark:text-slate-400 truncate font-normal">{ann.content}</p>
                         </TableCell>
                         <TableCell>
                           {ann.isUrgent ? (
-                            <Badge className="bg-red-500/20 text-red-300 border-red-500/40 text-[10px]">Urgente</Badge>
+                            <Badge className="bg-red-500/20 text-red-600 dark:text-red-300 border-red-500/40 text-[10px]">Urgente</Badge>
                           ) : (
-                            <Badge variant="outline" className="text-slate-400 text-[10px]">Normale</Badge>
+                            <Badge variant="outline" className="text-muted-foreground text-[10px]">Normale</Badge>
                           )}
                         </TableCell>
                         <TableCell>
@@ -545,14 +545,14 @@ export function AdminView() {
                             onCheckedChange={() => handleToggleAnnActive(ann.id, ann.isActive)}
                           />
                         </TableCell>
-                        <TableCell className="text-xs text-slate-400">
+                        <TableCell className="text-xs text-muted-foreground dark:text-slate-400">
                           {new Date(ann.createdAt).toLocaleDateString('fr-FR')}
                         </TableCell>
                         <TableCell className="text-right space-x-1">
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-amber-300 hover:bg-amber-500/20"
+                            className="h-8 w-8 text-[var(--feua-gold)] dark:text-amber-300 hover:bg-[var(--feua-gold)]/10 dark:hover:bg-amber-500/20"
                             onClick={() => {
                               setEditAnnId(ann.id);
                               setAnnForm({ title: ann.title, content: ann.content, isUrgent: ann.isUrgent });
@@ -564,7 +564,7 @@ export function AdminView() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-red-400 hover:bg-red-500/20"
+                            className="h-8 w-8 text-red-500 dark:text-red-400 hover:bg-red-500/10 dark:hover:bg-red-500/20"
                             onClick={() => handleDeleteAnn(ann.id)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -584,19 +584,19 @@ export function AdminView() {
       {tab === 'members' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row justify-between gap-3">
-            <h2 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Gestion des Membres & Inscriptions</h2>
+            <h2 className="text-sm font-bold text-[var(--feua-green)] dark:text-emerald-400 uppercase tracking-wider">Gestion des Membres &amp; Inscriptions</h2>
             <div className="flex gap-2">
               <Input
                 placeholder="Rechercher nom, email..."
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
-                className="bg-slate-950/70 border-slate-700 text-white rounded-xl text-xs w-48"
+                className="rounded-xl text-xs w-48"
               />
               <Select value={memberStatusFilter} onValueChange={(v) => setMemberStatusFilter(v === 'ALL' ? '' : v)}>
-                <SelectTrigger className="w-40 bg-slate-950/70 border-slate-700 text-xs text-white rounded-xl">
+                <SelectTrigger className="w-40 text-xs rounded-xl">
                   <SelectValue placeholder="Tous statuts" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-slate-700 text-white text-xs">
+                <SelectContent className="text-xs">
                   <SelectItem value="ALL">Tous les statuts</SelectItem>
                   <SelectItem value="PENDING_VALIDATION">En attente validation</SelectItem>
                   <SelectItem value="ACTIVE">Actif</SelectItem>
@@ -606,67 +606,67 @@ export function AdminView() {
             </div>
           </div>
 
-          <Card className="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/30 text-white shadow-xl">
+          <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl">
             <CardContent className="p-0">
               <Table>
-                <TableHeader className="bg-slate-950/60">
-                  <TableRow className="border-slate-800">
-                    <TableHead className="text-slate-300">Membre</TableHead>
-                    <TableHead className="text-slate-300">Niveau d'accès</TableHead>
-                    <TableHead className="text-slate-300">Statut</TableHead>
-                    <TableHead className="text-slate-300">Filière / Inst.</TableHead>
-                    <TableHead className="text-right text-slate-300">Actions d'administration</TableHead>
+                <TableHeader className="bg-muted/50 dark:bg-slate-950/60">
+                  <TableRow className="dark:border-slate-800">
+                    <TableHead className="dark:text-slate-300">Membre</TableHead>
+                    <TableHead className="dark:text-slate-300">Niveau d'accès</TableHead>
+                    <TableHead className="dark:text-slate-300">Statut</TableHead>
+                    <TableHead className="dark:text-slate-300">Filière / Inst.</TableHead>
+                    <TableHead className="text-right dark:text-slate-300">Actions d'administration</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {memberLoading ? (
                     [1, 2, 3].map((i) => (
                       <TableRow key={i}>
-                        <TableCell colSpan={5}><Skeleton className="h-8 w-full bg-slate-800" /></TableCell>
+                        <TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell>
                       </TableRow>
                     ))
                   ) : members.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-slate-400 text-xs">
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground dark:text-slate-400 text-xs">
                         Aucun membre trouvé.
                       </TableCell>
                     </TableRow>
                   ) : (
                     members.map((m) => (
-                      <TableRow key={m.id} className="border-slate-800/60 hover:bg-slate-800/40">
+                      <TableRow key={m.id} className="dark:border-slate-800/60 hover:bg-muted/50 dark:hover:bg-slate-800/40">
                         <TableCell className="text-xs">
-                          <p className="font-bold text-white">{m.firstName} {m.lastName}</p>
-                          <p className="text-[10px] text-slate-400">{m.email} • {m.matricule}</p>
+                          <p className="font-bold">{m.firstName} {m.lastName}</p>
+                          <p className="text-[10px] text-muted-foreground dark:text-slate-400">{m.email} • {m.matricule}</p>
                         </TableCell>
                         <TableCell>
-                          <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[10px]">
+                          <Badge className="bg-[var(--feua-green)]/20 text-[var(--feua-green)] dark:text-emerald-300 border-[var(--feua-green)]/40 dark:border-emerald-500/40 text-[10px]">
                             {ACCESS_LABELS[m.accessLevel] || m.accessLevel}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           {m.status === 'PENDING_VALIDATION' ? (
-                            <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-[10px] animate-pulse">
+                            <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40 text-[10px] animate-pulse">
                               En attente
                             </Badge>
                           ) : m.status === 'ACTIVE' ? (
-                            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[10px]">
+                            <Badge className="bg-[var(--feua-green)]/20 text-[var(--feua-green)] dark:text-emerald-300 border-[var(--feua-green)]/40 dark:border-emerald-500/40 text-[10px]">
                               Actif
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-slate-400 text-[10px]">
+                            <Badge variant="outline" className="text-muted-foreground text-[10px]">
                               {m.status}
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="text-xs text-slate-400">
+                        <TableCell className="text-xs text-muted-foreground dark:text-slate-400">
                           {m.filiere || '-'}
-                          <p className="text-[10px] text-slate-500">{m.institution}</p>
+                          <p className="text-[10px] text-muted-foreground/70 dark:text-slate-500">{m.institution}</p>
                         </TableCell>
                         <TableCell className="text-right space-x-1">
                           {m.status === 'PENDING_VALIDATION' && isCEO && (
                             <Button
                               size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] h-7 px-2 rounded-lg"
+                              className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90 text-white font-bold text-[10px] h-7 px-2 rounded-lg"
                               onClick={() => handleUpdateMemberStatus(m.id, 'ACTIVE')}
                             >
                               <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Valider
@@ -676,17 +676,17 @@ export function AdminView() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="border-slate-700 text-slate-300 hover:bg-amber-500/20 text-[10px] h-7 px-2 rounded-lg"
+                              className="text-[10px] h-7 px-2 rounded-lg"
                               onClick={() => handleUpdateMemberStatus(m.id, 'SUSPENDED')}
                             >
-                              <XCircle className="h-3.5 w-3.5 mr-1 text-amber-400" /> Suspendre
+                              <XCircle className="h-3.5 w-3.5 mr-1 text-amber-500" /> Suspendre
                             </Button>
                           )}
                           {m.status === 'SUSPENDED' && (
                             <Button
                               size="sm"
                               variant="outline"
-                              className="border-slate-700 text-slate-300 hover:bg-emerald-500/20 text-[10px] h-7 px-2 rounded-lg"
+                              className="text-[10px] h-7 px-2 rounded-lg"
                               onClick={() => handleUpdateMemberStatus(m.id, 'ACTIVE')}
                             >
                               Réactiver
@@ -696,7 +696,7 @@ export function AdminView() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-7 w-7 text-red-400 hover:bg-red-500/20"
+                              className="h-7 w-7 text-red-500 dark:text-red-400 hover:bg-red-500/10 dark:hover:bg-red-500/20"
                               onClick={() => setDeleteConfirmMember(m)}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -716,57 +716,56 @@ export function AdminView() {
       {/* TAB 4: UNIFORM ORDERS */}
       {tab === 'uniforms' && (
         <div className="space-y-4">
-          <h2 className="text-sm font-bold text-amber-300 uppercase tracking-wider">Gestion des Commandes d'Uniformes</h2>
-
-          <Card className="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/30 text-white shadow-xl">
+          <h2 className="text-sm font-bold text-[var(--feua-gold)] dark:text-amber-300 uppercase tracking-wider">Gestion des Commandes d&apos;Uniformes</h2>
+          <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl">
             <CardContent className="p-0">
               <Table>
-                <TableHeader className="bg-slate-950/60">
-                  <TableRow className="border-slate-800">
-                    <TableHead className="text-slate-300">Membre</TableHead>
-                    <TableHead className="text-slate-300">Cycle / Taille / Qté</TableHead>
-                    <TableHead className="text-slate-300">Montant Total</TableHead>
-                    <TableHead className="text-slate-300">Statut Validation</TableHead>
-                    <TableHead className="text-right text-slate-300">Actions Validation</TableHead>
+                <TableHeader className="bg-muted/50 dark:bg-slate-950/60">
+                  <TableRow className="dark:border-slate-800">
+                    <TableHead className="dark:text-slate-300">Membre</TableHead>
+                    <TableHead className="dark:text-slate-300">Cycle / Taille / Qté</TableHead>
+                    <TableHead className="dark:text-slate-300">Montant Total</TableHead>
+                    <TableHead className="dark:text-slate-300">Statut Validation</TableHead>
+                    <TableHead className="text-right dark:text-slate-300">Actions Validation</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {ordersLoading ? (
                     [1, 2].map((i) => (
                       <TableRow key={i}>
-                        <TableCell colSpan={5}><Skeleton className="h-8 w-full bg-slate-800" /></TableCell>
+                        <TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell>
                       </TableRow>
                     ))
                   ) : orders.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-slate-400 text-xs">
-                        Aucune commande d'uniforme enregistrée.
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground dark:text-slate-400 text-xs">
+                        Aucune commande d&apos;uniforme enregistrée.
                       </TableCell>
                     </TableRow>
                   ) : (
                     orders.map((ord) => (
-                      <TableRow key={ord.id} className="border-slate-800/60 hover:bg-slate-800/40">
-                        <TableCell className="text-xs font-bold text-white">
+                      <TableRow key={ord.id} className="dark:border-slate-800/60 hover:bg-muted/50 dark:hover:bg-slate-800/40">
+                        <TableCell className="text-xs font-bold">
                           {ord.member?.firstName} {ord.member?.lastName}
-                          <p className="text-[10px] text-slate-400">{ord.member?.matricule} • {ord.member?.phone}</p>
+                          <p className="text-[10px] text-muted-foreground dark:text-slate-400">{ord.member?.matricule} • {ord.member?.phone}</p>
                         </TableCell>
-                        <TableCell className="text-xs text-slate-300">
+                        <TableCell className="text-xs dark:text-slate-300">
                           Cycle {ord.cycle} • Taille {ord.taille} • Qté {ord.quantity}
                         </TableCell>
-                        <TableCell className="text-xs font-bold text-amber-400">
+                        <TableCell className="text-xs font-bold text-[var(--feua-gold)] dark:text-amber-400">
                           {ord.totalAmount?.toLocaleString()} FCFA
                         </TableCell>
                         <TableCell>
-                          {ord.status === 'EN_ATTENTE' && <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-[10px]">En Attente</Badge>}
-                          {ord.status === 'VAL1' && <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/40 text-[10px]">Validé Niv. 1</Badge>}
-                          {ord.status === 'VAL2' && <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[10px]">Validé Niv. 2</Badge>}
-                          {ord.status === 'LIVRE' && <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/40 text-[10px]">Livré</Badge>}
+                          {ord.status === 'EN_ATTENTE' && <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40 text-[10px]">En Attente</Badge>}
+                          {ord.status === 'VAL1' && <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 text-[10px]">Validé Niv. 1</Badge>}
+                          {ord.status === 'VAL2' && <Badge className="bg-[var(--feua-green)]/20 text-[var(--feua-green)] dark:text-emerald-300 border-[var(--feua-green)]/40 text-[10px]">Validé Niv. 2</Badge>}
+                          {ord.status === 'LIVRE' && <Badge className="bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/40 text-[10px]">Livré</Badge>}
                         </TableCell>
                         <TableCell className="text-right space-x-1">
                           {ord.status === 'EN_ATTENTE' && (
                             <Button
                               size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] h-7 px-2 rounded-lg"
+                              className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90 text-white font-bold text-[10px] h-7 px-2 rounded-lg"
                               onClick={() => handleUpdateOrderStatus(ord.id, 'VAL1')}
                             >
                               Validation Niv. 1
@@ -784,7 +783,7 @@ export function AdminView() {
                           {ord.status === 'VAL2' && (
                             <Button
                               size="sm"
-                              className="bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] h-7 px-2 rounded-lg"
+                              className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90 text-white font-bold text-[10px] h-7 px-2 rounded-lg"
                               onClick={() => handleUpdateOrderStatus(ord.id, 'LIVRE')}
                             >
                               Marquer Livré
@@ -794,7 +793,7 @@ export function AdminView() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-7 w-7 text-red-400 hover:bg-red-500/20"
+                              className="h-7 w-7 text-red-500 dark:text-red-400 hover:bg-red-500/10 dark:hover:bg-red-500/20"
                               onClick={() => setDeleteConfirmOrder(ord)}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -815,12 +814,12 @@ export function AdminView() {
       {tab === 'audit' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Mémoire H (Registre d'Audit Immuable)</h2>
+            <h2 className="text-sm font-bold text-muted-foreground dark:text-slate-300 uppercase tracking-wider">Mémoire H (Registre d&apos;Audit Immuable)</h2>
             <Select value={filterAction || 'all'} onValueChange={(v) => { setFilterAction(v === 'all' ? '' : v); setLogPage(1); }}>
-              <SelectTrigger className="w-56 bg-slate-950/70 border-slate-700 text-xs text-white rounded-xl">
+              <SelectTrigger className="w-56 text-xs rounded-xl">
                 <SelectValue placeholder="Toutes les actions" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-900 border-slate-700 text-white text-xs">
+              <SelectContent className="text-xs">
                 <SelectItem value="all">Toutes les actions</SelectItem>
                 <SelectItem value="LOGIN">Connexion</SelectItem>
                 <SelectItem value="ROLE_CHANGE">Modification de rôle</SelectItem>
@@ -832,50 +831,50 @@ export function AdminView() {
             </Select>
           </div>
 
-          <Card className="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/30 text-white shadow-xl">
+          <Card className="bg-card dark:bg-slate-900/80 backdrop-blur-xl border border-[var(--feua-green)]/30 dark:border-emerald-500/30 shadow-xl">
             <CardContent className="p-0">
               <Table>
-                <TableHeader className="bg-slate-950/60">
-                  <TableRow className="border-slate-800">
-                    <TableHead className="text-slate-300">Date & Heure</TableHead>
-                    <TableHead className="text-slate-300">Action</TableHead>
-                    <TableHead className="text-slate-300">Acteur</TableHead>
-                    <TableHead className="text-slate-300">Entité</TableHead>
-                    <TableHead className="text-slate-300">Détails</TableHead>
+                <TableHeader className="bg-muted/50 dark:bg-slate-950/60">
+                  <TableRow className="dark:border-slate-800">
+                    <TableHead className="dark:text-slate-300">Date &amp; Heure</TableHead>
+                    <TableHead className="dark:text-slate-300">Action</TableHead>
+                    <TableHead className="dark:text-slate-300">Acteur</TableHead>
+                    <TableHead className="dark:text-slate-300">Entité</TableHead>
+                    <TableHead className="dark:text-slate-300">Détails</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     [1, 2, 3, 4].map((i) => (
                       <TableRow key={i}>
-                        <TableCell colSpan={5}><Skeleton className="h-8 w-full bg-slate-800" /></TableCell>
+                        <TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell>
                       </TableRow>
                     ))
                   ) : logs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-slate-400 text-xs">
-                        Aucun journal d'audit trouvé.
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground dark:text-slate-400 text-xs">
+                        Aucun journal d&apos;audit trouvé.
                       </TableCell>
                     </TableRow>
                   ) : (
                     logs.map((log) => (
-                      <TableRow key={log.id} className="border-slate-800/60 hover:bg-slate-800/40 text-xs">
-                        <TableCell className="text-slate-400 whitespace-nowrap">
+                      <TableRow key={log.id} className="dark:border-slate-800/60 hover:bg-muted/50 dark:hover:bg-slate-800/40 text-xs">
+                        <TableCell className="text-muted-foreground dark:text-slate-400 whitespace-nowrap">
                           {new Date(log.createdAt).toLocaleString('fr-FR')}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="border-emerald-500/40 text-emerald-300 text-[10px]">
+                          <Badge variant="outline" className="border-[var(--feua-green)]/40 dark:border-emerald-500/40 text-[var(--feua-green)] dark:text-emerald-300 text-[10px]">
                             {log.action}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-slate-300">
+                        <TableCell className="dark:text-slate-300">
                           {log.actor ? `${log.actor.firstName} ${log.actor.lastName}` : 'Système'}
-                          <p className="text-[10px] text-slate-500">{log.actor?.matricule}</p>
+                          <p className="text-[10px] text-muted-foreground dark:text-slate-500">{log.actor?.matricule}</p>
                         </TableCell>
-                        <TableCell className="text-slate-400">
+                        <TableCell className="text-muted-foreground dark:text-slate-400">
                           {log.entityType}
                         </TableCell>
-                        <TableCell className="text-slate-300 max-w-xs truncate">
+                        <TableCell className="dark:text-slate-300 max-w-xs truncate">
                           {log.details}
                         </TableCell>
                       </TableRow>
@@ -883,13 +882,13 @@ export function AdminView() {
                   )}
                 </TableBody>
               </Table>
-              <div className="flex items-center justify-between p-4 border-t border-slate-800">
-                <p className="text-xs text-slate-400">{logTotal} entrée(s) trouvée(s)</p>
+              <div className="flex items-center justify-between p-4 border-t dark:border-slate-800">
+                <p className="text-xs text-muted-foreground dark:text-slate-400">{logTotal} entrée(s) trouvée(s)</p>
                 <div className="flex gap-1">
-                  <Button variant="outline" size="sm" disabled={logPage <= 1} onClick={() => setLogPage(logPage - 1)} className="border-slate-700 text-slate-300">
+                  <Button variant="outline" size="sm" disabled={logPage <= 1} onClick={() => setLogPage(logPage - 1)}>
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" disabled={logPage * 20 >= logTotal} onClick={() => setLogPage(logPage + 1)} className="border-slate-700 text-slate-300">
+                  <Button variant="outline" size="sm" disabled={logPage * 20 >= logTotal} onClick={() => setLogPage(logPage + 1)}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>

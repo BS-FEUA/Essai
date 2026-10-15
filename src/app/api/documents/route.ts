@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/db';
 import { getSession, canAccess } from '@/lib/auth';
 import { getPagination } from '@/lib/pagination';
+import { deleteFromGoogleDrive, getGoogleDriveFileId } from '@/lib/google-drive';
 
 export async function GET(req: NextRequest) {
   try {
@@ -63,6 +64,11 @@ export async function DELETE(req: NextRequest) {
     const { data: doc } = await supabaseAdmin.from('documents').select('*').eq('id', docId).single();
     if (!doc || (doc.member_id !== session.id && !canAccess(session.accessLevel, 'MASTER'))) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+    }
+
+    const googleDriveFileId = getGoogleDriveFileId(doc.file_url);
+    if (googleDriveFileId) {
+      await deleteFromGoogleDrive(googleDriveFileId);
     }
 
     const { error } = await supabaseAdmin.from('documents').delete().eq('id', docId);

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/db';
+import { uploadToGoogleDrive } from '@/lib/google-drive';
 import { randomUUID } from 'crypto';
 import path from 'path';
+
+export const runtime = 'nodejs';
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = new Set([
@@ -40,27 +43,15 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const ext = path.extname(file.name).toLowerCase() || '.pdf';
     const fileName = `${randomUUID()}${ext}`;
-    const storagePath = `${session.id}/${fileName}`;
+    const driveFile = await uploadToGoogleDrive({
+      buffer: Buffer.from(bytes),
+      fileName,
+      mimeType: file.type,
+    });
 
-    // Upload to Supabase Storage (bucket: documents)
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from('documents')
-      .upload(storagePath, bytes, {
-        contentType: file.type,
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error('Supabase Storage upload error:', uploadError);
-      return NextResponse.json({ error: 'Erreur lors de l\'upload du fichier' }, { status: 500 });
-    }
-
-    // Generate a signed URL valid for 7 days
-    const { data: signedUrlData } = await supabaseAdmin.storage
-      .from('documents')
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 7);
-
-    const fileUrl = signedUrlData?.signedUrl || storagePath;
+    // Keep the provider-specific identifier private. Supabase stores only the
+    // document metadata and the Google Drive reference.
+    const fileUrl = `gdrive://${driveFile.id}`;
 
     const { data: doc, error: docError } = await supabaseAdmin.from('documents').insert({
       title,
@@ -74,7 +65,12 @@ export async function POST(req: NextRequest) {
       description,
     }).select().single();
 
-    if (docError) throw docError;
+    if (docError) {
+      // Avoid leaving an orphaned file in Drive when metadata persistence fails.
+      const { deleteFromGoogleDrive } = await import('@/lib/google-drive');
+      await deleteFromGoogleDrive(driveFile.id).catch(() => undefined);
+      throw docError;
+    }
 
     await supabaseAdmin.from('audit_logs').insert({
       action: 'DOCUMENT_UPLOAD',

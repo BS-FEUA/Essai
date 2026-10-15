@@ -29,18 +29,18 @@ export async function GET(req: NextRequest) {
         { data: membersByFiliereRaw },
         { data: ficheStatsRaw },
       ] = await Promise.all([
-        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).not('email', 'like', 'deleted+%@example.invalid'),
-        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).not('email', 'like', 'deleted+%@example.invalid').eq('status', 'ACTIVE'),
-        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).not('email', 'like', 'deleted+%@example.invalid').eq('status', 'PENDING_VALIDATION'),
+        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).not('email', 'like', 'deleted+%@example.invalid').neq('status', 'IGNORANT'),
+        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).not('email', 'like', 'deleted+%@example.invalid').neq('status', 'IGNORANT').eq('status', 'ACTIVE'),
+        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).not('email', 'like', 'deleted+%@example.invalid').neq('status', 'IGNORANT').eq('status', 'PENDING_VALIDATION'),
         supabaseAdmin.from('cash_registers').select('balance').eq('is_active', true),
         supabaseAdmin.from('cash_transactions').select('*', { count: 'exact', head: true }).eq('status', 'COMPLETED'),
         supabaseAdmin.from('uniform_orders').select('*', { count: 'exact', head: true }),
         supabaseAdmin.from('uniform_orders').select('*', { count: 'exact', head: true }).eq('status', 'EN_ATTENTE'),
-        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).not('email', 'like', 'deleted+%@example.invalid').gte('last_login_at', sevenDaysAgo),
-        supabaseAdmin.from('members').select('access_level').not('email', 'like', 'deleted+%@example.invalid'),
-        supabaseAdmin.from('members').select('institution').not('email', 'like', 'deleted+%@example.invalid').not('institution', 'is', null),
-        supabaseAdmin.from('members').select('filiere').not('email', 'like', 'deleted+%@example.invalid').not('filiere', 'is', null),
-        supabaseAdmin.from('members').select('fiche_soumise').not('email', 'like', 'deleted+%@example.invalid'),
+        supabaseAdmin.from('members').select('*', { count: 'exact', head: true }).not('email', 'like', 'deleted+%@example.invalid').neq('status', 'IGNORANT').gte('last_login_at', sevenDaysAgo),
+        supabaseAdmin.from('members').select('access_level').not('email', 'like', 'deleted+%@example.invalid').neq('status', 'IGNORANT'),
+        supabaseAdmin.from('members').select('institution').not('email', 'like', 'deleted+%@example.invalid').neq('status', 'IGNORANT').not('institution', 'is', null),
+        supabaseAdmin.from('members').select('filiere').not('email', 'like', 'deleted+%@example.invalid').neq('status', 'IGNORANT').not('filiere', 'is', null),
+        supabaseAdmin.from('members').select('fiche_soumise').not('email', 'like', 'deleted+%@example.invalid').neq('status', 'IGNORANT'),
       ]);
 
       const totalBalance = (registersData || []).reduce((sum: number, r: any) => sum + (r.balance || 0), 0);
@@ -119,22 +119,25 @@ export async function GET(req: NextRequest) {
 
       if (error) throw error;
 
-      const logs = (logsRaw || []).map(l => ({
-        ...l,
-        actorId: l.actor_id,
-        entityType: l.entity_type,
-        entityId: l.entity_id,
-        ipAddress: l.ip_address,
-        userAgent: l.user_agent,
-        createdAt: l.created_at,
-        actor: l.actor ? {
-          id: Array.isArray(l.actor) ? l.actor[0].id : l.actor.id,
-          firstName: Array.isArray(l.actor) ? l.actor[0].first_name : l.actor.first_name,
-          lastName: Array.isArray(l.actor) ? l.actor[0].last_name : l.actor.last_name,
-          matricule: Array.isArray(l.actor) ? l.actor[0].matricule : l.actor.matricule,
-          accessLevel: Array.isArray(l.actor) ? l.actor[0].access_level : l.actor.access_level,
-        } : null,
-      }));
+      const logs = (logsRaw || []).map(l => {
+        const actor = Array.isArray(l.actor) ? l.actor[0] : l.actor;
+        return {
+          ...l,
+          actorId: l.actor_id,
+          entityType: l.entity_type,
+          entityId: l.entity_id,
+          ipAddress: l.ip_address,
+          userAgent: l.user_agent,
+          createdAt: l.created_at,
+          actor: actor ? {
+            id: actor.id,
+            firstName: actor.first_name,
+            lastName: actor.last_name,
+            matricule: actor.matricule,
+            accessLevel: actor.access_level,
+          } : null,
+        };
+      });
 
       return NextResponse.json({ logs, total: count || 0, page, limit, pages: Math.ceil((count || 0) / limit) });
     }

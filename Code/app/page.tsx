@@ -24,7 +24,6 @@ import { InscriptionModal } from "@/components/Modals/InscriptionModal";
 
 // Data
 import {
-  INITIAL_BUREAU_MEMBERS,
   INITIAL_COMMUNIQUES,
   INITIAL_CLAIMS,
   INITIAL_COTISATIONS,
@@ -367,7 +366,7 @@ function PortalPage({ initialTab = "communiques", isLanding = false }: { initial
 
         {activeTab === "bureau" && (
           <BureauMembersSection
-            members={INITIAL_BUREAU_MEMBERS}
+            members={[]}
             isAdminMode={isAdminMode}
           />
         )}

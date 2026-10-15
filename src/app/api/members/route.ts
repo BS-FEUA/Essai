@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('members')
       .select('id, matricule, first_name, last_name, email, phone, access_level, status, institution, filiere, niveau, photo_url, fiche_soumise, carte_etudiant, last_login_at, created_at', { count: 'exact' })
-      .not('email', 'like', 'deleted+%@example.invalid');
+      .not('email', 'like', 'deleted+%@example.invalid')
+      .neq('status', 'IGNORANT');
 
     if (search) {
       query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,matricule.ilike.%${search}%,email.ilike.%${search}%`);

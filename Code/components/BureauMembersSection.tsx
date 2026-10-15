@@ -40,7 +40,11 @@ export const BureauMembersSection: React.FC<BureauMembersSectionProps> = ({
         </div>
       </div>
 
-      {/* Grid of Executives */}
+      {members.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-slate-300 bg-white/70 p-6 text-center text-sm text-slate-600">
+          Aucun membre du Bureau n&apos;a encore été officiellement ajouté.
+        </p>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {members.map((member) => {
           const roleMeta = ROLE_INFOS[member.role];
@@ -122,6 +126,7 @@ export const BureauMembersSection: React.FC<BureauMembersSectionProps> = ({
           );
         })}
       </div>
+      )}
     </section>
   );
 };

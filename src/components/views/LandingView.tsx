@@ -20,7 +20,6 @@ import { CommuniqueModal } from '@/components/Modals/CommuniqueModal';
 import { InscriptionModal } from '@/components/Modals/InscriptionModal';
 
 import {
-  INITIAL_BUREAU_MEMBERS,
   INITIAL_COMMUNIQUES,
   INITIAL_CLAIMS,
   INITIAL_COTISATIONS,
@@ -266,7 +265,7 @@ export function LandingView() {
 
             {activeTab === 'bureau' && (
               <BureauMembersSection
-                members={INITIAL_BUREAU_MEMBERS}
+                members={[]}
                 isAdminMode={isAdminMode}
               />
             )}

@@ -10,7 +10,7 @@ const loginSchema = z.object({
 });
 const registerSchema = z.object({
   email: z.string().email('Format email invalide'),
-  password: z.string().min(4, 'Mot de passe de 4 caractères minimum'),
+  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
   matricule: z.string().optional(),
   firstName: z.string().min(1, 'Prénom requis'),
   lastName: z.string().min(1, 'Nom requis'),
@@ -24,7 +24,7 @@ const registerSchema = z.object({
 const recoverySchema = z.object({ email: z.string().email() });
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Mot de passe actuel requis'),
-  newPassword: z.string().min(6, 'Le nouveau mot de passe doit contenir au moins 6 caractères'),
+  newPassword: z.string().min(8, 'Le nouveau mot de passe doit contenir au moins 8 caractères'),
   confirmPassword: z.string().min(1, 'Confirmation requise'),
 }).refine((d) => d.newPassword === d.confirmPassword, { message: 'Les mots de passe ne correspondent pas', path: ['confirmPassword'] });
 

@@ -79,8 +79,8 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
       setRegError('Veuillez remplir les champs obligatoires (Prénom, Nom, Email, Mot de passe).');
       return;
     }
-    if (regForm.password.length < 4) {
-      setRegError('Le mot de passe doit comporter au moins 4 caractères.');
+    if (regForm.password.length < 8) {
+      setRegError('Le mot de passe doit comporter au moins 8 caractères.');
       return;
     }
     setRegSubmitting(true);
@@ -385,10 +385,11 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                           <Label className="text-xs font-semibold text-slate-300">Mot de passe *</Label>
                           <Input
                             type="password"
-                            placeholder="••••••••"
+                            placeholder="Au moins 8 caractères"
                             value={regForm.password}
                             onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
                             className="bg-slate-950/70 border-slate-700/80 text-white placeholder-slate-500 focus:border-emerald-400 rounded-xl text-xs"
+                            minLength={8}
                             required
                           />
                         </div>

@@ -326,12 +326,6 @@
   background: linear-gradient(120deg, rgba(255, 255, 255, 0.06), transparent 42%, rgba(212, 160, 23, 0.08)) !important;
 }
 
-.login-page .login-demo-card {
-  background: rgba(10, 28, 40, 0.93) !important;
-  border-color: rgba(212, 160, 23, 0.42) !important;
-  box-shadow: 0 14px 30px rgba(8, 33, 26, 0.2) !important;
-}
-
 .login-page input {
   background: rgba(255, 255, 255, 0.96) !important;
   border-color: rgba(27, 122, 61, 0.5) !important;

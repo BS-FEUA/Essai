@@ -9,18 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, Loader2, Sun, Moon, Home, Globe, UserCheck, ShieldCheck, UserPlus, LogIn, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, Loader2, Sun, Moon, Home, Globe, UserPlus, LogIn, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const pageVariants = {
   initial: { opacity: 1, y: 0 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.3 } },
   exit: { opacity: 0, y: -10, transition: { duration: 0.2 } },
 };
-
-const DEMO_ACCOUNTS = {
-  ceo: { email: 'ceo@bslokossa.bj', password: 'demo1234' },
-  master: { email: 'master@bslokossa.bj', password: 'demo1234' },
-} as const;
 
 export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 'register' }) {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(defaultTab);
@@ -105,25 +100,6 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
     }
   };
 
-  const handleQuickFillAndLogin = async (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setLoginError('');
-    setIsSubmittingLogin(true);
-    try {
-      const result = await login(demoEmail, demoPass);
-      if (result.success) {
-        router.push('/dashboard');
-      } else {
-        setLoginError(result.error || 'Échec de la connexion démo.');
-      }
-    } catch {
-      setLoginError('Erreur de connexion démo.');
-    } finally {
-      setIsSubmittingLogin(false);
-    }
-  };
-
   return (
     <div className="login-page min-h-screen flex flex-col lg:items-center lg:justify-center pt-24 pb-8 px-4 lg:p-4 relative overflow-y-auto overflow-x-hidden bg-transparent text-foreground">
       {/* Top Floating Navigation Header */}
@@ -164,25 +140,6 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
           <p className="text-[var(--feua-green)] dark:text-emerald-300 text-center text-sm font-semibold mt-2 max-w-xs">Bureau Syndical des Étudiants (IUT & ENSET)</p>
           <p className="text-muted-foreground text-center text-xs mt-3 max-w-sm">Fédération des Étudiants Universitaires Associés du Bénin</p>
           
-          <div className="mt-8 pt-6 border-t border-border w-full text-center space-y-3">
-            <p className="text-xs text-amber-300 font-bold uppercase tracking-wider">Accès Démo 1-Clic :</p>
-            <div className="flex flex-col gap-2 w-full">
-              <button
-                type="button"
-                onClick={() => handleQuickFillAndLogin(DEMO_ACCOUNTS.ceo.email, DEMO_ACCOUNTS.ceo.password)}
-                className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/10 hover:from-amber-500/30 hover:to-amber-600/20 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center justify-center gap-2 shadow-md"
-              >
-                <ShieldCheck className="h-4 w-4 text-amber-400" /> Espace Bureau Exécutif (CEO)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFillAndLogin(DEMO_ACCOUNTS.master.email, DEMO_ACCOUNTS.master.password)}
-                className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-500/20 to-emerald-600/10 hover:from-emerald-500/30 hover:to-emerald-600/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition flex items-center justify-center gap-2 shadow-md"
-              >
-                <UserCheck className="h-4 w-4 text-emerald-400" /> Espace Membre (Master)
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Right Form Container (Liquid Glass Card) */}
@@ -321,30 +278,6 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                   </Card>
                 </div>
 
-                {/* Demo accounts hint card */}
-                <div className="login-demo-card p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-amber-500/30 shadow-lg space-y-2">
-                  <p className="font-extrabold text-xs text-amber-300 text-center uppercase tracking-wider flex items-center justify-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-amber-400" /> Connexion Démo Immédiate
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => handleQuickFillAndLogin(DEMO_ACCOUNTS.ceo.email, DEMO_ACCOUNTS.ceo.password)}
-                      className="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-amber-500/30 text-left transition flex flex-col group"
-                    >
-                      <span className="font-bold text-amber-300 group-hover:text-amber-200">Compte Bureau (CEO)</span>
-                      <span className="text-[10px] text-slate-400 truncate">ceo@bslokossa.bj</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuickFillAndLogin(DEMO_ACCOUNTS.master.email, DEMO_ACCOUNTS.master.password)}
-                      className="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-emerald-500/30 text-left transition flex flex-col group"
-                    >
-                      <span className="font-bold text-emerald-400 group-hover:text-emerald-300">Compte Membre</span>
-                      <span className="text-[10px] text-slate-400 truncate">master@bslokossa.bj</span>
-                    </button>
-                  </div>
-                </div>
               </div>
             )}
 
@@ -492,26 +425,6 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                 </Card>
               </div>
             )}
-            {/* MOBILE ONLY: Demo accounts */}
-            <div className="lg:hidden mt-8 pt-6 border-t border-border w-full text-center space-y-3">
-              <p className="text-xs text-amber-600 dark:text-amber-300 font-bold uppercase tracking-wider">Accès Démo 1-Clic :</p>
-              <div className="flex flex-col gap-2 w-full">
-                <button
-                  type="button"
-                  onClick={() => handleQuickFillAndLogin(DEMO_ACCOUNTS.ceo.email, DEMO_ACCOUNTS.ceo.password)}
-                  className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/10 hover:from-amber-500/30 hover:to-amber-600/20 text-amber-600 dark:text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center justify-center gap-2 shadow-md"
-                >
-                  <ShieldCheck className="h-4 w-4 text-amber-500 dark:text-amber-400" /> Espace Bureau Exécutif (CEO)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickFillAndLogin(DEMO_ACCOUNTS.master.email, DEMO_ACCOUNTS.master.password)}
-                  className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[var(--feua-green)]/20 to-emerald-600/10 hover:from-[var(--feua-green)]/30 hover:to-emerald-600/20 text-[var(--feua-green)] dark:text-emerald-300 border border-emerald-500/40 text-xs font-bold transition flex items-center justify-center gap-2 shadow-md"
-                >
-                  <UserCheck className="h-4 w-4 text-[var(--feua-green)] dark:text-emerald-400" /> Espace Membre (Master)
-                </button>
-              </div>
-            </div>
           </div>
         </motion.div>
       </div>

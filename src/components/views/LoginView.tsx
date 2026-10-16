@@ -22,11 +22,13 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
   const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
   const { login, register, isAuthenticated } = useAppStore();
   const router = useRouter();
 
   useEffect(() => {
+    setEmailVerified(new URLSearchParams(window.location.search).get('verified') === '1');
     if (isAuthenticated) {
       router.push('/dashboard');
     }
@@ -202,6 +204,11 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
 
                     <form onSubmit={handleLoginSubmit} data-testid="login-form">
                       <CardContent className="space-y-4">
+                        {emailVerified && (
+                          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-700 dark:text-emerald-200">
+                            Adresse email confirmée. Votre compte doit encore être validé par le CEO avant votre première connexion.
+                          </div>
+                        )}
                         {loginError && (
                           <div className="p-3 rounded-xl bg-red-950/80 border border-red-500/40 text-red-200 text-xs flex items-start gap-2 animate-fade-in-up">
                             <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0 mt-0.5" />
@@ -305,8 +312,8 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-400">
                           <CheckCircle2 className="h-8 w-8" />
                         </div>
-                        <h4 className="font-bold text-lg text-emerald-300">Compte créé avec succès !</h4>
-                        <p className="text-xs text-slate-300">Votre inscription est terminée. Votre compte doit être validé par un administrateur (CEO) avant que vous ne puissiez vous connecter.</p>
+                        <h4 className="font-bold text-lg text-emerald-300">Vérifiez votre boîte email</h4>
+                        <p className="text-xs text-slate-300">Nous vous avons envoyé un lien de confirmation. Cliquez dessus pour vérifier votre adresse ; votre compte sera ensuite soumis à la validation du CEO avant toute connexion.</p>
                         <Button variant="outline" className="mt-4" onClick={() => { setRegSubmitted(false); setActiveTab('login'); }}>
                           Retour à la connexion
                         </Button>

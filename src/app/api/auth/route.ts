@@ -3,6 +3,7 @@ import { supabaseAdmin, createServerClient } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { z } from 'zod';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 const loginSchema = z.object({
   email: z.string().email('Format email invalide'),
@@ -62,6 +63,9 @@ export async function POST(req: NextRequest) {
       });
 
       if (error || !data.user) {
+        if (error?.code === 'email_not_confirmed') {
+          return NextResponse.json({ error: 'Confirmez votre adresse email avec le lien reçu avant de vous connecter.' }, { status: 403 });
+        }
         return NextResponse.json({ error: 'Email ou mot de passe incorrect' }, { status: 401 });
       }
 
@@ -131,22 +135,43 @@ export async function POST(req: NextRequest) {
       }
 
       // Create user in Auth
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      const registrationAuth = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } },
+      );
+      const { data: authData, error: authError } = await registrationAuth.auth.signUp({
         email: parsed.data.email,
         password: parsed.data.password,
-        email_confirm: true,
-        user_metadata: {
-          firstName: parsed.data.firstName,
-          lastName: parsed.data.lastName,
-          matricule: matriculeToUse
-        }
+        options: {
+          emailRedirectTo: new URL('/login?verified=1', req.nextUrl.origin).toString(),
+          data: {
+            firstName: parsed.data.firstName,
+            lastName: parsed.data.lastName,
+            matricule: matriculeToUse,
+          },
+        },
       });
 
       if (authError || !authData.user) {
-        if (authError?.message.includes('already registered')) {
+        if (authError?.message.toLowerCase().includes('already registered')) {
           return NextResponse.json({ error: 'Cet email est déjà enregistré.' }, { status: 409 });
         }
-        return NextResponse.json({ error: authError?.message || 'Erreur lors de la création Auth' }, { status: 500 });
+        console.error('Registration Auth error:', authError);
+        return NextResponse.json({ error: "Impossible d'envoyer le lien de vérification. Vérifiez la configuration email de Supabase puis réessayez." }, { status: 503 });
+      }
+
+      if (authData.user.identities?.length === 0) {
+        return NextResponse.json({ error: 'Cet email est déjà enregistré.' }, { status: 409 });
+      }
+
+      // Email confirmation must be enabled in Supabase Auth. Fail closed if
+      // the project is configured to auto-confirm email addresses.
+      if (authData.session) {
+        await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+        return NextResponse.json({
+          error: "La vérification par email n'est pas activée dans Supabase. Activez la confirmation des emails puis réessayez.",
+        }, { status: 503 });
       }
 
       const validDob = parsed.data.dateOfBirth && !isNaN(Date.parse(parsed.data.dateOfBirth))
@@ -180,7 +205,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'Inscription réussie. Votre compte est en attente de validation.'
+        message: 'Inscription enregistrée. Consultez votre boîte email et confirmez votre adresse avant de vous connecter. Votre compte sera ensuite soumis à la validation du CEO.'
       }, { status: 201 });
     }
 

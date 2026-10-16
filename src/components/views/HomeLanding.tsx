@@ -33,7 +33,7 @@ export function HomeLanding() {
           <div className="flex flex-wrap gap-3"><Link href={member ? "/dashboard" : "/register"} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 hover:bg-emerald-500">{member ? "Accéder à mes services" : "Créer mon compte"}<ArrowRight className="h-4 w-4" /></Link><Link href="/login" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/70 px-5 py-3 text-sm font-bold text-slate-800 backdrop-blur hover:bg-white dark:border-white/15 dark:bg-white/10 dark:text-white"><LogIn className="h-4 w-4" /> Connexion</Link></div>
         </motion.div>
         <div className="relative grid gap-4 sm:grid-cols-2">
-          <LiquidLogo className="pointer-events-none absolute -right-8 -top-28 hidden w-44 opacity-80 drop-shadow-[0_20px_35px_rgba(16,185,129,0.3)] lg:block" />
+          <LiquidLogo className="pointer-events-none absolute -right-8 -top-28 hidden w-28 drop-shadow-[0_12px_24px_rgba(16,185,129,0.22)] lg:block" />
           {capabilities.map(({ icon: Icon, title, text }, index) => <motion.article key={title} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.08 }} className="glass-surface rounded-3xl p-5"><Icon className="h-7 w-7 text-emerald-500" /><h2 className="mt-5 font-bold text-slate-900 dark:text-white">{title}</h2><p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{text}</p></motion.article>)}
         </div>
       </section>

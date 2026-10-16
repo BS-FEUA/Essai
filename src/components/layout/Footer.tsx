@@ -5,19 +5,19 @@ import { MessageCircle, Camera } from 'lucide-react';
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t-2 border-t-[var(--feua-gold)] bg-[#0f3d1f]/95 text-white/90 glass-surface">
+    <footer className="mt-auto border-t-2 border-t-[var(--feua-gold)] bg-[#0f3d1f] text-white">
       <div className="container mx-auto px-4 py-4 md:py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* About */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <img src="/feua-logo.jpeg" alt="FEUA" className="h-8 w-8 object-contain drop-shadow-[0_0_8px_rgba(212,160,23,0.5)]" />
+              <img src="/feua-logo.jpeg" alt="FEUA" className="h-11 w-11 rounded-lg border border-white/40 bg-white p-1 object-contain shadow-md" />
               <div>
                 <h3 className="font-bold text-sm text-[var(--feua-gold)]">FEUA</h3>
-                <p className="text-xs text-white/50">BS-Lokossa</p>
+                <p className="text-xs text-white/80">BS-Lokossa</p>
               </div>
             </div>
-            <p className="text-xs text-white/60 leading-relaxed">
+            <p className="text-xs text-white/85 leading-relaxed">
               Fédération des Étudiants de l’Université d’Abomey (UNSTIM) — Bureau Sectoriel de Lokossa.
               Unissant les étudiants pour un avenir meilleur au Bénin.
             </p>
@@ -38,7 +38,7 @@ export function Footer() {
           {/* Links - hidden on mobile */}
           <div className="hidden lg:block space-y-2">
             <h4 className="font-semibold text-sm">Liens utiles</h4>
-            <ul className="space-y-1 text-xs text-white/60">
+            <ul className="space-y-1 text-xs text-white/85">
               <li className="hover:text-[var(--feua-gold)] cursor-pointer transition-colors">
                 À propos de FEUA
               </li>
@@ -54,7 +54,7 @@ export function Footer() {
           {/* Contact - hidden on mobile */}
           <div className="hidden lg:block space-y-2">
             <h4 className="font-semibold text-sm">Contact</h4>
-            <ul className="space-y-1 text-xs text-white/60">
+            <ul className="space-y-1 text-xs text-white/85">
               <li className="hover:text-[var(--feua-gold)] transition-colors">Lokossa, Bénin</li>
               <li className="hover:text-[var(--feua-gold)] transition-colors">Monde étudiant</li>
               <li className="hover:text-[var(--feua-gold)] transition-colors">Université de Lokossa</li>
@@ -62,9 +62,9 @@ export function Footer() {
           </div>
         </div>
 
-        <Separator className="my-4 bg-white/10" />
+        <Separator className="my-4 bg-white/25" />
 
-        <div className="text-center text-xs text-white/50">
+        <div className="text-center text-xs text-white/80">
           <p>© 2026 FEUA BS-Lokossa — Fédération des Étudiants de l’Université d’Abomey (UNSTIM)</p>
         </div>
       </div>

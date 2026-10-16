@@ -122,7 +122,7 @@ export async function enableWebPush() {
     const title = payload.notification?.title || 'FEUA BS-Lokossa';
     const options: NotificationOptions = {
       body: payload.notification?.body,
-      icon: '/feua-logo.png',
+      icon: '/feua-logo.jpeg',
       data: { link: payload.data?.link || '/notifications' },
     };
     new Notification(title, options);

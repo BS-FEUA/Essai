@@ -38,13 +38,14 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           <div className="lg:col-span-7 space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Organe Officiel de Représentation Étudiante • FEUA - Lokossa</span>
+              <span>Fédération des Étudiants de l’Université d’Abomey (UNSTIM) • FEUA - Lokossa</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-tight">
               Bureau Sectoriel de Lokossa <br />
               <span className="text-amber-300 font-serif italic">Pas sans vous.</span>
             </h1>
+            <p className="text-xs font-semibold tracking-wide text-emerald-200">Représentation sectorielle UNSTIM — IUT &amp; ENSET Lokossa</p>
 
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl">
               Bienvenue sur la plateforme numérique officielle du BS-Lokossa.

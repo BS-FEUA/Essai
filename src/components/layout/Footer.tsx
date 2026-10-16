@@ -11,14 +11,14 @@ export function Footer() {
           {/* About */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <img src="/feua-logo.png" alt="FEUA" className="h-8 w-8 object-contain drop-shadow-[0_0_8px_rgba(212,160,23,0.5)]" />
+              <img src="/feua-logo.jpeg" alt="FEUA" className="h-8 w-8 object-contain drop-shadow-[0_0_8px_rgba(212,160,23,0.5)]" />
               <div>
                 <h3 className="font-bold text-sm text-[var(--feua-gold)]">FEUA</h3>
                 <p className="text-xs text-white/50">BS-Lokossa</p>
               </div>
             </div>
             <p className="text-xs text-white/60 leading-relaxed">
-              Fédération des Étudiants Universitaires Associés — Bureau Syndical de Lokossa.
+              Fédération des Étudiants de l’Université d’Abomey (UNSTIM) — Bureau Sectoriel de Lokossa.
               Unissant les étudiants pour un avenir meilleur au Bénin.
             </p>
             {/* Social media icons */}
@@ -65,7 +65,7 @@ export function Footer() {
         <Separator className="my-4 bg-white/10" />
 
         <div className="text-center text-xs text-white/50">
-          <p>© 2026 FEUA BS-Lokossa — Fédération des Étudiants Universitaires Associés</p>
+          <p>© 2026 FEUA BS-Lokossa — Fédération des Étudiants de l’Université d’Abomey (UNSTIM)</p>
         </div>
       </div>
     </footer>

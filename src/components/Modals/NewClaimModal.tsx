@@ -157,7 +157,7 @@ export const NewClaimModal: React.FC<NewClaimModalProps> = ({
               Annuler
             </button>
             <button type="submit" className="px-5 py-2.5 rounded-xl font-bold bg-feua text-white hover:bg-feua-dark shadow-sm">
-              Envoyer au Bureau Syndical
+              Envoyer au Bureau Sectoriel
             </button>
           </div>
         </form>

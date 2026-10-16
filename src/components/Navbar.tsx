@@ -79,7 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               INFO BS
             </span>
             <span className="truncate text-slate-200">
-              Garde syndicale permanente au Bâtiment BS - Du Lundi au Vendredi de 08h à 17h.
+              Permanence du Bureau sectoriel au Bâtiment BS - Du Lundi au Vendredi de 08h à 17h.
             </span>
           </div>
           <div className="hidden md:flex items-center gap-4 text-slate-300 text-xs">
@@ -113,7 +113,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-300 font-medium leading-none hidden sm:block">
-                Bureau Syndical - Campus de Lokossa (IUT & ENSET)
+                Bureau Sectoriel - Campus de Lokossa (IUT & ENSET)
               </p>
             </div>
           </div>

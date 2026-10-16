@@ -97,7 +97,7 @@ export const InscriptionSection: React.FC<InscriptionSectionProps> = ({
                 Portail d&apos;Inscription & Espace Membre FEUA
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                Portail officiel d&apos;adhésion au Bureau Syndical de Lokossa pour les étudiants IUT, ENSET & InstI.
+                Portail officiel d&apos;adhésion au Bureau Sectoriel de Lokossa pour les étudiants IUT, ENSET & InstI.
               </p>
             </div>
           </div>
@@ -148,7 +148,7 @@ export const InscriptionSection: React.FC<InscriptionSectionProps> = ({
                 Formulaire d&apos;Adhésion Multi-Profils
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Remplissez vos coordonnées exactes pour obtenir votre Carte d&apos;Adhérent Syndicale Numérique.
+                Remplissez vos coordonnées exactes pour obtenir votre Carte d&apos;Adhérent FEUA Numérique.
               </p>
             </div>
 
@@ -187,7 +187,7 @@ export const InscriptionSection: React.FC<InscriptionSectionProps> = ({
                       </div>
                       <div className="font-bold text-xs text-slate-900">Membre Adhérent FEUA</div>
                       <div className="text-[10px] text-slate-500 mt-1">
-                        Étudiant régulier (IUT / ENSET) souhaitant adhérer au bureau syndical.
+                        Étudiant régulier (IUT / ENSET) souhaitant adhérer au bureau sectoriel.
                       </div>
                     </div>
 
@@ -207,7 +207,7 @@ export const InscriptionSection: React.FC<InscriptionSectionProps> = ({
                       </div>
                       <div className="font-bold text-xs text-slate-900">Étudiant Landa</div>
                       <div className="text-[10px] text-slate-500 mt-1">
-                        Étudiant sous statut Landais souhaitant s&apos;informer sur nos services syndical.
+                        Étudiant sous statut Landais souhaitant s&apos;informer sur nos services du Bureau sectoriel.
                       </div>
                     </div>
 

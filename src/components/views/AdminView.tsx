@@ -262,7 +262,7 @@ export function AdminView() {
           <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
             <Shield className="h-7 w-7 text-amber-500 dark:text-amber-400" /> Administration & Audit
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">Espace de gestion globale du Bureau Syndical BS-Lokossa (FEUA)</p>
+          <p className="text-xs text-muted-foreground mt-1">Espace de gestion globale du Bureau Sectoriel BS-Lokossa (FEUA)</p>
         </div>
         {canAccess(member?.accessLevel || 'IGN', 'MAST') && (
           <Button

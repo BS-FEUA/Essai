@@ -15,7 +15,7 @@ export const ROLE_INFOS: Record<UserRole, RoleInfo> = {
   ceo: {
     code: "ceo",
     title: "Président",
-    fullName: "Président du Bureau Syndical",
+    fullName: "Président du Bureau Sectoriel",
     description:
       "Représente légalement le bureau, conduit les négociations avec la Direction Générale du Centre Universitaire et garantit l'application des décisions.",
     badgeColor: "bg-emerald-700 text-white",
@@ -57,7 +57,7 @@ export const ROLE_INFOS: Record<UserRole, RoleInfo> = {
     title: "Trésorier Général",
     fullName: "Trésorier Général",
     description:
-      "Supervise les finances du bureau syndical, recouvre les cotisations des membres et prépare les rapports de transparence financière.",
+      "Supervise les finances du bureau sectoriel, recouvre les cotisations des membres et prépare les rapports de transparence financière.",
     badgeColor: "bg-purple-700 text-white",
   },
   tga: {
@@ -197,7 +197,7 @@ Le Secrétariat aux Affaires Académiques.`,
       "Ordre du jour: Restauration du réseau Wi-Fi campus, état des sanitaires, transport universitaire et vote de la feuille de route.",
     content: `Camarades Étudiants,
 
-Face aux multiples défis d'infrastructures constatés sur le campus de Lokossa (défaillances répétées de l'électricité au niveau des blocs pédagogiques, connexion Internet instable et rareté des bus de liaison), le Président du Bureau Syndical vous convoque à :
+Face aux multiples défis d'infrastructures constatés sur le campus de Lokossa (défaillances répétées de l'électricité au niveau des blocs pédagogiques, connexion Internet instable et rareté des bus de liaison), le Président du Bureau Sectoriel vous convoque à :
 
 LA GRANDE ASSEMBLÉE GÉNÉRALE ORDINAIRE
 

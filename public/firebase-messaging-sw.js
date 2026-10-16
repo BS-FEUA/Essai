@@ -12,7 +12,7 @@ if (configParam) {
       const title = payload.notification?.title || 'FEUA BS-Lokossa';
       self.registration.showNotification(title, {
         body: payload.notification?.body || '',
-        icon: '/feua-logo.png',
+        icon: '/feua-logo.jpeg',
         data: { link: payload.data?.link || '/notifications' },
       });
     });

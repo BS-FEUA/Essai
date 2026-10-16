@@ -1,7 +1,7 @@
 {
   "name": "BS-Lokossa | FEUA",
   "short_name": "BS-Lokossa",
-  "description": "Bureau Syndical de Lokossa - Fédération des Étudiants Universitaires Associés",
+  "description": "Bureau Sectoriel de Lokossa - Fédération des Étudiants de l’Université d’Abomey (UNSTIM)",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8faf9",
@@ -9,9 +9,9 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/feua-logo.png",
+      "src": "/feua-logo.jpeg",
       "sizes": "any",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     }
   ],

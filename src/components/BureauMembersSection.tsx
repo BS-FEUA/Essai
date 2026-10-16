@@ -30,7 +30,7 @@ export const BureauMembersSection: React.FC<BureauMembersSectionProps> = ({
           </div>
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-              Membres du Bureau Syndical Executif (BS-Lokossa)
+              Membres du Bureau Sectoriel Exécutif (BS-Lokossa)
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
               Élus par les étudiants pour la défense de vos droits et la médiation auprès de la Direction Générale du Centre Universitaire.

@@ -91,7 +91,7 @@ export function ForgotPasswordView() {
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <div className="w-16 h-16 rounded-2xl bg-slate-900/80 p-2 border border-emerald-500/30 shadow-xl flex items-center justify-center">
-            <img src="/feua-logo.png" alt="FEUA" className="h-full w-full object-contain drop-shadow-[0_0_10px_rgba(27,122,61,0.5)]" />
+            <img src="/feua-logo.jpeg" alt="FEUA" className="h-full w-full object-contain drop-shadow-[0_0_10px_rgba(27,122,61,0.5)]" />
           </div>
         </div>
 

@@ -134,11 +134,11 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
         <div className="hidden lg:flex flex-col items-center justify-center p-10 rounded-3xl bg-card dark:bg-slate-900/60 backdrop-blur-xl border border-emerald-500/30 text-foreground relative overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-amber-400 to-emerald-500" />
           <div className="w-24 h-24 rounded-2xl bg-white dark:bg-slate-950/80 p-3 flex items-center justify-center border border-amber-400/40 shadow-xl mb-6">
-            <img src="/feua-logo.png" alt="FEUA" className="h-full w-full object-contain drop-shadow-[0_0_15px_rgba(212,160,23,0.6)]" />
+            <img src="/feua-logo.jpeg" alt="FEUA" className="h-full w-full object-contain drop-shadow-[0_0_15px_rgba(212,160,23,0.6)]" />
           </div>
           <h2 className="text-3xl font-black text-center tracking-tight">FEUA — BS Lokossa</h2>
-          <p className="text-[var(--feua-green)] dark:text-emerald-300 text-center text-sm font-semibold mt-2 max-w-xs">Bureau Syndical des Étudiants (IUT & ENSET)</p>
-          <p className="text-muted-foreground text-center text-xs mt-3 max-w-sm">Fédération des Étudiants Universitaires Associés du Bénin</p>
+          <p className="text-[var(--feua-green)] dark:text-emerald-300 text-center text-sm font-semibold mt-2 max-w-xs">Bureau Sectoriel des Étudiants (IUT & ENSET)</p>
+          <p className="text-muted-foreground text-center text-xs mt-3 max-w-sm">Fédération des Étudiants de l’Université d’Abomey (UNSTIM)</p>
           
         </div>
 
@@ -147,9 +147,10 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
           {/* Mobile logo */}
           <div className="lg:hidden flex flex-col items-center justify-center mb-2 mt-4">
             <div className="w-20 h-20 rounded-3xl bg-white dark:bg-slate-900/80 p-3 border border-emerald-500/30 shadow-lg flex items-center justify-center mb-3">
-              <img src="/feua-logo.png" alt="FEUA" className="h-full w-full object-contain" />
+              <img src="/feua-logo.jpeg" alt="FEUA" className="h-full w-full object-contain" />
             </div>
             <h2 className="text-2xl font-black text-center tracking-tight text-foreground">FEUA — BS Lokossa</h2>
+            <p className="mt-2 text-center text-xs font-semibold text-emerald-700 dark:text-emerald-200">Fédération des Étudiants de l’Université d’Abomey (UNSTIM)</p>
           </div>
 
           <div className="w-full">

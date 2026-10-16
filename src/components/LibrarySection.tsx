@@ -47,7 +47,7 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({
       [doc.id]: (prev[doc.id] || doc.downloadCount) + 1,
     }));
 
-    const content = `UNION ÉTUDIANTE FEUA - BS-LOKOSSA\nDocument Officiel: ${doc.title}\nCatégorie: ${doc.category}\nDate de mise en ligne: ${doc.dateUploaded}\n\nDescription:\n${doc.description}\n\nCe document fait foi de texte officiel conservé aux archives du Bureau Syndical de Lokossa.`;
+    const content = `UNION ÉTUDIANTE FEUA - BS-LOKOSSA\nDocument Officiel: ${doc.title}\nCatégorie: ${doc.category}\nDate de mise en ligne: ${doc.dateUploaded}\n\nDescription:\n${doc.description}\n\nCe document fait foi de texte officiel conservé aux archives du Bureau Sectoriel de Lokossa.`;
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");

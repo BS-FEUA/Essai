@@ -31,8 +31,8 @@ export const CommuniqueModal: React.FC<CommuniqueModalProps> = ({
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-feua text-amber-300 font-bold flex items-center justify-center text-sm">BS</div>
             <div>
-              <span className="text-xs font-bold text-feua tracking-wider uppercase block">Fédération des Étudiants (FEUA)</span>
-              <span className="text-[11px] text-slate-500 font-semibold">Bureau Syndical du Campus de Lokossa</span>
+              <span className="text-xs font-bold text-feua tracking-wider uppercase block">Fédération des Étudiants de l’Université d’Abomey (UNSTIM)</span>
+              <span className="text-[11px] text-slate-500 font-semibold">Bureau Sectoriel du Campus de Lokossa</span>
             </div>
           </div>
 
@@ -83,7 +83,7 @@ export const CommuniqueModal: React.FC<CommuniqueModalProps> = ({
             </div>
             <div>
               <p className="text-xs font-bold text-slate-900">{communique.authorName}</p>
-              <p className="text-[11px] text-slate-500">{roleInfo?.fullName || "Bureau Syndical BS-Lokossa"}</p>
+              <p className="text-[11px] text-slate-500">{roleInfo?.fullName || "Bureau Sectoriel BS-Lokossa"}</p>
             </div>
           </div>
 

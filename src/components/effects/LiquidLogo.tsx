@@ -70,7 +70,7 @@ export function LiquidLogo({ className = "" }: LiquidLogoProps) {
     gl.uniform1i(mask, 0);
 
     const image = new Image();
-    image.src = "/feua-logo.png";
+    image.src = "/feua-logo.jpeg";
     let frame = 0;
     let active = true;
     let resize: (() => void) | null = null;
@@ -132,7 +132,7 @@ export function LiquidLogo({ className = "" }: LiquidLogoProps) {
 
   return (
     <div className={`relative aspect-square ${className}`} aria-hidden="true">
-      {supported ? <canvas ref={canvasRef} className="h-full w-full" /> : <img src="/feua-logo.png" alt="" className="h-full w-full object-contain" />}
+      {supported ? <canvas ref={canvasRef} className="h-full w-full" /> : <img src="/feua-logo.jpeg" alt="" className="h-full w-full object-contain" />}
     </div>
   );
 }

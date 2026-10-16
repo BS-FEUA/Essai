@@ -127,7 +127,7 @@ export const RevendicationsSection: React.FC<RevendicationsSectionProps> = ({
             <h2 className="text-xl font-bold tracking-tight">Portail des Revendications & Doléances Étudiantes</h2>
           </div>
           <p className="text-xs text-slate-300">
-            Un problème de notes, d&apos;équipements de laboratoire ou de logement ? Soumettez votre dossier directement au Bureau Syndical.
+            Un problème de notes, d&apos;équipements de laboratoire ou de logement ? Soumettez votre dossier directement au Bureau Sectoriel.
           </p>
         </div>
 

@@ -22,7 +22,7 @@ export const Footer: React.FC = () => {
               <span className="font-bold text-white text-base">BS-Lokossa</span>
             </div>
             <p className="text-slate-400 text-xs leading-relaxed">
-              Bureau Syndical de Lokossa (FEUA). Organe officiel de représentation et de défense des droits des étudiants de l'IUT et de l'ENSET Lokossa.
+              Bureau Sectoriel de Lokossa (FEUA). Organe officiel de représentation et de défense des droits des étudiants de l'IUT et de l'ENSET Lokossa.
             </p>
           </div>
 
@@ -32,7 +32,7 @@ export const Footer: React.FC = () => {
             </h4>
             <p className="flex items-start gap-2 text-slate-300">
               <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-              <span>Centre Universitaire de Lokossa, Bâtiment de la Garde Syndicale BS, Lokossa, Bénin</span>
+              <span>Centre Universitaire de Lokossa, Bâtiment du Bureau Sectoriel BS, Lokossa, Bénin</span>
             </p>
             <p className="flex items-center gap-2 text-slate-300 pt-1">
               <Building className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -63,7 +63,7 @@ export const Footer: React.FC = () => {
               Affiliations
             </h4>
             <p className="text-slate-400 leading-relaxed">
-              Membre de la Fédération des Étudiants de l'Université d'Abomey-Calavi (FEUA).
+              Membre de la Fédération des Étudiants de l’Université d’Abomey (UNSTIM).
             </p>
             <div className="pt-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/80 font-mono text-[10px]">

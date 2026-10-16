@@ -54,7 +54,7 @@ export const CommuniquesSection: React.FC<CommuniquesSectionProps> = ({
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">Communiqués Officiels du BS-Lokossa</h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Les déclarations, informations et décisions prises par le Bureau Syndical pour les étudiants de Lokossa.
+            Les déclarations, informations et décisions prises par le Bureau Sectoriel pour les étudiants de Lokossa.
           </p>
         </div>
 

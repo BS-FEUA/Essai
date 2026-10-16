@@ -56,7 +56,7 @@ export const CotisationsSection: React.FC<CotisationsSectionProps> = ({
               </h2>
             </div>
             <p className="text-xs text-slate-300">
-              La cotisation statutaire (500 FCFA/an) garantit l&apos;autonomie du bureau syndical et finance l&apos;assistance sociale, l&apos;impression des supports et l&apos;action syndicale.
+              La cotisation statutaire (500 FCFA/an) garantit l&apos;autonomie du bureau sectoriel et finance l&apos;assistance sociale, l&apos;impression des supports et les actions du Bureau sectoriel.
             </p>
           </div>
 
@@ -123,7 +123,7 @@ export const CotisationsSection: React.FC<CotisationsSectionProps> = ({
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
               <PieIcon className="w-4 h-4 text-feua" />
-              Répartition des Dépenses Syndicales
+              Répartition des Dépenses du Bureau sectoriel
             </h3>
             <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">
               Transparence

@@ -42,7 +42,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-feua" />
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-              Agenda des Assemblées Générales & Activités Syndicales
+              Agenda des Assemblées Générales & Activités du Bureau sectoriel
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">

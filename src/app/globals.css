@@ -141,6 +141,11 @@
 }
 
 @layer components {
+  .dark .feua-watermark {
+    mix-blend-mode: screen !important;
+    opacity: 0.11 !important;
+  }
+
   .site-content {
     position: relative;
     isolation: isolate;
@@ -367,12 +372,12 @@ nextjs-portal,
   50% { transform: translateY(-3px) rotate(1deg) scale(1.02); }
 }
 
-img[src="/feua-logo.jpeg"] {
+img[src="/feua-logo-transparent.png"] {
   animation: feua-logo-float 5s ease-in-out infinite;
   transform-origin: center;
   will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  img[src="/feua-logo.jpeg"] { animation: none; will-change: auto; }
+  img[src="/feua-logo-transparent.png"] { animation: none; will-change: auto; }
 }

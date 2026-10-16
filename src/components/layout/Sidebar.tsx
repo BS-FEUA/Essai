@@ -76,7 +76,7 @@ export function Sidebar() {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <Link href="/dashboard" className="flex items-center gap-3 p-4">
-        <img src="/feua-logo.jpeg" alt="FEUA" className="h-10 w-10 object-contain drop-shadow-[0_0_12px_rgba(27,122,61,0.6)]" />
+        <img src="/feua-logo-transparent.png" alt="FEUA" className="h-10 w-10 object-contain drop-shadow-[0_0_12px_rgba(27,122,61,0.6)]" />
         {!collapsed && (
           <motion.div
             initial={{ opacity: 0, x: -10 }}

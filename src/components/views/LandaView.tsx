@@ -88,7 +88,7 @@ export function LandaView() {
 
       {/* Header */}
       <div className="text-center space-y-4 pt-10 sm:pt-0">
-        <img src="/feua-logo.jpeg" alt="FEUA" className="h-20 w-20 mx-auto object-contain" />
+        <img src="/feua-logo-transparent.png" alt="FEUA" className="h-20 w-20 mx-auto object-contain" />
         <h1 className="text-3xl font-bold text-[var(--feua-green)]">Espace Landa</h1>
         <p className="text-muted-foreground max-w-xl mx-auto">
           Publications officielles du Bureau et demandes de commande d&apos;uniforme.

@@ -9,8 +9,8 @@ export const metadata: Metadata = {
   authors: [{ name: "FEUA BS-Lokossa" }],
   manifest: "/manifest.json",
   icons: {
-    icon: "/feua-logo.jpeg",
-    apple: "/feua-logo.jpeg",
+    icon: "/feua-logo-transparent.png",
+    apple: "/feua-logo-transparent.png",
   },
   openGraph: {
     title: "BS-Lokossa | FEUA — UNSTIM",
@@ -31,19 +31,19 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="description" content="Bureau Sectoriel de Lokossa - Fédération des Étudiants de l’Université d’Abomey (UNSTIM) au Bénin" />
-        <link rel="apple-touch-icon" href="/feua-logo.jpeg" />
+        <link rel="apple-touch-icon" href="/feua-logo-transparent.png" />
       </head>
       <body className="site-liquid-glass antialiased bg-background text-foreground min-h-screen overflow-x-hidden">
         <div
           aria-hidden="true"
-          className="pointer-events-none fixed inset-0 z-[1]"
+          className="feua-watermark pointer-events-none fixed inset-0 z-[1]"
           style={{
-            backgroundImage: "url('/feua-logo.jpeg')",
+            backgroundImage: "url('/feua-logo-transparent.png')",
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
-            backgroundSize: 'min(60vw, 28rem)',
+            backgroundSize: 'min(72vw, 34rem)',
             mixBlendMode: 'multiply',
-            opacity: 0.06,
+            opacity: 0.09,
           }}
         />
         {children}

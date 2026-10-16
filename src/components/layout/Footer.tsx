@@ -11,7 +11,7 @@ export function Footer() {
           {/* About */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <img src="/feua-logo.jpeg" alt="FEUA" className="h-11 w-11 rounded-lg border border-white/40 bg-white p-1 object-contain shadow-md" />
+              <img src="/feua-logo-transparent.png" alt="FEUA" className="h-11 w-11 rounded-lg border border-white/40 bg-white p-1 object-contain shadow-md" />
               <div>
                 <h3 className="font-bold text-sm text-[var(--feua-gold)]">FEUA</h3>
                 <p className="text-xs text-white/80">BS-Lokossa</p>

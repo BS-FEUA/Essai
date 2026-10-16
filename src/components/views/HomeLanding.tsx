@@ -21,7 +21,7 @@ export function HomeLanding() {
       <div className="pointer-events-none absolute -left-40 top-24 -z-10 h-96 w-96 rounded-full bg-emerald-400/20 blur-3xl" />
       <div className="pointer-events-none absolute -right-32 bottom-0 -z-10 h-96 w-96 rounded-full bg-amber-300/20 blur-3xl" />
       <header className="mx-auto flex max-w-7xl items-center justify-between rounded-2xl border border-white/15 bg-slate-950/65 px-4 py-3 text-white shadow-xl backdrop-blur-xl sm:px-6">
-        <div className="flex items-center gap-3"><img src="/feua-logo.jpeg" alt="Logo FEUA" className="h-11 w-11 rounded-xl bg-white object-contain p-0.5" /><div><p className="font-extrabold">BS-Lokossa</p><p className="text-xs text-emerald-200">FEUA · UNSTIM · INSTI & ENSET</p></div></div>
+        <div className="flex items-center gap-3"><img src="/feua-logo-transparent.png" alt="Logo FEUA" className="h-11 w-11 rounded-xl bg-white object-contain p-0.5" /><div><p className="font-extrabold">BS-Lokossa</p><p className="text-xs text-emerald-200">FEUA · UNSTIM · INSTI & ENSET</p></div></div>
         <div className="flex items-center gap-2"><Link href="/landa" className="hidden rounded-xl px-3 py-2 text-xs font-bold text-slate-200 hover:bg-white/10 sm:block">Espace Landa</Link><Link href={member ? "/dashboard" : "/login"} className="rounded-xl bg-emerald-500 px-3.5 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-900/30 hover:bg-emerald-400">{member ? "Mon tableau de bord" : "Se connecter"}</Link></div>
       </header>
 

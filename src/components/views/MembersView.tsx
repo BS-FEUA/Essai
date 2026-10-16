@@ -252,7 +252,9 @@ export function MembersView() {
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {updateDialog.field === 'accessLevel'
-                ? Object.entries(ACCESS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)
+                ? Object.entries(ACCESS_LABELS)
+                    .filter(([k]) => member?.accessLevel === 'CEO' || k !== 'CEO')
+                    .map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)
                 : [
                     { value: 'ACTIVE', label: 'Actif' },
                     { value: 'PENDING_VALIDATION', label: 'En attente' },

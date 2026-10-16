@@ -115,8 +115,9 @@ export async function PUT(req: NextRequest) {
       if (status && !memberStatusSchema.safeParse(status).success) {
         return NextResponse.json({ error: 'Statut invalide' }, { status: 400 });
       }
-      // A manager cannot edit a peer/superior or grant a role at or above their own.
-      if (accessLevel && (ACCESS_HIERARCHY[accessLevel] ?? -1) >= actorRank) {
+      // Only the CEO may grant the CEO role; other managers cannot grant a
+      // role equal to or higher than their own.
+      if (accessLevel && session.accessLevel !== 'CEO' && (ACCESS_HIERARCHY[accessLevel] ?? -1) >= actorRank) {
         return NextResponse.json({ error: 'Impossible de modifier ce niveau d\'accès' }, { status: 403 });
       }
 

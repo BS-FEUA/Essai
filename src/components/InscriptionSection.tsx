@@ -32,7 +32,7 @@ export const InscriptionSection: React.FC<InscriptionSectionProps> = ({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [matricule, setMatricule] = useState("");
-  const [entite, setEntite] = useState<"IUT Lokossa" | "ENSET Lokossa" | "InstI Lokossa" | "Autre">("IUT Lokossa");
+  const [entite, setEntite] = useState<"INSTI Lokossa" | "ENSET Lokossa" | "Autre">("INSTI Lokossa");
   const [filiere, setFiliere] = useState("");
   const [niveau, setNiveau] = useState("Licence 1");
   const [invitationCode, setInvitationCode] = useState("");
@@ -50,13 +50,13 @@ export const InscriptionSection: React.FC<InscriptionSectionProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName || !email || !matricule) return;
+    if (!fullName || !email || !matricule || phone.replace(/\D/g, '').length < 8) return;
 
     onAddRegistration({
       category,
       fullName,
       email,
-      phone: phone || "+229 90 00 00 00",
+      phone,
       matricule,
       entite,
       filiere: filiere || "Génie Electrique & Informatique",
@@ -97,7 +97,7 @@ export const InscriptionSection: React.FC<InscriptionSectionProps> = ({
                 Portail d&apos;Inscription & Espace Membre FEUA
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                Portail officiel d&apos;adhésion au Bureau Sectoriel de Lokossa pour les étudiants IUT, ENSET & InstI.
+                Portail officiel d&apos;adhésion au Bureau Sectoriel de Lokossa pour les étudiants de l&apos;INSTI et de l&apos;ENSET.
               </p>
             </div>
           </div>
@@ -187,7 +187,7 @@ export const InscriptionSection: React.FC<InscriptionSectionProps> = ({
                       </div>
                       <div className="font-bold text-xs text-slate-900">Membre Adhérent FEUA</div>
                       <div className="text-[10px] text-slate-500 mt-1">
-                        Étudiant régulier (IUT / ENSET) souhaitant adhérer au bureau sectoriel.
+                        Étudiant régulier (INSTI / ENSET) souhaitant adhérer au bureau sectoriel.
                       </div>
                     </div>
 
@@ -268,14 +268,16 @@ export const InscriptionSection: React.FC<InscriptionSectionProps> = ({
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-xs font-semibold text-slate-700">Téléphone</label>
+                    <label className="block text-xs font-semibold text-slate-700">Numéro WhatsApp / téléphone joignable *</label>
                     <input
-                      type="text"
+                      type="tel"
+                      required
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+229 90 00 00 00"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-feua/30"
                     />
+                    <p className="text-[11px] text-slate-500">Numéro WhatsApp également joignable par appel classique, même sans Internet.</p>
                   </div>
                 </div>
 
@@ -287,9 +289,8 @@ export const InscriptionSection: React.FC<InscriptionSectionProps> = ({
                       onChange={(e) => setEntite(e.target.value as typeof entite)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-feua/30"
                     >
-                      <option value="IUT Lokossa">IUT Lokossa</option>
+                      <option value="INSTI Lokossa">INSTI Lokossa</option>
                       <option value="ENSET Lokossa">ENSET Lokossa</option>
-                      <option value="InstI Lokossa">InstI Lokossa</option>
                       <option value="Autre">Autre</option>
                     </select>
                   </div>

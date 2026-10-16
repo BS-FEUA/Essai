@@ -36,6 +36,8 @@ export function UniformsView() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [orderOpen, setOrderOpen] = useState(false);
+  const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [orderForm, setOrderForm] = useState({ taille: 'M', quantity: '1', notes: '', paymentMethod: 'ESPECES' });
 
   const userLevel = member?.accessLevel || 'IGN';
@@ -60,15 +62,23 @@ export function UniformsView() {
 
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmittingOrder(true);
     try {
+      const formData = new FormData();
+      formData.set('taille', orderForm.taille);
+      formData.set('quantity', orderForm.quantity);
+      formData.set('notes', orderForm.notes);
+      formData.set('paymentMethod', orderForm.paymentMethod);
+      if (paymentProof) formData.set('paymentProof', paymentProof);
       await apiFetch('/api/uniforms', {
         method: 'POST',
-        body: JSON.stringify({ ...orderForm, quantity: Number(orderForm.quantity) }),
+        body: formData,
       });
       setOrderOpen(false);
       setOrderForm({ taille: 'M', quantity: '1', notes: '', paymentMethod: 'ESPECES' });
+      setPaymentProof(null);
       loadOrders();
-    } catch { /* ignore */ }
+    } catch { /* apiFetch displays the error */ } finally { setSubmittingOrder(false); }
   };
 
   const handleValidate = async (orderId: string, newStatus: string) => {
@@ -124,15 +134,30 @@ export function UniformsView() {
                 <Label>Mode de paiement</Label>
                 <Select value={orderForm.paymentMethod} onValueChange={(v) => setOrderForm({ ...orderForm, paymentMethod: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="ESPECES">Espèces</SelectItem><SelectItem value="MOBILE_MONEY">Mobile Money</SelectItem><SelectItem value="VIREMENT">Virement</SelectItem></SelectContent>
+                  <SelectContent><SelectItem value="ESPECES">Espèces</SelectItem><SelectItem value="MOBILE_MONEY">Mobile Money</SelectItem><SelectItem value="VIREMENT">Virement bancaire</SelectItem><SelectItem value="POSTE">Dépôt à La Poste</SelectItem></SelectContent>
                 </Select>
               </div>
+              {orderForm.paymentMethod === 'POSTE' && (
+                <div className="space-y-2 rounded-xl border border-dashed border-[var(--feua-green)]/50 bg-[var(--feua-green-light)]/20 p-3">
+                  <Label htmlFor="uniform-payment-proof">Ajouter une photo du reçu de La Poste *</Label>
+                  <Input
+                    id="uniform-payment-proof"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    required
+                    onChange={(event) => setPaymentProof(event.target.files?.[0] || null)}
+                    className="cursor-pointer file:mr-3 file:rounded-md file:border-0 file:bg-[var(--feua-green)] file:px-3 file:py-1 file:text-white"
+                  />
+                  <p className="text-xs text-muted-foreground">Photo nette, formats JPG, PNG ou WebP, 4 Mo maximum.</p>
+                  {paymentProof && <p className="break-all text-xs font-medium text-[var(--feua-green)]">{paymentProof.name}</p>}
+                </div>
+              )}
               <div className="space-y-2"><Label>Notes</Label><Textarea value={orderForm.notes} onChange={(e) => setOrderForm({ ...orderForm, notes: e.target.value })} rows={2} /></div>
               <p className="text-sm font-medium text-[var(--feua-gold)]">Total : {(Number(orderForm.quantity) * 15000).toLocaleString()} FCFA</p>
             </div>
             <DialogFooter className="mt-4">
               <Button variant="outline" type="button" onClick={() => setOrderOpen(false)}>Annuler</Button>
-              <Button type="submit" className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90 text-white">Commander</Button>
+              <Button type="submit" disabled={submittingOrder} className="bg-[var(--feua-green)] hover:bg-[var(--feua-green)]/90 text-white">{submittingOrder ? 'Envoi…' : 'Commander'}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -155,6 +180,7 @@ export function UniformsView() {
                     <TableHead>Taille</TableHead>
                     <TableHead className="hidden sm:table-cell">Qté</TableHead>
                     <TableHead>Montant</TableHead>
+                    <TableHead>Preuve de paiement</TableHead>
                     <TableHead>Statut</TableHead>
                     {isAdmin && <TableHead className="text-right">Validation</TableHead>}
                     {isSuperAdmin && <TableHead className="text-right">Contrôle CEO</TableHead>}
@@ -168,6 +194,7 @@ export function UniformsView() {
                       <TableCell className="text-sm">{o.taille}</TableCell>
                       <TableCell className="text-sm hidden sm:table-cell">{o.quantity}</TableCell>
                       <TableCell className="text-sm font-mono">{(o.totalAmount || 0).toLocaleString()} FCFA</TableCell>
+                      <TableCell className="text-sm">{o.paymentProofUrl ? <a href={o.paymentProofUrl} target="_blank" rel="noreferrer" className="font-medium text-[var(--feua-green)] underline underline-offset-2">Voir le reçu</a> : '—'}</TableCell>
                       <TableCell><span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${orderBadge[o.status]?.color || 'bg-gray-100'}`}>{orderBadge[o.status]?.label || o.status}</span></TableCell>
                       {isAdmin && (
                         <TableCell className="text-right">

@@ -40,7 +40,7 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
     firstName: '',
     lastName: '',
     phone: '',
-    institution: 'IUT Lokossa',
+    institution: 'INSTI Lokossa',
     filiere: 'Informatique',
     niveau: 'Licence 1',
   });
@@ -76,7 +76,11 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
     if (regSubmitting) return;
     setRegError('');
     if (!regForm.email || !regForm.password || !regForm.firstName || !regForm.lastName) {
-      setRegError('Veuillez remplir les champs obligatoires (Prénom, Nom, Email, Mot de passe).');
+      setRegError('Remplissez tous les champs obligatoires : prénom, nom, email, mot de passe et téléphone.');
+      return;
+    }
+    if (!regForm.phone.trim() || regForm.phone.replace(/\D/g, '').length < 8) {
+      setRegError('Indiquez un numéro WhatsApp joignable aussi par appel téléphonique classique, sans connexion Internet.');
       return;
     }
     if (regForm.password.length < 8) {
@@ -137,7 +141,7 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
             <img src="/feua-logo.jpeg" alt="FEUA" className="h-full w-full object-contain drop-shadow-[0_0_15px_rgba(212,160,23,0.6)]" />
           </div>
           <h2 className="text-3xl font-black text-center tracking-tight">FEUA — BS Lokossa</h2>
-          <p className="text-[var(--feua-green)] dark:text-emerald-300 text-center text-sm font-semibold mt-2 max-w-xs">Bureau Sectoriel des Étudiants (IUT & ENSET)</p>
+          <p className="text-[var(--feua-green)] dark:text-emerald-300 text-center text-sm font-semibold mt-2 max-w-xs">Bureau Sectoriel des Étudiants (INSTI & ENSET)</p>
           <p className="text-muted-foreground text-center text-xs mt-3 max-w-sm">Fédération des Étudiants de l’Université d’Abomey (UNSTIM)</p>
           
         </div>
@@ -352,6 +356,21 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                         </div>
 
                         <div>
+                          <Label className="text-xs font-semibold text-slate-300">Numéro WhatsApp / téléphone joignable *</Label>
+                          <Input
+                            type="tel"
+                            inputMode="tel"
+                            autoComplete="tel"
+                            placeholder="+229 90 00 00 00"
+                            value={regForm.phone}
+                            onChange={(e) => setRegForm({ ...regForm, phone: e.target.value })}
+                            className="bg-slate-950/70 border-slate-700/80 text-white placeholder-slate-500 focus:border-emerald-400 rounded-xl text-xs"
+                            required
+                          />
+                          <p className="mt-1 text-[11px] leading-relaxed text-slate-400">Entrez un numéro WhatsApp auquel vous êtes également joignable par appel classique, même sans Internet.</p>
+                        </div>
+
+                        <div>
                           <Label className="text-xs font-semibold text-slate-300">Matricule / Identifiant (Optionnel)</Label>
                           <Input
                             placeholder="Ex: FEUA-2026-001"
@@ -365,7 +384,7 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                           <div>
                             <Label className="text-xs font-semibold text-slate-300">Institution</Label>
                             <Input
-                              placeholder="IUT Lokossa"
+                              placeholder="INSTI Lokossa"
                               value={regForm.institution}
                               onChange={(e) => setRegForm({ ...regForm, institution: e.target.value })}
                               className="bg-slate-950/70 border-slate-700/80 text-white placeholder-slate-500 focus:border-emerald-400 rounded-xl text-xs"

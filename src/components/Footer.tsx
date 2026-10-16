@@ -22,7 +22,7 @@ export const Footer: React.FC = () => {
               <span className="font-bold text-white text-base">BS-Lokossa</span>
             </div>
             <p className="text-slate-400 text-xs leading-relaxed">
-              Bureau Sectoriel de Lokossa (FEUA). Organe officiel de représentation et de défense des droits des étudiants de l'IUT et de l'ENSET Lokossa.
+              Bureau Sectoriel de Lokossa (FEUA). Organe officiel de représentation et de défense des droits des étudiants de l'INSTI et de l'ENSET Lokossa.
             </p>
           </div>
 
@@ -36,7 +36,7 @@ export const Footer: React.FC = () => {
             </p>
             <p className="flex items-center gap-2 text-slate-300 pt-1">
               <Building className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span>IUT Lokossa & ENSET Lokossa</span>
+              <span>INSTI Lokossa & ENSET Lokossa</span>
             </p>
           </div>
 

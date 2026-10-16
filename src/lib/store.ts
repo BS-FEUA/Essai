@@ -84,9 +84,13 @@ export function canAccess(userLevel: string, requiredLevel: string): boolean {
 // Silent fetch for session checks — Supabase SSR handles JWT cookies automatically
 export async function silentFetch<T = any>(url: string, options?: RequestInit): Promise<T | null> {
   try {
+    const headers = new Headers(options?.headers);
+    if (!headers.has('Content-Type') && !(options?.body instanceof FormData)) {
+      headers.set('Content-Type', 'application/json');
+    }
     const res = await fetch(url, {
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      headers,
       ...options,
     });
     const data = await res.json();
@@ -101,9 +105,13 @@ export async function apiFetch<T = any>(
   options?: RequestInit
 ): Promise<T> {
   try {
+    const headers = new Headers(options?.headers);
+    if (!headers.has('Content-Type') && !(options?.body instanceof FormData)) {
+      headers.set('Content-Type', 'application/json');
+    }
     const res = await fetch(url, {
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      headers,
       ...options,
     });
     const data = await res.json();

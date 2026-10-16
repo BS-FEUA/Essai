@@ -185,7 +185,7 @@ export function LandingView() {
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 font-medium">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Portail Étudiant BS-Lokossa (FEUA) — Campus IUT & ENSET</span>
+            <span>Portail Étudiant BS-Lokossa (FEUA) — Campus INSTI & ENSET</span>
           </div>
 
           <div className="flex items-center gap-2 ml-auto">

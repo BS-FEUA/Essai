@@ -113,7 +113,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-300 font-medium leading-none hidden sm:block">
-                Bureau Sectoriel - Campus de Lokossa (IUT & ENSET)
+                Bureau Sectoriel - Campus de Lokossa (INSTI & ENSET)
               </p>
             </div>
           </div>

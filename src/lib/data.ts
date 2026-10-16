@@ -96,7 +96,7 @@ export const INITIAL_BUREAU_MEMBERS: BureauMember[] = [
     id: "mem-2",
     role: "mast_in",
     name: "Victoire T. KPADONOU",
-    filiere: "Génie Civil & Fonderie (IUT Lokossa)",
+    filiere: "Génie Civil & Fonderie (INSTI Lokossa)",
     niveau: "Licence 3",
     photoUrl:
       "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80",
@@ -122,7 +122,7 @@ export const INITIAL_BUREAU_MEMBERS: BureauMember[] = [
     id: "mem-4",
     role: "mix",
     name: "Aïcha S. HOUEDANOU",
-    filiere: "Informatique de Gestion (IUT Lokossa)",
+    filiere: "Informatique de Gestion (INSTI Lokossa)",
     niveau: "Licence 2",
     photoUrl:
       "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&auto=format&fit=crop&q=80",
@@ -148,7 +148,7 @@ export const INITIAL_BUREAU_MEMBERS: BureauMember[] = [
     id: "mem-6",
     role: "amc",
     name: "Sèna B. HOUNKPATIN",
-    filiere: "Génie Chimique (IUT Lokossa)",
+    filiere: "Génie Chimique (INSTI Lokossa)",
     niveau: "Licence 3",
     photoUrl:
       "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80",
@@ -175,7 +175,7 @@ export const INITIAL_COMMUNIQUES: Communique[] = [
 Le Bureau Syndical de Lokossa (BS-FEUA) informe l'ensemble de la communauté universitaire que suite à la séance de concertation tenue ce mardi 19 Juillet 2026 entre la délégation syndicale et le Vice-Doyen chargé des affaires académiques:
 
 1. Le démarrage des examens de rattrapage initialement prévu pour le 24 Juillet est reporté au Lundi 31 Juillet 2026.
-2. Un guichet spécial de réclamation des notes manquantes de TP/TD est ouvert au Secrétariat Général de l'IUT et de l'ENSET jusqu'au Vendredi 28 Juillet à 17h00.
+2. Un guichet spécial de réclamation des notes manquantes de TP/TD est ouvert au Secrétariat Général de l'INSTI et de l'ENSET jusqu'au Vendredi 28 Juillet à 17h00.
 3. Les plannings révisés d'occupation des amphis (Amphi 500 et Salles B) seront affichés dès ce jeudi matin.
 
 Le Bureau Syndical invite les camarades au calme et à la concentration maximale pour ces échéances capitales.
@@ -183,7 +183,7 @@ Le Bureau Syndical invite les camarades au calme et à la concentration maximale
 Pour le Bureau Syndical,
 Le Secrétariat aux Affaires Académiques.`,
     isPinned: true,
-    tags: ["Examens", "IUT", "ENSET", "Planning"],
+    tags: ["Examens", "INSTI", "ENSET", "Planning"],
   },
   {
     id: "comm-002",
@@ -257,7 +257,7 @@ export const INITIAL_CLAIMS: Claim[] = [
     id: "clm-101",
     studentName: "Marius SODJINOU",
     studentId: "2024-LOK-0492",
-    filiere: "Informatique de Gestion - IUT",
+    filiere: "Informatique de Gestion - INSTI",
     category: "Salles & Matériel",
     urgency: "Haute",
     title: "Coupure d'électricité permanente dans la salle informatique Salle B3",
@@ -291,7 +291,7 @@ export const INITIAL_CLAIMS: Claim[] = [
     id: "clm-103",
     studentName: "Désiré KPONOU",
     studentId: "2025-LOK-1102",
-    filiere: "Maintenance Industrielle - IUT",
+    filiere: "Maintenance Industrielle - INSTI",
     category: "Restauration & Logement",
     urgency: "Critique",
     title: "Rupture de stock récurrente au restaurant universitaire du campus",
@@ -421,7 +421,7 @@ export const INITIAL_EVENTS: UnionEvent[] = [
     time: "09h00 - 16h00",
     location: "Esplanade Centrale de Lokossa",
     description:
-      "Présentation des filières ENSET et IUT, stand de guidage logement et ateliers d'intégration.",
+      "Présentation des filières ENSET et INSTI, stand de guidage logement et ateliers d'intégration.",
     organizerRole: "mast",
     registeredCount: 180,
     status: "À venir",
@@ -488,7 +488,7 @@ export const INITIAL_REGISTRATIONS: RegistrationRecord[] = [
     email: "marius.sodjinou@student.feua.bj",
     phone: "+229 97 12 34 56",
     matricule: "2024-LOK-0492",
-    entite: "IUT Lokossa",
+    entite: "INSTI Lokossa",
     filiere: "Informatique de Gestion",
     niveau: "Licence 2",
     photoUrl:
@@ -517,8 +517,8 @@ export const INITIAL_REGISTRATIONS: RegistrationRecord[] = [
     fullName: "Aïcha S. HOUEDANOU",
     email: "academique.bslokossa@feua.bj",
     phone: "+229 61 22 45 67",
-    matricule: "2023-IUT-0081",
-    entite: "IUT Lokossa",
+    matricule: "2023-INSTI-0081",
+    entite: "INSTI Lokossa",
     filiere: "Informatique de Gestion",
     niveau: "Licence 2",
     bureauRole: "mix",

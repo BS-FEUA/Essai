@@ -116,7 +116,7 @@ export interface RegistrationRecord {
   email: string;
   phone: string;
   matricule: string;
-  entite: "IUT Lokossa" | "ENSET Lokossa" | "InstI Lokossa" | "Autre";
+  entite: "INSTI Lokossa" | "ENSET Lokossa" | "Autre";
   filiere: string;
   niveau: string;
   photoUrl?: string;

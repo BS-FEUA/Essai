@@ -34,6 +34,18 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/feua-logo.jpeg" />
       </head>
       <body className="site-liquid-glass antialiased bg-background text-foreground min-h-screen overflow-x-hidden">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-[1]"
+          style={{
+            backgroundImage: "url('/feua-logo.jpeg')",
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: 'min(60vw, 28rem)',
+            mixBlendMode: 'multiply',
+            opacity: 0.06,
+          }}
+        />
         {children}
         <Toaster />
       </body>

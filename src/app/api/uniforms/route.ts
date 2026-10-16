@@ -3,12 +3,20 @@ import { supabaseAdmin } from '@/lib/db';
 import { getSession, canAccess } from '@/lib/auth';
 import { z } from 'zod';
 import { getPagination } from '@/lib/pagination';
+import { randomUUID } from 'node:crypto';
+
+const MAX_PROOF_BYTES = 4 * 1024 * 1024;
+const PROOF_MIME_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
 
 const orderSchema = z.object({
   taille: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL']),
   quantity: z.number().int().min(1).max(10),
   notes: z.string().trim().max(1000).optional(),
-  paymentMethod: z.string().trim().max(50).optional(),
+  paymentMethod: z.enum(['ESPECES', 'MOBILE_MONEY', 'VIREMENT', 'POSTE']).default('ESPECES'),
   paymentRef: z.string().trim().max(100).optional(),
   cycle: z.number().int().positive().max(99).optional(),
 });
@@ -45,36 +53,47 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error;
 
-    const orders = (ordersRaw || []).map(o => ({
-      ...o,
-      memberId: o.member_id,
-      totalAmount: o.total_amount,
-      paymentMethod: o.payment_method,
-      paymentRef: o.payment_ref,
-      validated1By: o.validated1_by,
-      validated1At: o.validated1_at,
-      validated2By: o.validated2_by,
-      validated2At: o.validated2_at,
-      livredAt: o.livred_at,
-      createdAt: o.created_at,
-      updatedAt: o.updated_at,
-      member: o.member ? {
-        id: Array.isArray(o.member) ? o.member[0].id : o.member.id,
-        firstName: Array.isArray(o.member) ? o.member[0].first_name : o.member.first_name,
-        lastName: Array.isArray(o.member) ? o.member[0].last_name : o.member.last_name,
-        matricule: Array.isArray(o.member) ? o.member[0].matricule : o.member.matricule,
-        phone: Array.isArray(o.member) ? o.member[0].phone : o.member.phone,
-      } : null,
-      validator1: o.validator1 ? {
-        id: Array.isArray(o.validator1) ? o.validator1[0].id : o.validator1.id,
-        firstName: Array.isArray(o.validator1) ? o.validator1[0].first_name : o.validator1.first_name,
-        lastName: Array.isArray(o.validator1) ? o.validator1[0].last_name : o.validator1.last_name,
-      } : null,
-      validator2: o.validator2 ? {
-        id: Array.isArray(o.validator2) ? o.validator2[0].id : o.validator2.id,
-        firstName: Array.isArray(o.validator2) ? o.validator2[0].first_name : o.validator2.first_name,
-        lastName: Array.isArray(o.validator2) ? o.validator2[0].last_name : o.validator2.last_name,
-      } : null,
+    const orders = await Promise.all((ordersRaw || []).map(async o => {
+      const { payment_proof_path: proofPath, ...orderFields } = o;
+      let paymentProofUrl: string | null = null;
+      if (proofPath) {
+        const { data } = await supabaseAdmin.storage
+          .from('uniform-payment-proofs')
+          .createSignedUrl(proofPath, 10 * 60);
+        paymentProofUrl = data?.signedUrl || null;
+      }
+      return {
+        ...orderFields,
+        memberId: o.member_id,
+        totalAmount: o.total_amount,
+        paymentMethod: o.payment_method,
+        paymentRef: o.payment_ref,
+        paymentProofUrl,
+        validated1By: o.validated1_by,
+        validated1At: o.validated1_at,
+        validated2By: o.validated2_by,
+        validated2At: o.validated2_at,
+        livredAt: o.livred_at,
+        createdAt: o.created_at,
+        updatedAt: o.updated_at,
+        member: o.member ? {
+          id: Array.isArray(o.member) ? o.member[0].id : o.member.id,
+          firstName: Array.isArray(o.member) ? o.member[0].first_name : o.member.first_name,
+          lastName: Array.isArray(o.member) ? o.member[0].last_name : o.member.last_name,
+          matricule: Array.isArray(o.member) ? o.member[0].matricule : o.member.matricule,
+          phone: Array.isArray(o.member) ? o.member[0].phone : o.member.phone,
+        } : null,
+        validator1: o.validator1 ? {
+          id: Array.isArray(o.validator1) ? o.validator1[0].id : o.validator1.id,
+          firstName: Array.isArray(o.validator1) ? o.validator1[0].first_name : o.validator1.first_name,
+          lastName: Array.isArray(o.validator1) ? o.validator1[0].last_name : o.validator1.last_name,
+        } : null,
+        validator2: o.validator2 ? {
+          id: Array.isArray(o.validator2) ? o.validator2[0].id : o.validator2.id,
+          firstName: Array.isArray(o.validator2) ? o.validator2[0].first_name : o.validator2.first_name,
+          lastName: Array.isArray(o.validator2) ? o.validator2[0].last_name : o.validator2.last_name,
+        } : null,
+      };
     }));
 
     return NextResponse.json({ orders, total: count || 0, page, limit, pages: Math.ceil((count || 0) / limit) });
@@ -89,12 +108,55 @@ export async function POST(req: NextRequest) {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
-    const parsed = orderSchema.safeParse(await req.json());
+    const contentType = req.headers.get('content-type') || '';
+    let rawOrder: Record<string, unknown>;
+    let proofFile: File | null = null;
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData();
+      rawOrder = {
+        taille: formData.get('taille'),
+        quantity: Number(formData.get('quantity')),
+        notes: formData.get('notes') || undefined,
+        paymentMethod: formData.get('paymentMethod') || undefined,
+      };
+      const file = formData.get('paymentProof');
+      if (file instanceof File) proofFile = file;
+    } else {
+      rawOrder = await req.json();
+    }
+
+    const parsed = orderSchema.safeParse(rawOrder);
     if (!parsed.success) return NextResponse.json({ error: 'Commande invalide' }, { status: 400 });
     const { taille, quantity, notes, paymentMethod, paymentRef, cycle = 1 } = parsed.data;
+    if (paymentMethod === 'POSTE' && !proofFile) {
+      return NextResponse.json({ error: 'Ajoutez une photo du reçu de paiement de La Poste.' }, { status: 400 });
+    }
+    if (proofFile && (!PROOF_MIME_EXTENSIONS[proofFile.type] || proofFile.size === 0 || proofFile.size > MAX_PROOF_BYTES)) {
+      return NextResponse.json({ error: 'La preuve doit être une photo JPG, PNG ou WebP de 4 Mo maximum.' }, { status: 400 });
+    }
+
+    let proofPath: string | null = null;
+    if (proofFile) {
+      const extension = PROOF_MIME_EXTENSIONS[proofFile.type];
+      proofPath = `${session.id}/${randomUUID()}.${extension}`;
+      const { error: storageError } = await supabaseAdmin.storage
+        .from('uniform-payment-proofs')
+        .upload(proofPath, Buffer.from(await proofFile.arrayBuffer()), {
+          contentType: proofFile.type,
+          upsert: false,
+        });
+      if (storageError) {
+        console.error('Uniform payment proof upload error:', storageError);
+        if (storageError.message.toLowerCase().includes('bucket')) {
+          return NextResponse.json({ error: 'Le stockage privé des reçus n’est pas encore configuré. Exécutez la migration Supabase 010.' }, { status: 503 });
+        }
+        return NextResponse.json({ error: 'Impossible d’enregistrer la photo du reçu.' }, { status: 500 });
+      }
+    }
     const unitPrice = 15000;
 
-    const { data: order, error } = await supabaseAdmin.from('uniform_orders').insert({
+    const orderPayload = {
       member_id: session.id, 
       cycle, 
       taille, 
@@ -103,9 +165,14 @@ export async function POST(req: NextRequest) {
       notes,
       payment_method: paymentMethod,
       payment_ref: paymentRef,
-    }).select().single();
+      ...(proofPath ? { payment_proof_path: proofPath } : {}),
+    };
+    const { data: order, error } = await supabaseAdmin.from('uniform_orders').insert(orderPayload).select().single();
 
-    if (error) throw error;
+    if (error) {
+      if (proofPath) await supabaseAdmin.storage.from('uniform-payment-proofs').remove([proofPath]);
+      throw error;
+    }
 
     return NextResponse.json({ success: true, order }, { status: 201 });
   } catch (error) {

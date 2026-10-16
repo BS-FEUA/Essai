@@ -45,11 +45,11 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
               Bureau Sectoriel de Lokossa <br />
               <span className="text-amber-300 font-serif italic">Pas sans vous.</span>
             </h1>
-            <p className="text-xs font-semibold tracking-wide text-emerald-200">Représentation sectorielle UNSTIM — IUT &amp; ENSET Lokossa</p>
+            <p className="text-xs font-semibold tracking-wide text-emerald-200">Représentation sectorielle UNSTIM — INSTI &amp; ENSET Lokossa</p>
 
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl">
               Bienvenue sur la plateforme numérique officielle du BS-Lokossa.
-              Consultez les communiqués du bureau, suivez l&apos;avancement de vos revendications académiques (IUT & ENSET), payez vos cotisations et participez aux assemblées générales.
+              Consultez les communiqués du bureau, suivez l&apos;avancement de vos revendications académiques (INSTI & ENSET), payez vos cotisations et participez aux assemblées générales.
             </p>
 
             <div className="pt-2 flex flex-wrap items-center gap-3">
@@ -87,7 +87,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
               <div className="flex items-center justify-between text-emerald-400">
                 <Users className="w-5 h-5" />
                 <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full">
-                  IUT & ENSET
+                  INSTI & ENSET
                 </span>
               </div>
               <div className="text-xl sm:text-2xl font-black text-white">

@@ -359,3 +359,20 @@ nextjs-portal,
 [aria-label="Open Next.js Dev Tools"] {
   display: none !important;
 }
+
+/* Keep the official logo artwork in its original colors and give each visible
+   copy a restrained float. */
+@keyframes feua-logo-float {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  50% { transform: translateY(-3px) rotate(1deg) scale(1.02); }
+}
+
+img[src="/feua-logo.jpeg"] {
+  animation: feua-logo-float 5s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  img[src="/feua-logo.jpeg"] { animation: none; will-change: auto; }
+}

@@ -6,7 +6,6 @@ import { useAppStore, ACCESS_LABELS, silentFetch, type Notification } from '@/li
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Popover,
   PopoverContent,
@@ -100,16 +99,16 @@ export function Header() {
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-[calc(100vw-2rem)] max-w-sm p-0 sm:w-80">
-          <div className="flex items-center justify-between px-4 py-3 border-b">
-            <span className="font-semibold text-sm">Notifications</span>
+        <PopoverContent align="end" sideOffset={8} collisionPadding={8} className="w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border bg-background p-0 shadow-2xl">
+          <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+            <span className="font-semibold text-sm">Notifications <span className="text-muted-foreground">({notifications.length})</span></span>
             {unreadCount > 0 && (
-              <Button variant="ghost" size="sm" className="text-xs text-[var(--feua-green)] hover:text-[var(--feua-green)] h-auto p-0" onClick={handleMarkAllRead}>
-                <CheckCheck className="mr-1 h-3 w-3" />Tout marquer comme lu
+              <Button variant="ghost" size="sm" className="h-auto shrink-0 p-1 text-xs text-[var(--feua-green)] hover:text-[var(--feua-green)]" onClick={handleMarkAllRead}>
+                <CheckCheck className="mr-1 h-3 w-3" /><span className="hidden sm:inline">Tout marquer comme lu</span><span className="sm:hidden">Tout lire</span>
               </Button>
             )}
           </div>
-          <ScrollArea className="max-h-72">
+          <div className="max-h-[min(65dvh,24rem)] overflow-y-auto overscroll-contain">
             {notifications.length === 0 ? (
               <div className="p-6 text-center">
                 <BellOff className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
@@ -120,13 +119,13 @@ export function Header() {
                 {notifications.map((n: Notification) => (
                   <div
                     key={n.id}
-                    className={`px-4 py-3 hover:bg-muted/50 transition-colors cursor-default ${n.status !== 'READ' ? 'border-l-[3px] border-l-[var(--feua-green)] bg-[var(--feua-green-light)]/30' : ''}`}
+                    className={`px-4 py-3.5 transition-colors hover:bg-muted/60 ${n.status !== 'READ' ? 'border-l-[3px] border-l-[var(--feua-green)] bg-[var(--feua-green-light)]/30' : ''}`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium">{n.title}</p>
+                      <p className="min-w-0 break-words text-sm font-semibold leading-5">{n.title}</p>
                       {n.status !== 'READ' && <span className="h-2 w-2 rounded-full bg-[var(--feua-green)] mt-1.5 flex-shrink-0" />}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
+                    <p className="mt-1 break-words text-xs leading-5 text-muted-foreground">{n.message}</p>
                     <p className="text-[10px] text-muted-foreground/70 mt-1">
                       {new Date(n.createdAt).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </p>
@@ -134,13 +133,13 @@ export function Header() {
                 ))}
               </div>
             )}
-          </ScrollArea>
+          </div>
           <div className="border-t">
             <button
               onClick={() => { setNotifOpen(false); router.push('/notifications'); }}
-              className="w-full py-2.5 text-xs text-center text-[var(--feua-green)] hover:bg-muted/50 transition-colors font-medium"
+              className="w-full px-4 py-3 text-center text-xs font-semibold text-[var(--feua-green)] transition-colors hover:bg-muted/50"
             >
-              Voir toutes les notifications →
+              Voir toutes les notifications <span aria-hidden="true">→</span>
             </button>
           </div>
         </PopoverContent>

@@ -42,8 +42,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
             </div>
 
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-tight">
-              Bureau Syndical de Lokossa <br />
-              <span className="text-amber-300 font-serif italic">Abolir l&apos;injustice, Promouvoir la réussite.</span>
+              Bureau Sectoriel de Lokossa <br />
+              <span className="text-amber-300 font-serif italic">Pas sans vous.</span>
             </h1>
 
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl">

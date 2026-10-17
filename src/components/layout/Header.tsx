@@ -90,10 +90,15 @@ export function Header() {
       {/* Notifications */}
       <Popover open={notifOpen} onOpenChange={setNotifOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} non lues` : 'Notifications'}
+            className="relative h-12 w-12 shrink-0 rounded-xl border border-border/70 bg-background/80 shadow-sm transition-colors hover:bg-muted/80"
+          >
             <Bell className={`h-5 w-5 ${unreadCount > 0 ? 'animate-bell-bounce' : ''}`} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-medium ring-2 ring-background">
+              <span className="absolute -right-1 -top-1 flex min-h-6 min-w-6 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-bold leading-none tabular-nums text-white shadow-sm ring-2 ring-background">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}

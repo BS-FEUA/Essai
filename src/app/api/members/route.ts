@@ -6,6 +6,16 @@ import { getPagination } from '@/lib/pagination';
 
 const accessLevelSchema = z.enum(['CEO', 'MAST_IN', 'MAST', 'MASTER', 'MIX', 'MIN', 'AMC', 'IGN']);
 const memberStatusSchema = z.enum(['ACTIVE', 'SUSPENDED', 'ARCHIVED', 'PENDING_VALIDATION', 'IGNORANT']);
+const profileUpdateSchema = z.object({
+  firstName: z.string().trim().min(1).max(80).optional(),
+  lastName: z.string().trim().min(1).max(80).optional(),
+  phone: z.string().trim().max(30).optional(),
+  address: z.string().trim().max(250).optional(),
+  city: z.string().trim().max(100).optional(),
+  institution: z.string().trim().max(150).optional(),
+  filiere: z.string().trim().max(150).optional(),
+  niveau: z.string().trim().max(80).optional(),
+}).strict();
 
 export async function GET(req: NextRequest) {
   try {
@@ -157,18 +167,36 @@ export async function PUT(req: NextRequest) {
     }
 
     // Updating own profile
+    const parsedProfile = profileUpdateSchema.safeParse(updateData);
+    if (!parsedProfile.success) {
+      return NextResponse.json({ error: parsedProfile.error.issues[0]?.message || 'Informations de profil invalides.' }, { status: 400 });
+    }
+    const profile = parsedProfile.data;
     const updatePayload: any = {};
-    if (updateData.firstName) updatePayload.first_name = updateData.firstName;
-    if (updateData.lastName) updatePayload.last_name = updateData.lastName;
-    if (updateData.phone !== undefined) updatePayload.phone = updateData.phone;
-    if (updateData.address !== undefined) updatePayload.address = updateData.address;
-    if (updateData.city !== undefined) updatePayload.city = updateData.city;
-    if (updateData.institution) updatePayload.institution = updateData.institution;
-    if (updateData.filiere) updatePayload.filiere = updateData.filiere;
-    if (updateData.niveau) updatePayload.niveau = updateData.niveau;
+    if (profile.firstName !== undefined) updatePayload.first_name = profile.firstName;
+    if (profile.lastName !== undefined) updatePayload.last_name = profile.lastName;
+    if (profile.phone !== undefined) updatePayload.phone = profile.phone;
+    if (profile.address !== undefined) updatePayload.address = profile.address;
+    if (profile.city !== undefined) updatePayload.city = profile.city;
+    if (profile.institution !== undefined) updatePayload.institution = profile.institution;
+    if (profile.filiere !== undefined) updatePayload.filiere = profile.filiere;
+    if (profile.niveau !== undefined) updatePayload.niveau = profile.niveau;
+
+    if (Object.keys(updatePayload).length === 0) {
+      return NextResponse.json({ error: 'Aucune modification fournie.' }, { status: 400 });
+    }
 
     const { data: updated, error } = await supabaseAdmin.from('members').update(updatePayload).eq('id', session.id).select().single();
     if (error) throw error;
+
+    const { error: auditError } = await supabaseAdmin.from('audit_logs').insert({
+      action: 'MEMBER_UPDATE',
+      actor_id: session.id,
+      entity_type: 'Member',
+      entity_id: session.id,
+      details: JSON.stringify({ message: 'Informations du profil modifiées', fields: Object.keys(updatePayload) }),
+    });
+    if (auditError) console.error('Member profile audit error:', auditError);
 
     return NextResponse.json({ success: true, member: updated });
   } catch (error) {

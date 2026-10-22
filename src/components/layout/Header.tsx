@@ -21,6 +21,7 @@ import {
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
 } from '@/components/ui/avatar';
 import { Bell, User, LogOut, CheckCheck, BellOff, Moon, Sun } from 'lucide-react';
 
@@ -170,6 +171,7 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="rounded-full p-0">
               <Avatar className="h-9 w-9 ring-2 ring-[var(--feua-green)] ring-offset-2 ring-offset-background">
+                <AvatarImage src={member.photoUrl || undefined} alt={`${member.firstName} ${member.lastName}`} />
                 <AvatarFallback className="bg-[var(--feua-green)] text-white text-sm font-medium">
                   {initials}
                 </AvatarFallback>

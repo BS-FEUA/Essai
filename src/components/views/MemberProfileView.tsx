@@ -8,7 +8,7 @@ import { roleBadgeColor, statusBadge, orderBadge } from './view-utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -89,6 +89,7 @@ export function MemberProfileView() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex flex-col sm:flex-row items-center gap-6">
               <Avatar className="h-20 w-20 border-2 border-[var(--feua-green)]">
+                <AvatarImage src={profileData.photoUrl || undefined} alt={`${profileData.firstName} ${profileData.lastName}`} />
                 <AvatarFallback className="bg-[var(--feua-green)] text-white text-2xl font-bold">{initials}</AvatarFallback>
               </Avatar>
               <div className="text-center sm:text-left">

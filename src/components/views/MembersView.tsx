@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -187,7 +187,7 @@ export function MembersView() {
                       <TableRow key={m.id} className="cursor-pointer" onClick={() => router.push(`/members/${m.id}`)}>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8"><AvatarFallback className="text-xs bg-[var(--feua-green)] text-white">{`${m.firstName?.[0] || ''}${m.lastName?.[0] || ''}`.toUpperCase()}</AvatarFallback></Avatar>
+                            <Avatar className="h-8 w-8"><AvatarImage src={m.photoUrl || undefined} alt={`${m.firstName} ${m.lastName}`} /><AvatarFallback className="text-xs bg-[var(--feua-green)] text-white">{`${m.firstName?.[0] || ''}${m.lastName?.[0] || ''}`.toUpperCase()}</AvatarFallback></Avatar>
                             <div className="min-w-0">
                               <p className="font-medium text-sm truncate">{m.firstName} {m.lastName}</p>
                               <p className="text-xs text-muted-foreground truncate">{m.email}</p>

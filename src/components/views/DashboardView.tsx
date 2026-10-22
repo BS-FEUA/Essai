@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
@@ -31,14 +31,16 @@ const pageVariants = {
 };
 
 export function DashboardView() {
-  const { member } = useAppStore();
+  const { member, setMember } = useAppStore();
   const router = useRouter();
   const [stats, setStats] = useState<any>(null);
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
-  const [editForm, setEditForm] = useState({ phone: '', institution: '', filiere: '', niveau: '' });
+  const [editForm, setEditForm] = useState({ firstName: '', lastName: '', phone: '', institution: '', filiere: '', niveau: '' });
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState('');
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [pwOpen, setPwOpen] = useState(false);
   const [pwLoading, setPwLoading] = useState(false);
@@ -46,21 +48,44 @@ export function DashboardView() {
 
   const openEditProfile = () => {
     setEditForm({
+      firstName: member?.firstName || '',
+      lastName: member?.lastName || '',
       phone: member?.phone || '',
       institution: member?.institution || '',
       filiere: member?.filiere || '',
       niveau: member?.niveau || '',
     });
+    setProfilePhoto(null);
+    setProfilePhotoPreview(member?.photoUrl || '');
     setEditProfileOpen(true);
   };
+
+  useEffect(() => {
+    return () => {
+      if (profilePhotoPreview.startsWith('blob:')) URL.revokeObjectURL(profilePhotoPreview);
+    };
+  }, [profilePhotoPreview]);
 
   const handleEditProfile = async () => {
     setEditLoading(true);
     try {
+      let photoUrl = member?.photoUrl || null;
+      if (profilePhoto) {
+        const photoData = new FormData();
+        photoData.set('photo', profilePhoto);
+        const upload = await apiFetch<{ photoUrl: string }>('/api/members/photo', {
+          method: 'POST',
+          body: photoData,
+        });
+        photoUrl = upload.photoUrl;
+      }
+
       await apiFetch('/api/members', {
         method: 'PUT',
-        body: JSON.stringify({ phone: editForm.phone, institution: editForm.institution, filiere: editForm.filiere, niveau: editForm.niveau }),
+        body: JSON.stringify(editForm),
       });
+      if (member) setMember({ ...member, ...editForm, photoUrl });
+      setProfilePhoto(null);
       setEditProfileOpen(false);
     } catch { /* handled by apiFetch */ } finally { setEditLoading(false); }
   };
@@ -131,6 +156,7 @@ export function DashboardView() {
         <div className="absolute bottom-0 left-1/2 w-24 h-24 rounded-full bg-[var(--feua-gold)]/10 translate-y-12" />
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <Avatar className="h-14 w-14 border-2 border-white/40 shadow-lg">
+            <AvatarImage src={member?.photoUrl || undefined} alt={`${member?.firstName} ${member?.lastName}`} />
             <AvatarFallback className="bg-white/20 text-white text-lg font-bold backdrop-blur-sm">{initials}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
@@ -152,6 +178,32 @@ export function DashboardView() {
             <DialogContent>
               <DialogHeader><DialogTitle>Modifier le profil</DialogTitle><DialogDescription>Mettez à jour vos informations personnelles.</DialogDescription></DialogHeader>
               <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16 border border-border">
+                    <AvatarImage src={profilePhotoPreview || undefined} alt="Aperçu de la photo de profil" />
+                    <AvatarFallback className="bg-[var(--feua-green)] text-white font-semibold">{initials}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <Label htmlFor="profile-photo">Photo de profil</Label>
+                    <Input
+                      id="profile-photo"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-2 file:py-1 file:text-xs"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (!file) return;
+                        setProfilePhoto(file);
+                        setProfilePhotoPreview(URL.createObjectURL(file));
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">JPG, PNG ou WebP, 3 Mo maximum.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-2"><Label>Prénom</Label><Input value={editForm.firstName} onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })} maxLength={80} required /></div>
+                  <div className="space-y-2"><Label>Nom</Label><Input value={editForm.lastName} onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })} maxLength={80} required /></div>
+                </div>
                 <div className="space-y-2"><Label>Téléphone</Label><Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} placeholder="+229 ..." /></div>
                 <div className="space-y-2"><Label>Institution</Label><Input value={editForm.institution} onChange={(e) => setEditForm({ ...editForm, institution: e.target.value })} placeholder="Université de Lokossa" /></div>
                 <div className="space-y-2"><Label>Filière</Label><Input value={editForm.filiere} onChange={(e) => setEditForm({ ...editForm, filiere: e.target.value })} placeholder="Ex: Droit" /></div>

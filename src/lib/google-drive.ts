@@ -4,16 +4,15 @@ import { Readable } from 'node:stream';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
 function getConfiguration() {
-  const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
 
-  if (!folderId || !clientId || !clientSecret || !refreshToken) {
-    throw new Error('Google Drive n’est pas configuré. Renseignez GOOGLE_DRIVE_FOLDER_ID, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET et GOOGLE_REFRESH_TOKEN.');
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error('Google Drive n’est pas configuré. Renseignez GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET et GOOGLE_REFRESH_TOKEN.');
   }
 
-  return { folderId, clientId, clientSecret, refreshToken };
+  return { clientId, clientSecret, refreshToken };
 }
 
 function getDriveClient() {
@@ -34,13 +33,35 @@ export function getGoogleDriveFileId(value: string) {
   return isGoogleDriveFileUrl(value) ? value.slice('gdrive://'.length) : null;
 }
 
+async function getOrCreateDriveFolder(drive: ReturnType<typeof google.drive>) {
+  const folderName = 'FEUA BS-Lokossa Documents';
+  const { data: existing } = await drive.files.list({
+    q: `name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+    pageSize: 1,
+    fields: 'files(id)',
+  });
+
+  if (existing.files?.[0]?.id) return existing.files[0].id;
+
+  const { data: created } = await drive.files.create({
+    requestBody: {
+      name: folderName,
+      mimeType: 'application/vnd.google-apps.folder',
+    },
+    fields: 'id',
+  });
+
+  if (!created.id) throw new Error('Google Drive n’a pas retourné l’identifiant du dossier.');
+  return created.id;
+}
+
 export async function uploadToGoogleDrive(options: {
   buffer: Buffer;
   fileName: string;
   mimeType: string;
 }) {
-  const { folderId } = getConfiguration();
   const drive = getDriveClient();
+  const folderId = await getOrCreateDriveFolder(drive);
   const { data } = await drive.files.create({
     requestBody: {
       name: options.fileName,

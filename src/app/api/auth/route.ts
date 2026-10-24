@@ -233,7 +233,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: 'Si cet email existe, un lien a été envoyé.' });
       }
       
-      await supabase.auth.resetPasswordForEmail(parsed.data.email);
+      const redirectTo = new URL('/reset-password', req.nextUrl.origin).toString();
+      const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, { redirectTo });
+      if (error) {
+        console.error('Password recovery email error:', error.message);
+        return NextResponse.json(
+          { error: "Impossible d'envoyer le lien de réinitialisation. Réessayez plus tard." },
+          { status: 502 },
+        );
+      }
       return NextResponse.json({ success: true, message: 'Si cet email existe, un lien a été envoyé.' });
     }
 

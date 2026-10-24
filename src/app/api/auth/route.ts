@@ -22,7 +22,6 @@ const registerSchema = z.object({
   dateOfBirth: z.string().optional(),
   invitationCode: z.string().optional(),
 });
-const recoverySchema = z.object({ email: z.string().email() });
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Mot de passe actuel requis'),
   newPassword: z.string().min(8, 'Le nouveau mot de passe doit contenir au moins 8 caractères'),
@@ -37,7 +36,6 @@ export async function POST(req: NextRequest) {
     const limits: Record<string, { limit: number; windowMs: number }> = {
       login: { limit: 40, windowMs: 15 * 60 * 1000 },
       register: { limit: 20, windowMs: 60 * 60 * 1000 },
-      requestRecovery: { limit: 10, windowMs: 60 * 60 * 1000 },
     };
     const policy = limits[action];
     if (policy && !await checkRateLimit(`auth:${action}:ip:${getClientIp(req.headers)}`, policy.limit, policy.windowMs)) {
@@ -218,31 +216,6 @@ export async function POST(req: NextRequest) {
       }
       await supabase.auth.signOut();
       return NextResponse.json({ success: true });
-    }
-
-    if (action === 'requestRecovery') {
-      const parsed = recoverySchema.safeParse(body);
-      if (!parsed.success) return NextResponse.json({ error: 'Email requis' }, { status: 400 });
-
-      const emailAllowed = await checkRateLimit(
-        `auth:recovery:email:${parsed.data.email.trim().toLowerCase()}`,
-        5,
-        60 * 60 * 1000,
-      );
-      if (!emailAllowed) {
-        return NextResponse.json({ success: true, message: 'Si cet email existe, un lien a été envoyé.' });
-      }
-      
-      const redirectTo = new URL('/reset-password', req.nextUrl.origin).toString();
-      const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, { redirectTo });
-      if (error) {
-        console.error('Password recovery email error:', error.message);
-        return NextResponse.json(
-          { error: "Impossible d'envoyer le lien de réinitialisation. Réessayez plus tard." },
-          { status: 502 },
-        );
-      }
-      return NextResponse.json({ success: true, message: 'Si cet email existe, un lien a été envoyé.' });
     }
 
     if (action === 'changePassword') {

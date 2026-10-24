@@ -28,11 +28,29 @@ export function ForgotPasswordView() {
     const isRecoveryRedirect = window.location.pathname === '/reset-password';
     if (!isRecoveryRedirect) return;
 
+    const query = new URLSearchParams(window.location.search);
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    const hasRecoveryCode = query.has('code') || query.get('type') === 'recovery'
+      || fragment.get('type') === 'recovery';
+    const redirectError = query.get('error_description') || fragment.get('error_description');
+    if (redirectError) {
+      setError('Ce lien de réinitialisation est invalide ou expiré. Demandez-en un nouveau.');
+      window.history.replaceState(null, '', '/forgot-password');
+      return;
+    }
+    if (!hasRecoveryCode) {
+      setError('Ouvrez le lien reçu dans votre e-mail pour choisir un nouveau mot de passe.');
+      window.history.replaceState(null, '', '/forgot-password');
+      return;
+    }
+
     setStep('checking');
     const supabase = getSupabaseBrowserClient();
     let recoveryConfirmed = false;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' && session) {
+      // Supabase emits PASSWORD_RECOVERY for implicit links and SIGNED_IN for
+      // PKCE code links. Both are accepted only on this dedicated callback URL.
+      if ((event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && session) {
         recoveryConfirmed = true;
         setError('');
         setStep('reset');
@@ -47,7 +65,7 @@ export function ForgotPasswordView() {
         setStep('email');
         window.history.replaceState(null, '', '/forgot-password');
       }
-    }, 5000);
+    }, 20000);
 
     return () => {
       window.clearTimeout(timeout);
@@ -60,14 +78,12 @@ export function ForgotPasswordView() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'requestRecovery', email: email.trim() }),
+      const supabase = getSupabaseBrowserClient();
+      const { error: requestError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || 'Impossible d’envoyer le lien. Réessayez dans quelques instants.');
+      if (requestError) {
+        setError('Impossible d’envoyer le lien. Vérifiez votre connexion puis réessayez.');
         return;
       }
       setStep('sent');
@@ -145,7 +161,7 @@ export function ForgotPasswordView() {
               <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">{title}</h1>
               <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-300">
                 {step === 'email' && 'Saisissez l’adresse liée à votre compte. Nous vous enverrons un lien sécurisé pour créer un nouveau mot de passe.'}
-                {step === 'sent' && 'Si un compte correspond à cette adresse, un lien de réinitialisation vient d’être envoyé. Ouvrez-le depuis cet appareil.'}
+                {step === 'sent' && `Si un compte correspond à ${email}, le lien a été envoyé à cette même adresse. Ouvrez-le depuis cet appareil.`}
                 {step === 'checking' && 'Nous vérifions votre lien sécurisé. Cela ne prend que quelques secondes.'}
                 {step === 'reset' && 'Votre lien est valide. Choisissez un nouveau mot de passe pour retrouver l’accès à votre compte.'}
                 {step === 'done' && 'Votre nouveau mot de passe est enregistré. Vous pouvez maintenant vous connecter.'}
@@ -157,11 +173,12 @@ export function ForgotPasswordView() {
                 <motion.form key="email" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} onSubmit={handleSendLink} className="space-y-5">
                   {error && <div role="alert" className="rounded-xl border border-red-400/30 bg-red-950/50 px-4 py-3 text-sm text-red-200">{error}</div>}
                   <div className="space-y-2">
-                    <Label htmlFor="recovery-email" className="text-sm font-semibold text-slate-200">Adresse e-mail</Label>
+                    <Label htmlFor="recovery-email" className="text-sm font-semibold text-slate-200">Adresse e-mail du compte</Label>
                     <div className="relative">
                       <Mail aria-hidden="true" className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <Input id="recovery-email" type="email" autoComplete="email" placeholder="vous@exemple.com" value={email} onChange={(event) => setEmail(event.target.value)} className={`${inputClass} pl-11`} required />
                     </div>
+                    <p className="text-xs leading-5 text-slate-400">Le lien sera envoyé uniquement à cette adresse si elle correspond au compte.</p>
                   </div>
                   <Button type="submit" className="h-12 w-full rounded-xl bg-emerald-600 text-base font-bold text-white hover:bg-emerald-500" disabled={loading}>
                     {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Envoi en cours…</> : 'Recevoir le lien sécurisé'}

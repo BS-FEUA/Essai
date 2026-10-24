@@ -5,24 +5,22 @@ const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
 function getConfiguration() {
   const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
-  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
 
-  if (!folderId || !clientEmail || !privateKey) {
-    throw new Error('Google Drive n’est pas configuré. Renseignez GOOGLE_DRIVE_FOLDER_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL et GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.');
+  if (!folderId || !clientId || !clientSecret || !refreshToken) {
+    throw new Error('Google Drive n’est pas configuré. Renseignez GOOGLE_DRIVE_FOLDER_ID, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET et GOOGLE_REFRESH_TOKEN.');
   }
 
-  return { folderId, clientEmail, privateKey };
+  return { folderId, clientId, clientSecret, refreshToken };
 }
 
 function getDriveClient() {
-  const { clientEmail, privateKey } = getConfiguration();
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: clientEmail,
-      private_key: privateKey,
-    },
-    scopes: [DRIVE_SCOPE],
+  const { clientId, clientSecret, refreshToken } = getConfiguration();
+  const auth = new google.auth.OAuth2(clientId, clientSecret);
+  auth.setCredentials({
+    refresh_token: refreshToken,
   });
 
   return google.drive({ version: 'v3', auth });

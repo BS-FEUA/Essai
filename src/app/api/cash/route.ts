@@ -9,13 +9,13 @@ const createTransactionSchema = z.object({
   type: z.enum(['DEPOSIT', 'WITHDRAWAL', 'PAYMENT', 'TRANSFER', 'REFUND']),
   amount: z.number().int().positive().max(10_000_000),
   description: z.string().trim().max(500).optional(),
-  paymentMethod: z.string().trim().max(50).optional(),
+  paymentMethod: z.enum(['ESPECES', 'MOBILE_MONEY', 'VIREMENT', 'CARTE']).optional(),
   memberId: z.string().min(1).max(64).optional(),
 });
 
 const validateTransactionSchema = z.object({
   transactionId: z.string().min(1).max(64),
-  status: z.enum(['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED']),
+  status: z.enum(['COMPLETED', 'FAILED', 'CANCELLED']),
 });
 
 export async function GET(req: NextRequest) {
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
       description: description || `${type} - ${targetMemberId}`,
       payment_method: paymentMethod || 'ESPECES',
       member_id: targetMemberId,
-      status: type === 'DEPOSIT' ? 'COMPLETED' : 'PENDING',
+      status: 'PENDING',
     }).select().single();
     
     if (error) throw error;
@@ -157,14 +157,30 @@ export async function PUT(req: NextRequest) {
 
     const { data: tx } = await supabaseAdmin.from('cash_transactions').select('*').eq('id', transactionId).single();
     if (!tx) return NextResponse.json({ error: 'Transaction non trouvée' }, { status: 404 });
+    if (tx.status !== 'PENDING') {
+      return NextResponse.json({ error: 'Cette transaction a déjà été traitée.' }, { status: 409 });
+    }
+
+    if (status === 'COMPLETED' && ['WITHDRAWAL', 'PAYMENT', 'TRANSFER'].includes(tx.type)) {
+      const { data: register, error: registerError } = await supabaseAdmin
+        .from('cash_registers')
+        .select('balance')
+        .eq('id', tx.register_id)
+        .maybeSingle();
+      if (registerError) throw registerError;
+      if (!register || register.balance < tx.amount) {
+        return NextResponse.json({ error: 'Solde insuffisant pour valider cette transaction.' }, { status: 409 });
+      }
+    }
 
     const { data: updatedTxRaw, error } = await supabaseAdmin.from('cash_transactions').update({
       status, 
       validated_by: session.id, 
       validated_at: new Date().toISOString()
-    }).eq('id', transactionId).select().single();
+    }).eq('id', transactionId).eq('status', 'PENDING').select().maybeSingle();
 
     if (error) throw error;
+    if (!updatedTxRaw) return NextResponse.json({ error: 'La transaction a déjà été traitée.' }, { status: 409 });
 
     // Trigger update_cash_balance in PostgreSQL handles the register balance update automatically
 

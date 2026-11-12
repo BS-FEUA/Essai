@@ -18,7 +18,6 @@ const orderSchema = z.object({
   notes: z.string().trim().max(1000).optional(),
   paymentMethod: z.enum(['ESPECES', 'MOBILE_MONEY', 'VIREMENT', 'POSTE']).default('ESPECES'),
   paymentRef: z.string().trim().max(100).optional(),
-  cycle: z.number().int().positive().max(99).optional(),
 });
 const orderStatusSchema = z.enum(['VAL1', 'VAL2', 'LIVRE', 'ANNULE']);
 
@@ -128,7 +127,7 @@ export async function POST(req: NextRequest) {
 
     const parsed = orderSchema.safeParse(rawOrder);
     if (!parsed.success) return NextResponse.json({ error: 'Commande invalide' }, { status: 400 });
-    const { taille, quantity, notes, paymentMethod, paymentRef, cycle = 1 } = parsed.data;
+    const { taille, quantity, notes, paymentMethod, paymentRef } = parsed.data;
     if (paymentMethod === 'POSTE' && !proofFile) {
       return NextResponse.json({ error: 'Ajoutez une photo du reçu de paiement de La Poste.' }, { status: 400 });
     }
@@ -156,9 +155,21 @@ export async function POST(req: NextRequest) {
     }
     const unitPrice = 15000;
 
+    const { data: latestOrder, error: latestOrderError } = await supabaseAdmin
+      .from('uniform_orders')
+      .select('cycle')
+      .eq('member_id', session.id)
+      .order('cycle', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latestOrderError) {
+      if (proofPath) await supabaseAdmin.storage.from('uniform-payment-proofs').remove([proofPath]);
+      throw latestOrderError;
+    }
+
     const orderPayload = {
       member_id: session.id, 
-      cycle, 
+      cycle: (latestOrder?.cycle || 0) + 1,
       taille, 
       quantity: quantity || 1,
       total_amount: (quantity || 1) * unitPrice, 

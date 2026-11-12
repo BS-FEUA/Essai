@@ -33,6 +33,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       supabaseAdmin.from('notifications').select('*').eq('member_id', id).order('created_at', { ascending: false }).limit(5),
     ]);
 
+    const canViewFinancialDetails = canAccess(session.accessLevel, 'MAST_IN');
+
     const member = {
       ...memberRaw,
       firstName: memberRaw.first_name,
@@ -46,7 +48,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       createdAt: memberRaw.created_at,
       updatedAt: memberRaw.updated_at,
       documents: (documents || []).map(d => ({ ...d, fileName: d.file_name, fileSize: d.file_size, mimeType: d.mime_type, fileUrl: d.file_url, memberId: d.member_id })),
-      cashTransactions: (cashTransactions || []).map(t => ({ ...t, registerId: t.register_id, memberId: t.member_id })),
+      cashTransactions: canViewFinancialDetails
+        ? (cashTransactions || []).map(t => ({ ...t, registerId: t.register_id, memberId: t.member_id }))
+        : [],
       uniformOrders: (uniformOrders || []).map(o => ({ ...o, memberId: o.member_id, totalAmount: o.total_amount })),
       notifications: (notifications || []).map(n => ({ ...n, memberId: n.member_id })),
     };

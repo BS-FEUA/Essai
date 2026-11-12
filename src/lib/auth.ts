@@ -41,7 +41,12 @@ export const ACCESS_LABELS: Record<string, string> = {
 };
 
 export function canAccess(userLevel: string, requiredLevel: string): boolean {
-  return (ACCESS_HIERARCHY[userLevel] || 0) >= (ACCESS_HIERARCHY[requiredLevel] || 0);
+  const userRank = ACCESS_HIERARCHY[userLevel];
+  const requiredRank = ACCESS_HIERARCHY[requiredLevel];
+
+  // Unknown roles or requirements must fail closed. Treating an unknown role
+  // as IGN could otherwise grant it access to endpoints requiring IGN.
+  return userRank !== undefined && requiredRank !== undefined && userRank >= requiredRank;
 }
 
 export async function getSession(): Promise<SessionMember | null> {

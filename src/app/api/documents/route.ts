@@ -62,7 +62,13 @@ export async function DELETE(req: NextRequest) {
     if (!docId) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
 
     const { data: doc } = await supabaseAdmin.from('documents').select('*').eq('id', docId).single();
-    if (!doc || (doc.member_id !== session.id && !canAccess(session.accessLevel, 'MASTER'))) {
+    if (!doc) return NextResponse.json({ error: 'Document non trouvé' }, { status: 404 });
+    if (doc.member_id !== session.id && !canAccess(session.accessLevel, 'MASTER')) {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+    }
+    // Members can remove their own documents; deleting another member's
+    // document is an administrative action reserved for MAST_IN and CEO.
+    if (doc.member_id !== session.id && !canAccess(session.accessLevel, 'MAST_IN')) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 

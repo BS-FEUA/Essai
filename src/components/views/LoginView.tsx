@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, Loader2, Sun, Moon, Home, Globe, UserPlus, LogIn, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, Loader2, Sun, Moon, Home, Globe, UserPlus, LogIn, AlertCircle, CheckCircle2, CalendarDays, ShieldCheck } from 'lucide-react';
 
 const pageVariants = {
   initial: { opacity: 1, y: 0 },
@@ -49,6 +49,20 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
   const [regError, setRegError] = useState('');
   const [regSubmitted, setRegSubmitted] = useState(false);
   const [regSubmitting, setRegSubmitting] = useState(false);
+  const [academicYear, setAcademicYear] = useState('');
+
+  useEffect(() => {
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Africa/Porto-Novo',
+      year: 'numeric',
+      month: 'numeric',
+    }).formatToParts(now);
+    const year = Number(parts.find((part) => part.type === 'year')?.value);
+    const month = Number(parts.find((part) => part.type === 'month')?.value);
+    const endYear = month >= 9 ? year + 1 : year;
+    setAcademicYear(`${endYear - 1}-${endYear}`);
+  }, []);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -304,6 +318,10 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                     <CardDescription className="text-slate-400 text-xs">
                       Rejoignez la communauté FEUA BS-Lokossa
                     </CardDescription>
+                    <div className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-200">
+                      <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                      Année académique : {academicYear || '…'}
+                    </div>
                   </CardHeader>
 
                   <CardContent className="space-y-4">
@@ -329,8 +347,9 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
 
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <Label className="text-xs font-semibold text-slate-300">Prénom *</Label>
+                            <Label htmlFor="register-first-name" className="text-xs font-semibold text-slate-300">Prénom *</Label>
                             <Input
+                              id="register-first-name"
                               placeholder="Prénom"
                               value={regForm.firstName}
                               onChange={(e) => setRegForm({ ...regForm, firstName: e.target.value })}
@@ -339,8 +358,9 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                             />
                           </div>
                           <div>
-                            <Label className="text-xs font-semibold text-slate-300">Nom *</Label>
+                            <Label htmlFor="register-last-name" className="text-xs font-semibold text-slate-300">Nom *</Label>
                             <Input
+                              id="register-last-name"
                               placeholder="Nom"
                               value={regForm.lastName}
                               onChange={(e) => setRegForm({ ...regForm, lastName: e.target.value })}
@@ -351,8 +371,9 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                         </div>
 
                         <div>
-                          <Label className="text-xs font-semibold text-slate-300">Email *</Label>
+                          <Label htmlFor="register-email" className="text-xs font-semibold text-slate-300">Email *</Label>
                           <Input
+                            id="register-email"
                             type="email"
                             placeholder="votre@email.bj"
                             value={regForm.email}
@@ -363,8 +384,9 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                         </div>
 
                         <div>
-                          <Label className="text-xs font-semibold text-slate-300">Numéro WhatsApp / téléphone joignable *</Label>
+                          <Label htmlFor="register-phone" className="text-xs font-semibold text-slate-300">Numéro WhatsApp / téléphone joignable *</Label>
                           <Input
+                            id="register-phone"
                             type="tel"
                             inputMode="tel"
                             autoComplete="tel"
@@ -378,19 +400,30 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                         </div>
 
                         <div>
-                          <Label className="text-xs font-semibold text-slate-300">Matricule / Identifiant (Optionnel)</Label>
+                          <Label htmlFor="register-matricule" className="text-xs font-semibold text-slate-300">Matricule universitaire</Label>
                           <Input
-                            placeholder="Ex: FEUA-2026-001"
+                            id="register-matricule"
+                            autoComplete="off"
+                            placeholder="Ex. 62244STI24"
                             value={regForm.matricule}
                             onChange={(e) => setRegForm({ ...regForm, matricule: e.target.value })}
                             className="bg-slate-950/70 border-slate-700/80 text-white placeholder-slate-500 focus:border-emerald-400 rounded-xl text-xs"
                           />
+                          <p className="mt-1 text-[11px] leading-relaxed text-slate-400">Si vous n&apos;avez pas encore de matricule, un identifiant FEUA sera attribué automatiquement.</p>
+                        </div>
+
+                        <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/5 p-3 text-xs leading-relaxed text-slate-300">
+                          <div className="mb-1 flex items-center gap-2 font-semibold text-emerald-200">
+                            <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Inscription membre étudiant
+                          </div>
+                          Les fonctions de dirigeant sont attribuées par le bureau. Après votre inscription, confirmez votre email puis attendez la validation du CEO avant votre première connexion.
                         </div>
 
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <Label className="text-xs font-semibold text-slate-300">Institution</Label>
+                            <Label htmlFor="register-institution" className="text-xs font-semibold text-slate-300">Institution</Label>
                             <Input
+                              id="register-institution"
                               placeholder="INSTI Lokossa"
                               value={regForm.institution}
                               onChange={(e) => setRegForm({ ...regForm, institution: e.target.value })}
@@ -398,8 +431,9 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                             />
                           </div>
                           <div>
-                            <Label className="text-xs font-semibold text-slate-300">Filière</Label>
+                            <Label htmlFor="register-filiere" className="text-xs font-semibold text-slate-300">Filière</Label>
                             <Input
+                              id="register-filiere"
                               placeholder="Informatique"
                               value={regForm.filiere}
                               onChange={(e) => setRegForm({ ...regForm, filiere: e.target.value })}
@@ -409,8 +443,9 @@ export function LoginView({ defaultTab = 'login' }: { defaultTab?: 'login' | 're
                         </div>
 
                         <div>
-                          <Label className="text-xs font-semibold text-slate-300">Mot de passe *</Label>
+                          <Label htmlFor="register-password" className="text-xs font-semibold text-slate-300">Mot de passe *</Label>
                           <Input
+                            id="register-password"
                             type="password"
                             placeholder="Au moins 8 caractères"
                             value={regForm.password}

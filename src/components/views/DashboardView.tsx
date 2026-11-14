@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -14,7 +14,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { MemberBadgeSection } from './MemberBadgeSection';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
@@ -46,8 +45,9 @@ export function DashboardView() {
   const [pwOpen, setPwOpen] = useState(false);
   const [pwLoading, setPwLoading] = useState(false);
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const profileEditorRequested = useRef(false);
 
-  const openEditProfile = () => {
+  const openEditProfile = useCallback(() => {
     setEditForm({
       firstName: member?.firstName || '',
       lastName: member?.lastName || '',
@@ -59,7 +59,15 @@ export function DashboardView() {
     setProfilePhoto(null);
     setProfilePhotoPreview(member?.photoUrl || '');
     setEditProfileOpen(true);
-  };
+  }, [member]);
+
+  useEffect(() => {
+    if (!profileEditorRequested.current && new URLSearchParams(window.location.search).get('editProfile') === '1') {
+      profileEditorRequested.current = true;
+      openEditProfile();
+      router.replace('/dashboard');
+    }
+  }, [openEditProfile, router]);
 
   useEffect(() => {
     return () => {
@@ -242,8 +250,6 @@ export function DashboardView() {
           </Dialog>
         </div>
       </motion.div>
-
-      <MemberBadgeSection onAddPhoto={() => { openEditProfile(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
 
       {/* Stats */}
       {loading ? (

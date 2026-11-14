@@ -23,6 +23,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Bell,
+  IdCard,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -35,6 +36,7 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { label: 'Tableau de bord', icon: <LayoutDashboard className="h-4 w-4" />, view: 'dashboard', path: '/dashboard' },
+  { label: 'Badges', icon: <IdCard className="h-4 w-4" />, view: 'badges', path: '/badges' },
   { label: 'Membres', icon: <Users className="h-4 w-4" />, view: 'members', path: '/members', requiredLevel: 'MASTER' },
   { label: 'Documents', icon: <FileText className="h-4 w-4" />, view: 'documents', path: '/documents' },
   { label: 'Caisses', icon: <Wallet className="h-4 w-4" />, view: 'cash', path: '/cash', requiredLevel: 'MASTER' },

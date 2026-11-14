@@ -5,6 +5,7 @@ import { canAccess, getSession, ACCESS_HIERARCHY } from '@/lib/auth';
 import { isLeadershipBadgeLevel } from '@/lib/badge-rules';
 import { supabaseAdmin } from '@/lib/db';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getPagination } from '@/lib/pagination';
 
 const reviewSchema = z.object({
   action: z.literal('review'),
@@ -29,16 +30,25 @@ export async function GET(req: NextRequest) {
 
     const canReview = canAccess(session.accessLevel, 'MIN');
     let pendingBadges: Array<Record<string, unknown>> = [];
+    let pendingTotal = 0;
+    let pendingPages = 0;
+    const { page, limit, from, to } = getPagination(req.nextUrl.searchParams, 8, 20);
+    const queueSearch = (req.nextUrl.searchParams.get('search') || '').trim().slice(0, 80).replace(/[(),%]/g, '');
     if (canReview) {
-      const { data, error: queueError } = await supabaseAdmin
+      let queueQuery = supabaseAdmin
         .from('members')
-        .select('id, matricule, first_name, last_name, access_level, institution, filiere, niveau, photo_url, badge_status')
+        .select('id, matricule, first_name, last_name, access_level, institution, filiere, niveau, photo_url, badge_status', { count: 'exact' })
         .eq('status', 'ACTIVE')
         .eq('badge_status', 'PENDING')
         .not('email', 'like', 'deleted+%@example.invalid')
-        .order('created_at', { ascending: true })
-        .limit(50);
+        .order('created_at', { ascending: true });
+      if (queueSearch) {
+        queueQuery = queueQuery.or(`first_name.ilike.%${queueSearch}%,last_name.ilike.%${queueSearch}%,matricule.ilike.%${queueSearch}%`);
+      }
+      const { data, count, error: queueError } = await queueQuery.range(from, to);
       if (queueError) throw queueError;
+      pendingTotal = count || 0;
+      pendingPages = Math.ceil(pendingTotal / limit);
       pendingBadges = (data || []).map((item) => ({
         id: item.id,
         matricule: item.matricule,
@@ -73,7 +83,7 @@ export async function GET(req: NextRequest) {
         : null,
     };
 
-    return NextResponse.json({ badge, pendingBadges, canReview });
+    return NextResponse.json({ badge, pendingBadges, canReview, pendingTotal, pendingPage: page, pendingPages });
   } catch (error) {
     console.error('Badge load error:', error);
     return NextResponse.json({ error: 'Impossible de charger les informations du badge.' }, { status: 500 });

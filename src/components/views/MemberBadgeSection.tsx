@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { apiFetch, ACCESS_LABELS } from '@/lib/store';
 import { isLeadershipBadgeLevel } from '@/lib/badge-rules';
@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CheckCircle2, Clock3, Download, IdCard, Loader2, RefreshCw, ShieldCheck, XCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { CheckCircle2, ChevronLeft, ChevronRight, Clock3, Download, IdCard, Loader2, RefreshCw, Search, ShieldCheck, XCircle } from 'lucide-react';
 
 type MemberBadge = {
   matricule: string;
@@ -31,7 +32,14 @@ type PendingBadge = Omit<MemberBadge, 'status' | 'badgeStatus' | 'rejectionReaso
   canReview: boolean;
 };
 
-type BadgeResponse = { badge: MemberBadge; pendingBadges: PendingBadge[]; canReview: boolean };
+type BadgeResponse = {
+  badge: MemberBadge;
+  pendingBadges: PendingBadge[];
+  canReview: boolean;
+  pendingTotal: number;
+  pendingPage: number;
+  pendingPages: number;
+};
 
 function loadImage(src: string, crossOrigin = false) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -195,17 +203,28 @@ export function MemberBadgeSection({ onAddPhoto }: { onAddPhoto: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState('');
+  const [queueSearch, setQueueSearch] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [queuePage, setQueuePage] = useState(1);
 
   const reload = useCallback(async () => {
     try {
-      const response = await apiFetch<BadgeResponse>('/api/badges');
+      const parameters = new URLSearchParams({ page: String(queuePage), limit: '8' });
+      if (appliedSearch) parameters.set('search', appliedSearch);
+      const response = await apiFetch<BadgeResponse>(`/api/badges?${parameters}`);
+      const lastPage = Math.max(1, response.pendingPages);
+      if (queuePage > lastPage) {
+        setQueuePage(lastPage);
+        return;
+      }
       setData(response);
+      setError('');
     } catch {
       setError('Impossible de charger les informations du badge.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [appliedSearch, queuePage]);
 
   useEffect(() => {
     void reload();
@@ -222,6 +241,12 @@ export function MemberBadgeSection({ onAddPhoto }: { onAddPhoto: () => void }) {
     } catch {
       setError('La demande n’a pas pu être envoyée. Vérifiez votre photo puis réessayez.');
     } finally { setSubmitting(false); }
+  };
+
+  const handleQueueSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setQueuePage(1);
+    setAppliedSearch(queueSearch.trim());
   };
 
   const reviewBadge = async (memberId: string, decision: 'APPROVED' | 'REJECTED') => {
@@ -342,36 +367,74 @@ export function MemberBadgeSection({ onAddPhoto }: { onAddPhoto: () => void }) {
         </CardContent>
       </Card>
 
-      {data.canReview && data.pendingBadges.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-[var(--feua-green)]" />Demandes de badge à examiner</CardTitle>
-            <CardDescription>La validation d’un badge de dirigeant est réservée au CEO.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {data.pendingBadges.map((request) => (
-              <div key={request.id} className="flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={request.photoUrl || undefined} alt={`Photo de ${request.firstName} ${request.lastName}`} />
-                  <AvatarFallback>{request.firstName[0]}{request.lastName[0]}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold">{request.firstName} {request.lastName}</p>
-                  <p className="text-xs text-muted-foreground">{request.matricule} · {ACCESS_LABELS[request.accessLevel] || request.accessLevel}{request.institution ? ` · ${request.institution}` : ''}</p>
-                  {request.requiresCeo && <p className="mt-1 text-xs font-medium text-amber-700">Validation CEO requise</p>}
-                </div>
-                {request.canReview ? (
-                  <div className="flex gap-2">
-                    <Button size="sm" disabled={submitting} onClick={() => void reviewBadge(request.id, 'APPROVED')} className="bg-[var(--feua-green)] text-white hover:bg-emerald-800">
-                      <CheckCircle2 className="mr-1.5 h-4 w-4" />Autoriser
-                    </Button>
-                    <Button size="sm" variant="outline" disabled={submitting} onClick={() => void reviewBadge(request.id, 'REJECTED')}>
-                      <XCircle className="mr-1.5 h-4 w-4" />Refuser
-                    </Button>
-                  </div>
-                ) : <Badge variant="outline">En attente du CEO</Badge>}
+      {data.canReview && (
+        <Card className="overflow-hidden border-2 border-emerald-800/15 shadow-md">
+          <CardHeader className="border-b bg-slate-50/80 dark:bg-slate-900/60">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck className="h-5 w-5 text-[var(--feua-green)]" />File de validation</CardTitle>
+                <CardDescription className="mt-1">{data.pendingTotal} demande{data.pendingTotal === 1 ? '' : 's'} · Le CEO valide les badges des dirigeants.</CardDescription>
               </div>
-            ))}
+              <Badge className="w-fit bg-emerald-800 px-3 py-1 text-sm text-white">{data.pendingTotal} en attente</Badge>
+            </div>
+            <form onSubmit={handleQueueSearch} className="flex gap-2 pt-2">
+              <Input
+                aria-label="Rechercher une demande de badge"
+                placeholder="Nom ou matricule…"
+                value={queueSearch}
+                onChange={(event) => setQueueSearch(event.target.value)}
+                className="max-w-md bg-background"
+              />
+              <Button type="submit" variant="outline" className="shrink-0">
+                <Search className="mr-2 h-4 w-4" />Rechercher
+              </Button>
+            </form>
+          </CardHeader>
+          <CardContent className="space-y-4 p-3 sm:p-5">
+            <div role="list" aria-label="Demandes de badge" className="max-h-[32rem] space-y-2 overflow-y-auto overscroll-contain pr-1">
+              {data.pendingBadges.length === 0 ? (
+                <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+                  {data.pendingTotal === 0 && !appliedSearch ? 'Aucune demande à traiter.' : 'Aucune demande ne correspond à cette recherche.'}
+                </div>
+              ) : data.pendingBadges.map((request) => (
+                <article role="listitem" key={request.id} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-950 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar className="h-11 w-11 shrink-0 ring-2 ring-emerald-700/15">
+                      <AvatarImage src={request.photoUrl || undefined} alt={`Photo de ${request.firstName} ${request.lastName}`} />
+                      <AvatarFallback>{request.firstName[0]}{request.lastName[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">{request.firstName} {request.lastName}</p>
+                      <p className="truncate text-xs text-muted-foreground">{request.matricule} · {ACCESS_LABELS[request.accessLevel] || request.accessLevel}{request.institution ? ` · ${request.institution}` : ''}</p>
+                      {request.requiresCeo && <p className="mt-1 text-xs font-semibold text-amber-700">Validation CEO requise</p>}
+                    </div>
+                  </div>
+                  {request.canReview ? (
+                    <div className="grid grid-cols-2 gap-2 sm:w-52">
+                      <Button size="sm" disabled={submitting} onClick={() => void reviewBadge(request.id, 'APPROVED')} className="bg-[var(--feua-green)] text-white hover:bg-emerald-800">
+                        <CheckCircle2 className="mr-1.5 h-4 w-4" />Autoriser
+                      </Button>
+                      <Button size="sm" variant="outline" disabled={submitting} onClick={() => void reviewBadge(request.id, 'REJECTED')}>
+                        <XCircle className="mr-1.5 h-4 w-4" />Refuser
+                      </Button>
+                    </div>
+                  ) : <Badge variant="outline" className="w-fit">En attente du CEO</Badge>}
+                </article>
+              ))}
+            </div>
+            {data.pendingPages > 1 && (
+              <nav aria-label="Pagination des demandes" className="flex items-center justify-between border-t pt-3">
+                <p className="text-xs text-muted-foreground">Page {data.pendingPage} sur {data.pendingPages}</p>
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" variant="outline" disabled={queuePage <= 1} onClick={() => setQueuePage((page) => page - 1)}>
+                    <ChevronLeft className="mr-1 h-4 w-4" />Précédent
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" disabled={queuePage >= data.pendingPages} onClick={() => setQueuePage((page) => page + 1)}>
+                    Suivant<ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              </nav>
+            )}
           </CardContent>
         </Card>
       )}

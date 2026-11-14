@@ -39,6 +39,7 @@ export type ViewName =
   | 'register'
   | 'forgot-password'
   | 'dashboard'
+  | 'badges'
   | 'members'
   | 'member-profile'
   | 'documents'

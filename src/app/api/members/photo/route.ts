@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     const { data: currentMember, error: memberError } = await supabaseAdmin
       .from('members')
-      .select('photo_url')
+      .select('photo_url, badge_status')
       .eq('id', session.id)
       .single();
     if (memberError) throw memberError;
@@ -51,7 +51,16 @@ export async function POST(req: NextRequest) {
     const photoUrl = publicUrlData.publicUrl;
     const { error: updateError } = await supabaseAdmin
       .from('members')
-      .update({ photo_url: photoUrl })
+      .update({
+        photo_url: photoUrl,
+        ...(currentMember.badge_status !== 'NOT_REQUESTED' ? {
+          badge_status: 'NOT_REQUESTED',
+          badge_authorized_by: null,
+          badge_authorized_at: null,
+          badge_rejection_reason: null,
+          badge_verification_token: randomUUID(),
+        } : {}),
+      })
       .eq('id', session.id);
 
     if (updateError) {
@@ -70,7 +79,10 @@ export async function POST(req: NextRequest) {
       actor_id: session.id,
       entity_type: 'Member',
       entity_id: session.id,
-      details: JSON.stringify({ message: 'Photo de profil modifiée' }),
+      details: JSON.stringify({
+        message: 'Photo de profil modifiée',
+        badgeAuthorizationReset: currentMember.badge_status !== 'NOT_REQUESTED',
+      }),
     });
 
     return NextResponse.json({ success: true, photoUrl });

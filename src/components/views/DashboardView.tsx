@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
+import { MemberBadgeSection } from './MemberBadgeSection';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
@@ -78,6 +79,7 @@ export function DashboardView() {
           body: photoData,
         });
         photoUrl = upload.photoUrl;
+        window.dispatchEvent(new Event('feua:member-profile-updated'));
       }
 
       await apiFetch('/api/members', {
@@ -85,6 +87,7 @@ export function DashboardView() {
         body: JSON.stringify(editForm),
       });
       if (member) setMember({ ...member, ...editForm, photoUrl });
+      window.dispatchEvent(new Event('feua:member-profile-updated'));
       setProfilePhoto(null);
       setEditProfileOpen(false);
     } catch { /* handled by apiFetch */ } finally { setEditLoading(false); }
@@ -239,6 +242,8 @@ export function DashboardView() {
           </Dialog>
         </div>
       </motion.div>
+
+      <MemberBadgeSection onAddPhoto={() => { openEditProfile(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
 
       {/* Stats */}
       {loading ? (

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import { supabaseAdmin } from '@/lib/db';
 import { getSession, canAccess, ACCESS_HIERARCHY } from '@/lib/auth';
 import { z } from 'zod';
@@ -141,6 +142,15 @@ export async function PUT(req: NextRequest) {
       
       if (accessLevel) updatePayload.access_level = accessLevel;
       if (status) updatePayload.status = status;
+      if ((accessLevel && accessLevel !== target.access_level) || (status && status !== 'ACTIVE')) {
+        Object.assign(updatePayload, {
+          badge_status: 'NOT_REQUESTED',
+          badge_authorized_by: null,
+          badge_authorized_at: null,
+          badge_rejection_reason: null,
+          badge_verification_token: randomUUID(),
+        });
+      }
       
       if (target.status === 'PENDING_VALIDATION' && status === 'ACTIVE') {
         updatePayload.validated_by = session.id;
@@ -184,6 +194,27 @@ export async function PUT(req: NextRequest) {
 
     if (Object.keys(updatePayload).length === 0) {
       return NextResponse.json({ error: 'Aucune modification fournie.' }, { status: 400 });
+    }
+
+    const badgeProfileFields = ['firstName', 'lastName', 'institution', 'filiere', 'niveau'];
+    if (badgeProfileFields.some((field) => updateData[field] !== undefined)) {
+      const { data: currentBadge, error: badgeError } = await supabaseAdmin
+        .from('members').select('badge_status, first_name, last_name, institution, filiere, niveau').eq('id', session.id).single();
+      if (badgeError) throw badgeError;
+      const badgeProfileChanged = (profile.firstName !== undefined && profile.firstName !== currentBadge.first_name)
+        || (profile.lastName !== undefined && profile.lastName !== currentBadge.last_name)
+        || (profile.institution !== undefined && profile.institution !== currentBadge.institution)
+        || (profile.filiere !== undefined && profile.filiere !== currentBadge.filiere)
+        || (profile.niveau !== undefined && profile.niveau !== currentBadge.niveau);
+      if (badgeProfileChanged && currentBadge.badge_status !== 'NOT_REQUESTED') {
+        Object.assign(updatePayload, {
+          badge_status: 'NOT_REQUESTED',
+          badge_authorized_by: null,
+          badge_authorized_at: null,
+          badge_rejection_reason: null,
+          badge_verification_token: randomUUID(),
+        });
+      }
     }
 
     const { data: updated, error } = await supabaseAdmin.from('members').update(updatePayload).eq('id', session.id).select().single();

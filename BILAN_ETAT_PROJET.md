@@ -4,7 +4,7 @@
 **Dépôt :** `BS-FEUA/Essai`, branche `main`  
 **Dernière modification intégrée :** `6ab930f` — *Improve badge request interface*
 
-> Ce bilan distingue les fonctionnalités visibles dans le dépôt des éléments effectivement vérifiés. Les vérifications locales récentes ont réussi (typecheck, lint et build). Le déploiement de production Vercel associé à `6ab930f` est **READY**.
+> Ce bilan distingue les fonctionnalités visibles dans le dépôt des éléments effectivement vérifiés. Les vérifications locales récentes ont réussi (typecheck, lint et build). Le déploiement de production Vercel associé à `6ab930f` est **READY**. Le parcours badge a aussi été testé par l’utilisateur et a fonctionné.
 
 ## État général
 
@@ -20,6 +20,7 @@ Les espaces présents couvrent l’accueil public, le tableau de bord, les membr
 - **Inscription :** le flux d’adhésion FEUA a été amélioré (`6eec314`).
 - **Badges membres :** demande de badge, validation ou refus par un responsable autorisé, règles particulières pour les dirigeants, génération d’un badge téléchargeable en PNG, QR code et page/API de vérification publique (`9dd1ee3`).
 - **Interface des badges :** espace dédié `/badges` au lieu d’un panneau mêlé au tableau de bord ; file d’attente recherchable par nom ou matricule, pagination de huit demandes et hauteur de liste plafonnée pour rester lisible quand le volume augmente (`6ab930f`).
+- **Vérification fonctionnelle des badges :** l’utilisateur a testé la fonctionnalité et confirme qu’elle a bien fonctionné.
 - **Qualité locale :** `npm run typecheck`, `npm run lint` et `npm run build` ont réussi pour les modifications récentes des badges.
 - **Automatisation de publication :** les changements des badges ont été poussés sur `main` ; Vercel a détecté le commit et le déploiement de production est **READY**.
 
@@ -38,7 +39,7 @@ La présence du code ne garantit pas à elle seule que tous les cas d’usage so
 
 ### P0 — Confirmer la mise en production des badges
 
-1. Le déploiement Vercel du commit `6ab930f` est **READY**. Ouvrir le site de production et confirmer le rendu et le parcours métier avec des comptes de test autorisés.
+1. Le déploiement Vercel du commit `6ab930f` est **READY** et le parcours badge a été testé avec succès. En cas de nouvelles évolutions, refaire une vérification ciblée des rôles et des vues concernées.
 2. Ouvrir l’espace `/badges` avec un compte membre et un compte responsable ; vérifier que les droits et les données visibles correspondent à chaque rôle.
 3. Parcourir le cycle complet : demande, recherche dans la file, validation/refus, téléchargement PNG, QR code et vérification publique.
 4. Tester l’interface à faible largeur et avec plusieurs demandes ; confirmer que la pagination, le défilement, les libellés et les états vides restent compréhensibles.
@@ -72,7 +73,7 @@ La présence du code ne garantit pas à elle seule que tous les cas d’usage so
 | Priorité | Chantier | État | Résultat attendu |
 |---|---|---|---|
 | P0 | Déploiement Vercel du commit `6ab930f` | **READY** | Version badges publiée ; parcours utilisateur à confirmer |
-| P0 | Vérification manuelle du cycle badge par rôle | À faire | Demande, décision, téléchargement et QR validés |
+| P0 | Vérification fonctionnelle de la génération de badge | **Testée avec succès par l’utilisateur** | Parcours de badge opérationnel selon le test effectué |
 | P1 | Audit routes API, rôles et politiques RLS | À poursuivre | Aucun accès hors périmètre utilisateur |
 | P1 | Fiabilité des caisses et paiements | À vérifier | Opérations traçables et résistantes aux erreurs/répétitions |
 | P1 | Stockage privé et durable des fichiers | À vérifier | Fichiers protégés et persistants en production |
@@ -91,6 +92,6 @@ La présence du code ne garantit pas à elle seule que tous les cas d’usage so
 
 ## Conclusion
 
-Le projet dispose d’un ensemble conséquent de modules et vient de recevoir un parcours de badge membre avec une file de demandes plus claire et adaptée au volume. Le déploiement Vercel de ces changements est **READY** ; la prochaine action est de vérifier ce parcours avec les rôles concernés. Ensuite, le travail doit se concentrer sur les permissions, les opérations financières, le stockage durable, les tests automatisés et les exigences d’exploitation.
+Le projet dispose d’un ensemble conséquent de modules et vient de recevoir un parcours de badge membre avec une file de demandes plus claire et adaptée au volume. Le déploiement Vercel de ces changements est **READY** et l’utilisateur confirme que la fonctionnalité badge a été testée avec succès. Le travail peut maintenant se concentrer sur les permissions générales, les opérations financières, le stockage durable, les tests automatisés et les exigences d’exploitation.
 
 Ce document est un état de suivi fondé sur le dépôt et les dernières vérifications disponibles ; les éléments marqués « à vérifier » ne sont pas présentés comme validés en production.

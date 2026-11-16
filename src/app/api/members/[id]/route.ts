@@ -30,7 +30,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       supabaseAdmin.from('documents').select('*').eq('member_id', id).order('created_at', { ascending: false }).limit(10),
       supabaseAdmin.from('cash_transactions').select('*, register:cash_registers(*)').eq('member_id', id).order('created_at', { ascending: false }).limit(10),
       supabaseAdmin.from('uniform_orders').select('*').eq('member_id', id).order('created_at', { ascending: false }).limit(10),
-      supabaseAdmin.from('notifications').select('*').eq('member_id', id).order('created_at', { ascending: false }).limit(5),
+      session.id === id
+        ? supabaseAdmin.from('notifications').select('*').eq('member_id', session.id).order('created_at', { ascending: false }).limit(5)
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
     const canViewFinancialDetails = canAccess(session.accessLevel, 'MAST_IN');

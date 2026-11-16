@@ -6,6 +6,7 @@ import { isLeadershipBadgeLevel } from '@/lib/badge-rules';
 import { supabaseAdmin } from '@/lib/db';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getPagination } from '@/lib/pagination';
+import { sendWebPushToMembers } from '@/lib/firebase-admin';
 
 const reviewSchema = z.object({
   action: z.literal('review'),
@@ -15,6 +16,7 @@ const reviewSchema = z.object({
 }).strict();
 
 const requestSchema = z.object({ action: z.literal('request') }).strict();
+const downloadSchema = z.object({ action: z.literal('download'), memberId: z.string().uuid() }).strict();
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -28,18 +30,24 @@ export async function GET(req: NextRequest) {
       .single();
     if (error) throw error;
 
-    const canReview = canAccess(session.accessLevel, 'MIN');
+    const canReview = canAccess(session.accessLevel, 'MAST');
+    const canViewOthers = canReview;
     let pendingBadges: Array<Record<string, unknown>> = [];
     let pendingTotal = 0;
     let pendingPages = 0;
     const { page, limit, from, to } = getPagination(req.nextUrl.searchParams, 8, 20);
     const queueSearch = (req.nextUrl.searchParams.get('search') || '').trim().slice(0, 80).replace(/[(),%]/g, '');
-    if (canReview) {
+    const section = req.nextUrl.searchParams.get('section') === 'approved' ? 'approved' : 'pending';
+    let issuedBadges: Array<Record<string, unknown>> = [];
+    let issuedTotal = 0;
+    let issuedPages = 0;
+    if (canViewOthers && section === 'pending') {
       let queueQuery = supabaseAdmin
         .from('members')
         .select('id, matricule, first_name, last_name, access_level, institution, filiere, niveau, photo_url, badge_status', { count: 'exact' })
         .eq('status', 'ACTIVE')
         .eq('badge_status', 'PENDING')
+        .neq('id', session.id)
         .not('email', 'like', 'deleted+%@example.invalid')
         .order('created_at', { ascending: true });
       if (queueSearch) {
@@ -66,6 +74,25 @@ export async function GET(req: NextRequest) {
       }));
     }
 
+    if (canViewOthers && section === 'approved') {
+      let issuedQuery = supabaseAdmin
+        .from('members')
+        .select('id, matricule, first_name, last_name, access_level, institution, filiere, niveau, photo_url, badge_status, badge_verification_token', { count: 'exact' })
+        .eq('status', 'ACTIVE').eq('badge_status', 'APPROVED').neq('id', session.id)
+        .not('email', 'like', 'deleted+%@example.invalid').order('last_name', { ascending: true });
+      if (queueSearch) issuedQuery = issuedQuery.or(`first_name.ilike.%${queueSearch}%,last_name.ilike.%${queueSearch}%,matricule.ilike.%${queueSearch}%`);
+      const { data, count, error: issuedError } = await issuedQuery.range(from, to);
+      if (issuedError) throw issuedError;
+      issuedTotal = count || 0;
+      issuedPages = Math.ceil(issuedTotal / limit);
+      issuedBadges = (data || []).map((item) => ({
+        id: item.id, matricule: item.matricule, firstName: item.first_name, lastName: item.last_name,
+        accessLevel: item.access_level, status: 'ACTIVE', institution: item.institution, filiere: item.filiere,
+        niveau: item.niveau, photoUrl: item.photo_url, badgeStatus: item.badge_status,
+        rejectionReason: null, verificationUrl: new URL(`/verify/${item.badge_verification_token}`, req.nextUrl.origin).toString(),
+      }));
+    }
+
     const badge = {
       matricule: row.matricule,
       firstName: row.first_name,
@@ -83,7 +110,7 @@ export async function GET(req: NextRequest) {
         : null,
     };
 
-    return NextResponse.json({ badge, pendingBadges, canReview, pendingTotal, pendingPage: page, pendingPages });
+    return NextResponse.json({ badge, pendingBadges, issuedBadges, canReview, pendingTotal, pendingPage: page, pendingPages, issuedTotal, issuedPages, section });
   } catch (error) {
     console.error('Badge load error:', error);
     return NextResponse.json({ error: 'Impossible de charger les informations du badge.' }, { status: 500 });
@@ -96,6 +123,26 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+    const download = downloadSchema.safeParse(body);
+    if (download.success) {
+      if (!canAccess(session.accessLevel, 'MAST')) return NextResponse.json({ error: 'Action réservée aux responsables de niveau Mast à CEO.' }, { status: 403 });
+      if (download.data.memberId === session.id) return NextResponse.json({ error: 'Cette action concerne le badge d’un autre membre.' }, { status: 400 });
+      if (!await checkRateLimit(`badge:download:${session.id}`, 30, 15 * 60 * 1000)) return NextResponse.json({ error: 'Trop de téléchargements. Réessayez plus tard.' }, { status: 429 });
+      const { data: target, error: targetError } = await supabaseAdmin.from('members')
+        .select('id, first_name, last_name, access_level, badge_status, status').eq('id', download.data.memberId).maybeSingle();
+      if (targetError) throw targetError;
+      if (!target || target.status !== 'ACTIVE' || target.badge_status !== 'APPROVED') return NextResponse.json({ error: 'Badge autorisé introuvable.' }, { status: 404 });
+      const { data: actor, error: actorError } = await supabaseAdmin.from('members').select('first_name, last_name, access_level').eq('id', session.id).single();
+      if (actorError) throw actorError;
+      const actorLabel = `${actor.first_name} ${actor.last_name} (${actor.access_level})`;
+      const { error: notificationError } = await supabaseAdmin.from('notifications').insert({
+        member_id: target.id, title: 'Téléchargement de votre badge',
+        content: `Votre badge FEUA a été téléchargé par ${actorLabel}.`, channel: 'IN_APP', status: 'UNREAD', link: '/badges',
+      });
+      if (notificationError) throw notificationError;
+      await sendWebPushToMembers([target.id], { title: 'Téléchargement de votre badge', body: `Votre badge FEUA a été téléchargé par ${actorLabel}.`, link: '/badges' });
+      return NextResponse.json({ success: true });
+    }
     const request = requestSchema.safeParse(body);
     if (request.success) {
       if (!await checkRateLimit(`badge:request:${session.id}`, 3, 60 * 60 * 1000)) {

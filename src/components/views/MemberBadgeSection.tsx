@@ -31,14 +31,19 @@ type PendingBadge = Omit<MemberBadge, 'status' | 'badgeStatus' | 'rejectionReaso
   requiresCeo: boolean;
   canReview: boolean;
 };
+type IssuedBadge = MemberBadge & { id: string };
 
 type BadgeResponse = {
   badge: MemberBadge;
   pendingBadges: PendingBadge[];
+  issuedBadges: IssuedBadge[];
   canReview: boolean;
   pendingTotal: number;
   pendingPage: number;
   pendingPages: number;
+  issuedTotal: number;
+  issuedPages: number;
+  section: 'pending' | 'approved';
 };
 
 function loadImage(src: string, crossOrigin = false) {
@@ -61,8 +66,8 @@ function currentAcademicYear() {
   return `${endYear - 1}-${endYear}`;
 }
 
-async function downloadBadgePng(badge: MemberBadge) {
-  const qrCanvas = document.querySelector<HTMLCanvasElement>('#feua-member-badge-qr canvas');
+async function downloadBadgePng(badge: MemberBadge, qrId = 'feua-member-badge-qr', photoUrl = '/api/badges/photo', beforeDownload?: () => Promise<void>) {
+  const qrCanvas = document.querySelector<HTMLCanvasElement>(`#${qrId} canvas`);
   if (!qrCanvas) throw new Error('Le QR code du badge est indisponible.');
 
   const canvas = document.createElement('canvas');
@@ -123,7 +128,7 @@ async function downloadBadgePng(badge: MemberBadge) {
   context.fillStyle = '#147a4b';
   context.fillRect(photoX - 4, photoY - 4, photoSize + 8, photoSize + 8);
   try {
-    const photo = badge.photoUrl ? await loadImage('/api/badges/photo') : null;
+    const photo = badge.photoUrl ? await loadImage(photoUrl) : null;
     if (photo) {
       const scale = Math.max(photoSize / photo.width, photoSize / photo.height);
       const sourceWidth = photoSize / scale;
@@ -189,6 +194,7 @@ async function downloadBadgePng(badge: MemberBadge) {
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((value) => value ? resolve(value) : reject(new Error('Export PNG impossible.')), 'image/png');
   });
+  await beforeDownload?.();
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -206,13 +212,15 @@ export function MemberBadgeSection({ onAddPhoto }: { onAddPhoto: () => void }) {
   const [queueSearch, setQueueSearch] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
   const [queuePage, setQueuePage] = useState(1);
+  const [queueSection, setQueueSection] = useState<'pending' | 'approved'>('pending');
+  const [selectedBadge, setSelectedBadge] = useState<IssuedBadge | null>(null);
 
   const reload = useCallback(async () => {
     try {
-      const parameters = new URLSearchParams({ page: String(queuePage), limit: '8' });
+      const parameters = new URLSearchParams({ page: String(queuePage), limit: '8', section: queueSection });
       if (appliedSearch) parameters.set('search', appliedSearch);
       const response = await apiFetch<BadgeResponse>(`/api/badges?${parameters}`);
-      const lastPage = Math.max(1, response.pendingPages);
+      const lastPage = Math.max(1, queueSection === 'pending' ? response.pendingPages : response.issuedPages);
       if (queuePage > lastPage) {
         setQueuePage(lastPage);
         return;
@@ -224,7 +232,7 @@ export function MemberBadgeSection({ onAddPhoto }: { onAddPhoto: () => void }) {
     } finally {
       setLoading(false);
     }
-  }, [appliedSearch, queuePage]);
+  }, [appliedSearch, queuePage, queueSection]);
 
   useEffect(() => {
     void reload();
@@ -247,6 +255,20 @@ export function MemberBadgeSection({ onAddPhoto }: { onAddPhoto: () => void }) {
     event.preventDefault();
     setQueuePage(1);
     setAppliedSearch(queueSearch.trim());
+  };
+
+  const downloadOtherBadge = async () => {
+    if (!selectedBadge) return;
+    setDownloading(true);
+    setError('');
+    try {
+      await downloadBadgePng(selectedBadge, 'feua-other-badge-qr', `/api/badges/photo?memberId=${encodeURIComponent(selectedBadge.id)}`, async () => {
+        await apiFetch('/api/badges', { method: 'POST', body: JSON.stringify({ action: 'download', memberId: selectedBadge.id }) });
+      });
+      setSelectedBadge(null);
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : 'Le téléchargement a échoué.');
+    } finally { setDownloading(false); }
   };
 
   const reviewBadge = async (memberId: string, decision: 'APPROVED' | 'REJECTED') => {
@@ -372,14 +394,18 @@ export function MemberBadgeSection({ onAddPhoto }: { onAddPhoto: () => void }) {
           <CardHeader className="border-b bg-slate-50/80 dark:bg-slate-900/60">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck className="h-5 w-5 text-[var(--feua-green)]" />File de validation</CardTitle>
-                <CardDescription className="mt-1">{data.pendingTotal} demande{data.pendingTotal === 1 ? '' : 's'} · Le CEO valide les badges des dirigeants.</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck className="h-5 w-5 text-[var(--feua-green)]" />Gestion des badges</CardTitle>
+                <CardDescription className="mt-1">Les responsables Mast à CEO voient toutes les demandes et les badges autorisés.</CardDescription>
               </div>
-              <Badge className="w-fit bg-emerald-800 px-3 py-1 text-sm text-white">{data.pendingTotal} en attente</Badge>
+              <Badge className="w-fit bg-emerald-800 px-3 py-1 text-sm text-white">{queueSection === 'pending' ? `${data.pendingTotal} en attente` : `${data.issuedTotal} autorisés`}</Badge>
+            </div>
+            <div className="flex flex-wrap gap-2 pt-2" role="tablist" aria-label="Catégorie de badges">
+              <Button type="button" size="sm" variant={queueSection === 'pending' ? 'default' : 'outline'} onClick={() => { setQueuePage(1); setQueueSection('pending'); setSelectedBadge(null); }}>Demandes en attente</Button>
+              <Button type="button" size="sm" variant={queueSection === 'approved' ? 'default' : 'outline'} onClick={() => { setQueuePage(1); setQueueSection('approved'); setSelectedBadge(null); }}>Badges autorisés</Button>
             </div>
             <form onSubmit={handleQueueSearch} className="flex gap-2 pt-2">
               <Input
-                aria-label="Rechercher une demande de badge"
+                aria-label={queueSection === 'pending' ? 'Rechercher une demande de badge' : 'Rechercher un badge autorisé'}
                 placeholder="Nom ou matricule…"
                 value={queueSearch}
                 onChange={(event) => setQueueSearch(event.target.value)}
@@ -392,11 +418,11 @@ export function MemberBadgeSection({ onAddPhoto }: { onAddPhoto: () => void }) {
           </CardHeader>
           <CardContent className="space-y-4 p-3 sm:p-5">
             <div role="list" aria-label="Demandes de badge" className="max-h-[32rem] space-y-2 overflow-y-auto overscroll-contain pr-1">
-              {data.pendingBadges.length === 0 ? (
+              {queueSection === 'pending' && data.pendingBadges.length === 0 || queueSection === 'approved' && data.issuedBadges.length === 0 ? (
                 <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-                  {data.pendingTotal === 0 && !appliedSearch ? 'Aucune demande à traiter.' : 'Aucune demande ne correspond à cette recherche.'}
+                  {queueSection === 'pending' ? (data.pendingTotal === 0 && !appliedSearch ? 'Aucune demande à traiter.' : 'Aucune demande ne correspond à cette recherche.') : (data.issuedTotal === 0 && !appliedSearch ? 'Aucun badge autorisé à afficher.' : 'Aucun badge ne correspond à cette recherche.')}
                 </div>
-              ) : data.pendingBadges.map((request) => (
+              ) : queueSection === 'pending' ? data.pendingBadges.map((request) => (
                 <article role="listitem" key={request.id} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-950 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                   <div className="flex min-w-0 items-center gap-3">
                     <Avatar className="h-11 w-11 shrink-0 ring-2 ring-emerald-700/15">
@@ -420,16 +446,30 @@ export function MemberBadgeSection({ onAddPhoto }: { onAddPhoto: () => void }) {
                     </div>
                   ) : <Badge variant="outline" className="w-fit">En attente du CEO</Badge>}
                 </article>
+              )) : data.issuedBadges.map((issued) => (
+                <article role="listitem" key={issued.id} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-950 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar className="h-11 w-11 shrink-0"><AvatarImage src={issued.photoUrl || undefined} alt={`Photo de ${issued.firstName} ${issued.lastName}`} /><AvatarFallback>{issued.firstName[0]}{issued.lastName[0]}</AvatarFallback></Avatar>
+                    <div className="min-w-0"><p className="truncate font-semibold">{issued.firstName} {issued.lastName}</p><p className="truncate text-xs text-muted-foreground">{issued.matricule} · {ACCESS_LABELS[issued.accessLevel] || issued.accessLevel}</p></div>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => setSelectedBadge(issued)}><Download className="mr-2 h-4 w-4" />Télécharger</Button>
+                </article>
               ))}
             </div>
-            {data.pendingPages > 1 && (
+            {selectedBadge && queueSection === 'approved' && (
+              <div className="flex flex-col gap-4 rounded-xl border border-emerald-700/25 bg-emerald-50/60 p-4 dark:bg-emerald-950/20 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3"><div id="feua-other-badge-qr" className="shrink-0 bg-white p-1"><QRCodeCanvas value={selectedBadge.verificationUrl || ''} size={88} level="H" marginSize={4} title="QR code de vérification du badge" /></div><div><p className="font-semibold">Badge de {selectedBadge.firstName} {selectedBadge.lastName}</p><p className="text-sm text-muted-foreground">Le membre recevra une notification à chaque téléchargement.</p></div></div>
+                <div className="flex gap-2"><Button type="button" variant="outline" onClick={() => setSelectedBadge(null)}>Annuler</Button><Button type="button" disabled={downloading} onClick={() => void downloadOtherBadge()} className="bg-[var(--feua-green)] text-white hover:bg-emerald-800">{downloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Télécharger le PNG</Button></div>
+              </div>
+            )}
+            {(queueSection === 'pending' ? data.pendingPages : data.issuedPages) > 1 && (
               <nav aria-label="Pagination des demandes" className="flex items-center justify-between border-t pt-3">
-                <p className="text-xs text-muted-foreground">Page {data.pendingPage} sur {data.pendingPages}</p>
+                <p className="text-xs text-muted-foreground">Page {data.pendingPage} sur {queueSection === 'pending' ? data.pendingPages : data.issuedPages}</p>
                 <div className="flex gap-2">
                   <Button type="button" size="sm" variant="outline" disabled={queuePage <= 1} onClick={() => setQueuePage((page) => page - 1)}>
                     <ChevronLeft className="mr-1 h-4 w-4" />Précédent
                   </Button>
-                  <Button type="button" size="sm" variant="outline" disabled={queuePage >= data.pendingPages} onClick={() => setQueuePage((page) => page + 1)}>
+                  <Button type="button" size="sm" variant="outline" disabled={queuePage >= (queueSection === 'pending' ? data.pendingPages : data.issuedPages)} onClick={() => setQueuePage((page) => page + 1)}>
                     Suivant<ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 </div>

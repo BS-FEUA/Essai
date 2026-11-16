@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { canAccess, getSession } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -7,19 +7,26 @@ export const runtime = 'nodejs';
 const BUCKET = 'member-avatars';
 const BUCKET_MARKER = `/storage/v1/object/public/${BUCKET}/`;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
   try {
+    const memberId = req.nextUrl.searchParams.get('memberId') || session.id;
+    if (memberId !== session.id && !canAccess(session.accessLevel, 'MAST')) {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+    }
     const { data: member, error: memberError } = await supabaseAdmin
-      .from('members').select('photo_url').eq('id', session.id).single();
+      .from('members').select('id, photo_url, status, badge_status').eq('id', memberId).maybeSingle();
     if (memberError) throw memberError;
+    if (!member || (memberId !== session.id && (member.status !== 'ACTIVE' || member.badge_status !== 'APPROVED'))) {
+      return NextResponse.json({ error: 'Photo indisponible' }, { status: 404 });
+    }
     const encodedPath = member.photo_url?.split(BUCKET_MARKER)[1];
     if (!encodedPath) return NextResponse.json({ error: 'Photo indisponible' }, { status: 404 });
 
     const path = decodeURIComponent(encodedPath);
-    if (!path.startsWith(`${session.id}/`) || path.includes('..')) {
+    if (!path.startsWith(`${memberId}/`) || path.includes('..')) {
       return NextResponse.json({ error: 'Photo indisponible' }, { status: 404 });
     }
 

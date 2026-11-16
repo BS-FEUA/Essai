@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { CheckCircle2, ChevronLeft, ChevronRight, Clock3, Download, IdCard, Loader2, RefreshCw, Search, ShieldCheck, XCircle } from 'lucide-react';
 
 type MemberBadge = {
+  memberCode: string;
   matricule: string;
   firstName: string;
   lastName: string;
@@ -176,7 +177,7 @@ async function downloadBadgePng(badge: MemberBadge, qrId = 'feua-member-badge-qr
   context.fillText('Fédération des Étudiants', 35, 878);
   context.fillText('de l’Université d’Abomey', 35, 918);
   context.font = '600 18px Arial';
-  context.fillText(badge.matricule.slice(0, 24), 35, 968);
+  context.fillText(badge.memberCode.slice(0, 24), 35, 968);
 
   context.fillStyle = '#ffffff';
   context.fillRect(465, 828, 185, 185);
@@ -334,6 +335,7 @@ export function MemberBadgeSection({ onAddPhoto }: { onAddPhoto: () => void }) {
                   </Avatar>
                   <p className="mt-3 break-words text-lg font-extrabold">{badge.firstName} {badge.lastName.toUpperCase()}</p>
                   <p className="mt-1 text-sm font-semibold text-slate-700">{isLeadershipBadgeLevel(badge.accessLevel) ? ACCESS_LABELS[badge.accessLevel] : 'Membre actif'}</p>
+                  <p className="mt-1 font-mono text-xs text-slate-500">ID FEUA : {badge.memberCode}</p>
                   <div className="mt-4 bg-[var(--feua-green)] px-3 py-2 text-sm font-bold text-white">
                     {isLeadershipBadgeLevel(badge.accessLevel) ? 'DIRIGEANT' : 'ENGAGEMENT ÉTUDIANT'}
                   </div>

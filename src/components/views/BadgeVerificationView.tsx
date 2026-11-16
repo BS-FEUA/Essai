@@ -7,6 +7,7 @@ import { ACCESS_LABELS } from '@/lib/store';
 import { CheckCircle2, Loader2, ShieldCheck, XCircle } from 'lucide-react';
 
 type VerifiedMember = {
+  memberCode: string;
   matricule: string;
   firstName: string;
   lastName: string;
@@ -54,7 +55,7 @@ export function BadgeVerificationView({ token }: { token: string }) {
               <div className="space-y-3 rounded-xl border p-4">
                 <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Nom du membre</p><p className="text-lg font-bold">{member.firstName} {member.lastName}</p></div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Matricule</p><p className="font-semibold">{member.matricule}</p></div>
+                  <div><p className="text-xs uppercase tracking-wide text-muted-foreground">ID FEUA</p><p className="font-mono text-xs font-semibold">{member.memberCode}</p></div>
                   <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Fonction</p><Badge>{ACCESS_LABELS[member.accessLevel] || member.accessLevel}</Badge></div>
                 </div>
                 {member.institution && <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Institution</p><p className="text-sm">{member.institution}</p></div>}

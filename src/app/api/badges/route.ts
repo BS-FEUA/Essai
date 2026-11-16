@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   try {
     const { data: row, error } = await supabaseAdmin
       .from('members')
-      .select('id, matricule, first_name, last_name, access_level, status, institution, filiere, niveau, photo_url, badge_status, badge_rejection_reason, badge_verification_token')
+      .select('id, member_code, matricule, first_name, last_name, access_level, status, institution, filiere, niveau, photo_url, badge_status, badge_rejection_reason, badge_verification_token')
       .eq('id', session.id)
       .single();
     if (error) throw error;
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     if (canViewOthers && section === 'pending') {
       let queueQuery = supabaseAdmin
         .from('members')
-        .select('id, matricule, first_name, last_name, access_level, institution, filiere, niveau, photo_url, badge_status', { count: 'exact' })
+        .select('id, member_code, matricule, first_name, last_name, access_level, institution, filiere, niveau, photo_url, badge_status', { count: 'exact' })
         .eq('status', 'ACTIVE')
         .eq('badge_status', 'PENDING')
         .neq('id', session.id)
@@ -59,6 +59,7 @@ export async function GET(req: NextRequest) {
       pendingPages = Math.ceil(pendingTotal / limit);
       pendingBadges = (data || []).map((item) => ({
         id: item.id,
+        memberCode: item.member_code,
         matricule: item.matricule,
         firstName: item.first_name,
         lastName: item.last_name,
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
     if (canViewOthers && section === 'approved') {
       let issuedQuery = supabaseAdmin
         .from('members')
-        .select('id, matricule, first_name, last_name, access_level, institution, filiere, niveau, photo_url, badge_status, badge_verification_token', { count: 'exact' })
+        .select('id, member_code, matricule, first_name, last_name, access_level, institution, filiere, niveau, photo_url, badge_status, badge_verification_token', { count: 'exact' })
         .eq('status', 'ACTIVE').eq('badge_status', 'APPROVED').neq('id', session.id)
         .not('email', 'like', 'deleted+%@example.invalid').order('last_name', { ascending: true });
       if (queueSearch) issuedQuery = issuedQuery.or(`first_name.ilike.%${queueSearch}%,last_name.ilike.%${queueSearch}%,matricule.ilike.%${queueSearch}%`);
@@ -86,14 +87,15 @@ export async function GET(req: NextRequest) {
       issuedTotal = count || 0;
       issuedPages = Math.ceil(issuedTotal / limit);
       issuedBadges = (data || []).map((item) => ({
-        id: item.id, matricule: item.matricule, firstName: item.first_name, lastName: item.last_name,
+        id: item.id, memberCode: item.member_code, matricule: item.matricule, firstName: item.first_name, lastName: item.last_name,
         accessLevel: item.access_level, status: 'ACTIVE', institution: item.institution, filiere: item.filiere,
         niveau: item.niveau, photoUrl: item.photo_url, badgeStatus: item.badge_status,
-        rejectionReason: null, verificationUrl: new URL(`/verify/${item.badge_verification_token}`, req.nextUrl.origin).toString(),
+        rejectionReason: null, verificationUrl: new URL(`/verify/${item.member_code}`, req.nextUrl.origin).toString(),
       }));
     }
 
     const badge = {
+      memberCode: row.member_code,
       matricule: row.matricule,
       firstName: row.first_name,
       lastName: row.last_name,
@@ -106,7 +108,7 @@ export async function GET(req: NextRequest) {
       badgeStatus: row.badge_status,
       rejectionReason: row.badge_rejection_reason,
       verificationUrl: row.badge_status === 'APPROVED'
-        ? new URL(`/verify/${row.badge_verification_token}`, req.nextUrl.origin).toString()
+        ? new URL(`/verify/${row.member_code}`, req.nextUrl.origin).toString()
         : null,
     };
 

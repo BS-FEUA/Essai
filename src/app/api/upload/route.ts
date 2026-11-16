@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/db';
 import { uploadToGoogleDrive } from '@/lib/google-drive';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { randomUUID } from 'crypto';
 import path from 'path';
 
@@ -75,6 +76,9 @@ function matchesDeclaredMime(buffer: Buffer, mimeType: string) {
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+  if (!await checkRateLimit(`upload:${session.id}`, 5, 15 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Trop de téléversements. Réessayez dans 15 minutes.' }, { status: 429 });
+  }
 
   try {
     const formData = await req.formData();

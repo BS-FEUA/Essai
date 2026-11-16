@@ -126,8 +126,13 @@ export async function POST(req: NextRequest) {
         ? parsed.data.matricule.trim()
         : `FEUA-${Math.floor(100000 + Math.random() * 900000)}`;
 
-      // Check if matricule exists
-      const { data: existingMatricule } = await supabaseAdmin.from('members').select('id').eq('matricule', matriculeToUse).single();
+      // Check if matricule exists. Do not continue when the lookup itself fails.
+      const { data: existingMatricule, error: matriculeLookupError } = await supabaseAdmin
+        .from('members').select('id').eq('matricule', matriculeToUse).maybeSingle();
+      if (matriculeLookupError) {
+        console.error('Registration matricule lookup error:', matriculeLookupError);
+        return NextResponse.json({ error: 'Impossible de vérifier le matricule. Réessayez dans un moment.' }, { status: 503 });
+      }
       if (existingMatricule) {
         return NextResponse.json({ error: 'Ce matricule est déjà utilisé.' }, { status: 409 });
       }
@@ -155,6 +160,9 @@ export async function POST(req: NextRequest) {
         if (authError?.message.toLowerCase().includes('already registered')) {
           return NextResponse.json({ error: 'Cet email est déjà enregistré.' }, { status: 409 });
         }
+        if (authError?.message.toLowerCase().includes('matricule')) {
+          return NextResponse.json({ error: 'Ce matricule vient d’être utilisé par un autre compte. Vérifiez-le puis réessayez.' }, { status: 409 });
+        }
         console.error('Registration Auth error:', authError);
         return NextResponse.json({ error: "Impossible d'envoyer le lien de vérification. Vérifiez la configuration email de Supabase puis réessayez." }, { status: 503 });
       }
@@ -166,7 +174,8 @@ export async function POST(req: NextRequest) {
       // Email confirmation must be enabled in Supabase Auth. Fail closed if
       // the project is configured to auto-confirm email addresses.
       if (authData.session) {
-        await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+        const { error: cleanupError } = await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+        if (cleanupError) console.error('Registration cleanup after unexpected session failed:', cleanupError);
         return NextResponse.json({
           error: "La vérification par email n'est pas activée dans Supabase. Activez la confirmation des emails puis réessayez.",
         }, { status: 503 });
@@ -195,11 +204,21 @@ export async function POST(req: NextRequest) {
 
       if (updateError) {
         console.error('Registration DB Error:', updateError);
+        const { error: cleanupError } = await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+        if (cleanupError) {
+          console.error('Registration rollback failed:', cleanupError);
+          return NextResponse.json({ error: 'Le profil n’a pas pu être enregistré. La création du compte doit être vérifiée par le support avant une nouvelle tentative.' }, { status: 500 });
+        }
+        if (updateError.code === '23505' && updateError.message.toLowerCase().includes('matricule')) {
+          return NextResponse.json({ error: 'Ce matricule vient d’être utilisé par un autre compte. Vérifiez-le puis réessayez.' }, { status: 409 });
+        }
+        return NextResponse.json({ error: 'L’inscription n’a pas pu être enregistrée. Réessayez dans quelques minutes.' }, { status: 503 });
       }
 
-      await supabaseAdmin.from('audit_logs').insert({
+      const { error: auditError } = await supabaseAdmin.from('audit_logs').insert({
         action: 'CREATE', actor_id: authData.user.id, entity_type: 'Member', entity_id: authData.user.id, details: '{"message": "Inscription membre"}'
       });
+      if (auditError) console.error('Registration audit log error:', auditError);
 
       return NextResponse.json({
         success: true,

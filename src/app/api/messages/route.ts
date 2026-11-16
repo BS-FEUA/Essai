@@ -97,7 +97,9 @@ export async function GET(req: NextRequest) {
       const { error: markReadError } = await supabaseAdmin
         .from('message_recipients')
         .update({ is_read: true, read_at: new Date().toISOString() })
-        .in('id', unreadIds);
+        .in('id', unreadIds)
+        // Keep ownership in the database mutation itself as defense in depth.
+        .eq('recipient_id', session.id);
       if (markReadError) throw markReadError;
     }
 

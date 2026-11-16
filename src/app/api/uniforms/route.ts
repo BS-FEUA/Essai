@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/db';
 import { getSession, canAccess } from '@/lib/auth';
 import { z } from 'zod';
 import { getPagination } from '@/lib/pagination';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { randomUUID } from 'node:crypto';
 
 const MAX_PROOF_BYTES = 4 * 1024 * 1024;
@@ -20,6 +21,19 @@ const orderSchema = z.object({
   paymentRef: z.string().trim().max(100).optional(),
 });
 const orderStatusSchema = z.enum(['VAL1', 'VAL2', 'LIVRE', 'ANNULE']);
+
+function matchesProofMime(buffer: Buffer, mimeType: string) {
+  switch (mimeType) {
+    case 'image/jpeg':
+      return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+    case 'image/png':
+      return buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    case 'image/webp':
+      return buffer.length >= 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP';
+    default:
+      return false;
+  }
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -106,6 +120,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    if (!await checkRateLimit(`uniform-order:${session.id}`, 5, 15 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Trop de commandes. Réessayez dans 15 minutes.' }, { status: 429 });
+    }
 
     const contentType = req.headers.get('content-type') || '';
     let rawOrder: Record<string, unknown>;
@@ -134,6 +151,10 @@ export async function POST(req: NextRequest) {
     if (proofFile && (!PROOF_MIME_EXTENSIONS[proofFile.type] || proofFile.size === 0 || proofFile.size > MAX_PROOF_BYTES)) {
       return NextResponse.json({ error: 'La preuve doit être une photo JPG, PNG ou WebP de 4 Mo maximum.' }, { status: 400 });
     }
+    const proofBuffer = proofFile ? Buffer.from(await proofFile.arrayBuffer()) : null;
+    if (proofFile && proofBuffer && !matchesProofMime(proofBuffer, proofFile.type)) {
+      return NextResponse.json({ error: 'Le contenu de la preuve ne correspond pas au format déclaré.' }, { status: 400 });
+    }
 
     let proofPath: string | null = null;
     if (proofFile) {
@@ -141,7 +162,7 @@ export async function POST(req: NextRequest) {
       proofPath = `${session.id}/${randomUUID()}.${extension}`;
       const { error: storageError } = await supabaseAdmin.storage
         .from('uniform-payment-proofs')
-        .upload(proofPath, Buffer.from(await proofFile.arrayBuffer()), {
+        .upload(proofPath, proofBuffer!, {
           contentType: proofFile.type,
           upsert: false,
         });

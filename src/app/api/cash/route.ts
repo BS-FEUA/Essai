@@ -155,7 +155,8 @@ export async function PUT(req: NextRequest) {
 
     if (!transactionId) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
 
-    const { data: tx } = await supabaseAdmin.from('cash_transactions').select('*').eq('id', transactionId).single();
+    const { data: tx, error: transactionError } = await supabaseAdmin.from('cash_transactions').select('*').eq('id', transactionId).maybeSingle();
+    if (transactionError) throw transactionError;
     if (!tx) return NextResponse.json({ error: 'Transaction non trouvée' }, { status: 404 });
     if (tx.status !== 'PENDING') {
       return NextResponse.json({ error: 'Cette transaction a déjà été traitée.' }, { status: 409 });
@@ -179,6 +180,9 @@ export async function PUT(req: NextRequest) {
       validated_at: new Date().toISOString()
     }).eq('id', transactionId).eq('status', 'PENDING').select().maybeSingle();
 
+    if (error?.code === 'P0001' && error.message.includes('INSUFFICIENT_CASH_BALANCE')) {
+      return NextResponse.json({ error: 'Solde insuffisant pour valider cette transaction.' }, { status: 409 });
+    }
     if (error) throw error;
     if (!updatedTxRaw) return NextResponse.json({ error: 'La transaction a déjà été traitée.' }, { status: 409 });
 

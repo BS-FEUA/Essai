@@ -21,7 +21,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import {
   Users, FileText, Wallet, MessageSquare, Shirt, Shield,
   Package, CheckCircle, AlertTriangle, DollarSign, Activity,
-  Lock, Loader2, Pencil, ChevronDown, Megaphone, FileUp,
+  Lock, Loader2, Pencil, ChevronDown, Megaphone, FileUp, IdCard,
 } from 'lucide-react';
 
 const pageVariants = {
@@ -142,6 +142,7 @@ export function DashboardView() {
   const initials = `${member?.firstName?.[0] || ''}${member?.lastName?.[0] || ''}`.toUpperCase();
 
   const quickActions = [
+    { label: 'Badges', icon: <IdCard className="h-5 w-5" />, path: '/badges', color: 'text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400' },
     { label: 'Documents', icon: <FileText className="h-5 w-5" />, path: '/documents', color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400' },
     { label: 'Messagerie', icon: <MessageSquare className="h-5 w-5" />, path: '/messages', color: 'text-[var(--feua-gold)] bg-[var(--feua-gold-light)] dark:bg-amber-900/30 dark:text-amber-400' },
     { label: 'Uniformes', icon: <Shirt className="h-5 w-5" />, path: '/uniforms', color: 'text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400' },

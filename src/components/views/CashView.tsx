@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore, apiFetch } from '@/lib/store';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,7 @@ export function CashView() {
   const [loading, setLoading] = useState(true);
   const [txOpen, setTxOpen] = useState(false);
   const [txForm, setTxForm] = useState({ registerId: '', type: 'DEPOSIT', amount: '', description: '', paymentMethod: 'ESPECES', memberId: '' });
+  const idempotencyRef = useRef<{ payload: string; key: string } | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -77,11 +78,18 @@ export function CashView() {
 
   const handleAddTx = async (e: React.FormEvent) => {
     e.preventDefault();
+    const request = { ...txForm, amount: Number(txForm.amount) };
+    const payload = JSON.stringify(request);
+    if (!idempotencyRef.current || idempotencyRef.current.payload !== payload) {
+      idempotencyRef.current = { payload, key: window.crypto.randomUUID() };
+    }
+    const idempotencyKey = idempotencyRef.current.key;
     try {
       await apiFetch('/api/cash', {
         method: 'POST',
-        body: JSON.stringify({ ...txForm, amount: Number(txForm.amount) }),
+        body: JSON.stringify({ ...request, idempotencyKey }),
       });
+      idempotencyRef.current = null;
       setTxOpen(false);
       setTxForm({ ...txForm, amount: '', description: '', memberId: '' });
       loadTransactions();

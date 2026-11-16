@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { getPagination } from '@/lib/pagination';
 
 const createTransactionSchema = z.object({
+  idempotencyKey: z.string().uuid(),
   registerId: z.string().min(1).max(64),
   type: z.enum(['DEPOSIT', 'WITHDRAWAL', 'PAYMENT', 'TRANSFER', 'REFUND']),
   amount: z.number().int().positive().max(10_000_000),
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
 
     const parsed = createTransactionSchema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: 'Transaction invalide' }, { status: 400 });
-    const { registerId, type, amount, description, paymentMethod, memberId } = parsed.data;
+    const { idempotencyKey, registerId, type, amount, description, paymentMethod, memberId } = parsed.data;
 
     if (!registerId || !type || !amount) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 });
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
     
-    const { data: tx, error } = await supabaseAdmin.from('cash_transactions').insert({
+    const transactionPayload = {
       register_id: registerId, 
       type, 
       amount,
@@ -115,7 +116,40 @@ export async function POST(req: NextRequest) {
       payment_method: paymentMethod || 'ESPECES',
       member_id: targetMemberId,
       status: 'PENDING',
-    }).select().single();
+      idempotency_key: idempotencyKey,
+      idempotency_actor_id: session.id,
+    };
+    const { data: tx, error } = await supabaseAdmin.from('cash_transactions').insert(transactionPayload).select().single();
+
+    if (error?.code === '23505') {
+      const { data: existing, error: existingError } = await supabaseAdmin
+        .from('cash_transactions')
+        .select('*')
+        .eq('idempotency_key', idempotencyKey)
+        .maybeSingle();
+      if (existingError) throw existingError;
+      if (!existing) throw error;
+
+      const sameRequest = existing.idempotency_actor_id === session.id
+        && existing.register_id === transactionPayload.register_id
+        && existing.type === transactionPayload.type
+        && existing.amount === transactionPayload.amount
+        && existing.description === transactionPayload.description
+        && existing.payment_method === transactionPayload.payment_method
+        && existing.member_id === transactionPayload.member_id;
+      if (!sameRequest) return NextResponse.json({ error: 'Cette clé a déjà été utilisée pour une autre transaction.' }, { status: 409 });
+
+      return NextResponse.json({ success: true, transaction: {
+        ...existing,
+        registerId: existing.register_id,
+        memberId: existing.member_id,
+        paymentMethod: existing.payment_method,
+        validatedBy: existing.validated_by,
+        validatedAt: existing.validated_at,
+        createdAt: existing.created_at,
+        updatedAt: existing.updated_at,
+      } });
+    }
     
     if (error) throw error;
 

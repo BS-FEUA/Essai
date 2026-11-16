@@ -842,10 +842,11 @@ export function AdminView() {
                 <SelectItem value="all">Toutes les actions</SelectItem>
                 <SelectItem value="LOGIN">Connexion</SelectItem>
                 <SelectItem value="ROLE_CHANGE">Modification de rôle</SelectItem>
-                <SelectItem value="MEMBER_DELETE">Suppression membre</SelectItem>
+                <SelectItem value="DELETE">Suppression membre</SelectItem>
                 <SelectItem value="DOCUMENT_UPLOAD">Upload document</SelectItem>
                 <SelectItem value="UNIFORM_ORDER">Commande uniforme</SelectItem>
-                <SelectItem value="ANNOUNCEMENT_CREATE">Création annonce</SelectItem>
+                <SelectItem value="CREATE">Création</SelectItem>
+                <SelectItem value="MEMBER_UPDATE">Modification de profil</SelectItem>
               </SelectContent>
             </Select>
           </div>

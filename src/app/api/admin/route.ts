@@ -9,7 +9,7 @@ const auditQuerySchema = z.object({
   action: z.enum([
     'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'LOGIN_FAILED', 'ROLE_CHANGE', 'STATUS_CHANGE',
     'PAYMENT', 'WITHDRAWAL', 'DOCUMENT_UPLOAD', 'DOCUMENT_DOWNLOAD', 'MESSAGE_SEND', 'ARCHIVE', 'EXPORT',
-    'SYSTEM', 'UNIFORM_ORDER', 'BADGE_REQUEST', 'BADGE_APPROVED', 'BADGE_REJECTED',
+    'SYSTEM', 'UNIFORM_ORDER', 'BADGE_REQUEST', 'BADGE_APPROVED', 'BADGE_REJECTED', 'MEMBER_UPDATE',
   ]).or(z.literal('')).default(''),
   actorId: z.union([z.string().uuid(), z.literal('')]).default(''),
 });

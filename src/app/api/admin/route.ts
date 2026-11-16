@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/db';
 import { getSession, canAccess } from '@/lib/auth';
+import { z } from 'zod';
+
+const auditQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).max(1_000_000).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(30),
+  action: z.enum([
+    'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'LOGIN_FAILED', 'ROLE_CHANGE', 'STATUS_CHANGE',
+    'PAYMENT', 'WITHDRAWAL', 'DOCUMENT_UPLOAD', 'DOCUMENT_DOWNLOAD', 'MESSAGE_SEND', 'ARCHIVE', 'EXPORT',
+    'SYSTEM', 'UNIFORM_ORDER', 'BADGE_REQUEST', 'BADGE_APPROVED', 'BADGE_REJECTED',
+  ]).or(z.literal('')).default(''),
+  actorId: z.union([z.string().uuid(), z.literal('')]).default(''),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -96,10 +108,16 @@ export async function GET(req: NextRequest) {
 
     // Audit logs (Mémoire H)
     if (section === 'audit') {
-      const page = parseInt(searchParams.get('page') || '1');
-      const limit = parseInt(searchParams.get('limit') || '30');
-      const action = searchParams.get('action') || '';
-      const actorId = searchParams.get('actorId') || '';
+      const parsedAuditQuery = auditQuerySchema.safeParse({
+        page: searchParams.get('page') ?? undefined,
+        limit: searchParams.get('limit') ?? undefined,
+        action: searchParams.get('action') ?? undefined,
+        actorId: searchParams.get('actorId') ?? undefined,
+      });
+      if (!parsedAuditQuery.success) {
+        return NextResponse.json({ error: 'Filtres d’audit invalides.' }, { status: 400 });
+      }
+      const { page, limit, action, actorId } = parsedAuditQuery.data;
 
       let query = supabaseAdmin
         .from('audit_logs')

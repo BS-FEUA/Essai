@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { toast } from '@/hooks/use-toast';
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
 
 type CachedResponse = { data: unknown; expiresAt: number };
 
@@ -294,11 +295,18 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Logout — Supabase clears JWT cookie automatically
   logout: async () => {
     try {
-      await apiFetch('/api/auth', {
+      const response = await fetch('/api/auth', {
         method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'logout' }),
       });
-    } catch { /* ignore */ }
+      if (!response.ok) throw new Error('La session serveur n’a pas pu être fermée.');
+    } catch {
+      try {
+        await getSupabaseBrowserClient().auth.signOut();
+      } catch { /* Continue to clear local state and leave the protected page. */ }
+    }
     set({
       member: null,
       isAuthenticated: false,
@@ -309,6 +317,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
     lastSessionCheckAt = 0;
     clearApiCache();
-    toast({ title: 'Déconnexion', description: 'À bientôt !' });
+    // A full navigation clears any stale App Router/RSC state after cookie changes.
+    window.location.replace('/login');
   },
 }));

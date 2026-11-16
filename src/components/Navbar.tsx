@@ -163,7 +163,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </Link>
                 <button
                   type="button"
-                  onClick={() => logout()}
+                  onClick={() => void logout()}
                   className="bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-red-500/30"
                 >
                   Déconnexion

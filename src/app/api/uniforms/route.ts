@@ -176,36 +176,23 @@ export async function POST(req: NextRequest) {
     }
     const unitPrice = 15000;
 
-    const { data: latestOrder, error: latestOrderError } = await supabaseAdmin
-      .from('uniform_orders')
-      .select('cycle')
-      .eq('member_id', session.id)
-      .order('cycle', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (latestOrderError) {
+    const { data: createdOrders, error } = await supabaseAdmin.rpc('create_uniform_order', {
+      p_member_id: session.id,
+      p_taille: taille,
+      p_quantity: quantity,
+      p_total_amount: quantity * unitPrice,
+      p_notes: notes ?? null,
+      p_payment_method: paymentMethod,
+      p_payment_ref: paymentRef ?? null,
+      p_payment_proof_path: proofPath,
+    });
+
+    if (error || !createdOrders?.[0]) {
       if (proofPath) await supabaseAdmin.storage.from('uniform-payment-proofs').remove([proofPath]);
-      throw latestOrderError;
+      throw error || new Error('La création de la commande n’a retourné aucun résultat.');
     }
 
-    const orderPayload = {
-      member_id: session.id, 
-      cycle: (latestOrder?.cycle || 0) + 1,
-      taille, 
-      quantity: quantity || 1,
-      total_amount: (quantity || 1) * unitPrice, 
-      notes,
-      payment_method: paymentMethod,
-      payment_ref: paymentRef,
-      ...(proofPath ? { payment_proof_path: proofPath } : {}),
-    };
-    const { data: order, error } = await supabaseAdmin.from('uniform_orders').insert(orderPayload).select().single();
-
-    if (error) {
-      if (proofPath) await supabaseAdmin.storage.from('uniform-payment-proofs').remove([proofPath]);
-      throw error;
-    }
-
+    const order = createdOrders[0];
     return NextResponse.json({ success: true, order }, { status: 201 });
   } catch (error) {
     console.error('Uniforms POST error:', error);

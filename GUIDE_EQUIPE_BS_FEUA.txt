@@ -1,0 +1,203 @@
+GUIDE DE CONTRIBUTION — PROJET BS-FEUA
+=====================================
+
+Projet : BS-Lokossa / FEUA
+Dépôt GitHub : https://github.com/BS-FEUA/Essai
+Branche de production : main
+Dernier point de reprise connu : commit 75321b2
+
+OBJECTIF
+--------
+Ce guide explique comment préparer son poste, contribuer sans écraser le
+travail des autres, et transmettre les modifications pour revue avant leur
+mise en production.
+
+1. ACCÈS AU PROJET
+-----------------
+1. Envoyez votre nom d’utilisateur GitHub au responsable du dépôt.
+2. Le responsable vous invite depuis le dépôt : Settings > Collaborators
+   (ou Collaborators and teams) > Add people.
+3. Acceptez l’invitation reçue par GitHub.
+4. Utilisez uniquement votre propre compte GitHub. Ne demandez et ne partagez
+   jamais le mot de passe d’un autre membre.
+
+Un accès Write est normalement suffisant pour créer une branche et proposer une
+Pull Request. La branche main est la branche de production : les changements
+doivent y arriver par Pull Request après revue.
+
+2. PRÉPARER SON ENVIRONNEMENT
+-----------------------------
+Prérequis : Git, Node.js et npm installés sur votre ordinateur.
+
+Dans un terminal :
+
+  git clone https://github.com/BS-FEUA/Essai.git
+  cd Essai
+  npm ci
+
+Le dépôt fournit un fichier .env.example. Créez votre fichier local .env.local
+à partir de ce modèle et demandez les valeurs nécessaires au responsable par
+un canal privé et sécurisé. N’envoyez jamais ces valeurs dans une Pull Request,
+un ticket, une capture d’écran ou un message public.
+
+Ne commitez jamais .env, .env.local, une clé de service Supabase, un jeton ou un
+mot de passe. Pour les essais, utilisez de préférence un environnement et une
+base de développement distincts de la production.
+
+Démarrer l’application :
+
+  npm run dev
+
+Vérifications à effectuer avant de proposer un changement :
+
+  npm run lint
+  npm run typecheck
+  npm run build
+
+3. CRÉER UN COMPTE ET UTILISER CODEX
+------------------------------------
+Il n’existe pas de compte Codex séparé à créer : chaque membre utilise son
+propre compte ChatGPT/OpenAI.
+
+1. Si vous n’avez pas de compte, créez-en un sur https://chatgpt.com/ . Chaque
+   membre garde son compte personnel ; ne partagez pas un compte commun.
+2. Installez l’application ChatGPT pour Windows ou macOS depuis
+   https://chatgpt.com/download/ , si elle n’est pas déjà installée.
+3. Ouvrez l’application et connectez-vous avec votre compte.
+4. Dans le menu de l’application, sélectionnez Codex.
+5. Clonez le dépôt en suivant la section 2 de ce guide, puis ouvrez dans Codex
+   le dossier local Essai. Accordez à Codex l’accès à ce dossier lorsque
+   l’application le demande.
+6. Démarrez une nouvelle conversation Codex et donnez-lui une tâche précise.
+
+Exemple de demande à Codex :
+
+  Tu travailles sur le projet BS-FEUA dans cette branche dédiée. Commence par
+  lire AGENTS.md s’il est présent, vérifier git status et examiner les fichiers
+  concernés. Reprends le volet « routes API : sessions, rôles, propriété des
+  données, validation et rate limiting » de GUIDE_EQUIPE_BS_FEUA.txt. Analyse
+  d’abord, puis propose ou effectue un correctif limité à cette tâche. Ne
+  modifie pas main, ne touche pas aux secrets et ne déploie pas en production.
+  Si une migration est nécessaire, ajoute un nouveau fichier dans
+  supabase/migrations et explique quand il faut l’appliquer. À la fin, indique
+  les fichiers changés, les vérifications effectuées et les étapes manuelles
+  restantes. Ne pousse pas directement sur main : je relirai le diff et
+  proposerai une Pull Request.
+
+Le contexte des conversations Codex d’un membre n’est pas le dossier partagé
+de l’équipe. Pour reprendre le travail, transmettez ce guide, la tâche attribuée
+et le commit de référence 75321b2. Codex peut lire le dépôt local et aider à
+modifier, expliquer ou vérifier le code ; le membre reste responsable de relire
+le diff avant de l’envoyer dans une Pull Request.
+
+Les limites d’utilisation dépendent du compte et du forfait. Codex local dans
+l’application et Codex Cloud n’ont pas les mêmes conditions d’accès. Pour ce
+projet, l’usage décrit ci-dessus est le travail sur un clone local.
+
+Documentation officielle :
+  https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan
+  https://help.openai.com/en/articles/20001275-chatgpt-work-and-codex
+
+4. TRAVAILLER SANS MODIFIER DIRECTEMENT MAIN
+--------------------------------------------
+Avant de commencer chaque tâche :
+
+  git switch main
+  git pull --ff-only
+  git switch -c fix/description-courte
+
+Exemples de noms de branches :
+
+  fix/api-access-checks
+  fix/security-headers
+  docs/security-review
+
+Après avoir terminé et vérifié votre changement :
+
+  git add <fichiers-modifies>
+  git commit -m "Describe the change"
+  git push -u origin fix/description-courte
+
+Ouvrez ensuite une Pull Request vers main depuis GitHub. Décrivez le problème,
+les fichiers concernés, la correction, les vérifications effectuées et toute
+migration Supabase requise. Attendez la revue et la décision du responsable
+avant de considérer le changement comme livré.
+
+Ne poussez pas directement sur main. N’utilisez pas git push --force sur une
+branche partagée. Si main évolue pendant votre travail, récupérez ses nouveaux
+changements et intégrez-les à votre branche avant la fusion.
+
+5. RÈGLES POUR SUPABASE ET LES MIGRATIONS
+-----------------------------------------
+- Toute modification de schéma ou de fonction SQL doit être enregistrée dans
+  un nouveau fichier daté de supabase/migrations/.
+- N’éditez pas une ancienne migration déjà appliquée en production.
+- Décrivez dans la Pull Request l’ordre d’application et les conséquences sur
+  la version actuelle de l’application.
+- Faites valider et appliquer les migrations par la personne responsable de
+  Supabase. N’exécutez pas de SQL directement sur la production sans accord.
+- Gardez les identifiants de production hors de votre poste et des commits ;
+  utilisez les accès et l’environnement qui vous ont été attribués.
+
+6. CONSIGNES SPÉCIFIQUES AU PROJET
+----------------------------------
+- L’application utilise Next.js, React, TypeScript, Supabase et Vercel.
+- Le code applicatif courant se trouve principalement dans src/.
+- Avant de modifier une API Next.js ou un composant Next.js, consultez la
+  documentation locale correspondant à la version installée dans
+  node_modules/next/dist/docs/.
+- Les contrôles d’accès doivent être faits côté serveur ; ne faites pas
+  confiance à un rôle, un montant ou un identifiant fourni uniquement par le
+  navigateur.
+- Une migration doit accompagner toute évolution de base nécessaire au code.
+- Pour les données sensibles, ne renvoyez au navigateur que les champs dont
+  l’écran a réellement besoin.
+
+7. PROCESSUS DE REVUE ET DE DÉPLOIEMENT
+--------------------------------------
+1. Le contributeur ouvre une Pull Request vers main.
+2. Le responsable vérifie le code, les contrôles et la migration éventuelle.
+3. La prévisualisation Vercel de la Pull Request est examinée avant fusion.
+4. Après validation, le responsable fusionne la Pull Request dans main.
+5. La fusion dans la branche de production déclenche le déploiement Vercel.
+6. Vérifiez le déploiement et le parcours concerné après publication.
+
+Une Pull Request ne vaut pas validation automatique pour la production. Le
+responsable du projet décide de sa fusion et de l’application des migrations.
+
+8. TRAVAUX À REPRENDRE APRÈS LE COMMIT 75321b2
+----------------------------------------------
+Les correctifs précédents ont notamment traité des contrôles de propriété,
+des limites d’upload, de la validation du contenu de fichiers, de l’idempotence
+des transactions de caisse, ainsi que des accès concurrents et cycles de
+commandes d’uniformes. Les migrations associées ont été déclarées appliquées
+par le responsable du projet.
+
+Les volets restant à examiner dans l’audit de sécurité et de résilience sont :
+
+1. Terminer la revue des routes API : session, rôle, propriété des données,
+   validation des entrées et limitation des requêtes.
+2. Vérifier qu’aucun secret n’est exposé par les variables d’environnement ou
+   importé dans du code exécuté dans le navigateur.
+3. Continuer la revue des réponses de base de données et de la gestion des
+   connexions dans l’environnement serverless.
+4. Terminer la revue des opérations financières, des intégrations de paiement,
+   des webhooks et des protections contre les répétitions.
+5. Vérifier les en-têtes HTTP de sécurité et les composants error.tsx et
+   global-error.tsx.
+
+Attribuez chaque volet à une personne, créez une branche dédiée et ouvrez une
+Pull Request distincte. Évitez que plusieurs personnes modifient la même route
+ou le même fichier en même temps.
+
+9. AIDE ET INCIDENTS
+--------------------
+En cas de secret commité, de donnée de production exposée, de migration
+incertaine ou de déploiement défaillant : arrêtez la fusion, prévenez le
+responsable immédiatement et ne publiez pas de capture contenant des secrets.
+
+Pour toute question, indiquez le nom de la branche, le commit concerné, les
+fichiers modifiés et le message d’erreur complet après avoir masqué les
+informations sensibles.
+
+FIN DU GUIDE

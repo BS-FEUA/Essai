@@ -252,8 +252,14 @@ export async function PUT(req: NextRequest) {
       updateData.livred_at = new Date().toISOString();
     }
 
-    const { data: updated, error } = await supabaseAdmin.from('uniform_orders').update(updateData).eq('id', orderId).select().single();
+    const { data: updated, error } = await supabaseAdmin.from('uniform_orders')
+      .update(updateData)
+      .eq('id', orderId)
+      .eq('status', order.status)
+      .select()
+      .maybeSingle();
     if (error) throw error;
+    if (!updated) return NextResponse.json({ error: 'La commande a déjà été modifiée. Rechargez la liste avant de réessayer.' }, { status: 409 });
     
     return NextResponse.json({ success: true, order: updated });
   } catch (error) {
